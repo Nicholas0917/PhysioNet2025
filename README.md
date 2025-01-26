@@ -152,4 +152,3 @@ Please see the [Challenge website](https://physionetchallenges.org/2025/) for mo
 * [Evaluation code](https://github.com/physionetchallenges/evaluation-2025)
 * [Frequently asked questions (FAQ) for this year's Challenge](https://physionetchallenges.org/2025/faq/)
 * [Frequently asked questions (FAQ) about the Challenges in general](https://physionetchallenges.org/faq/)
-# PhysioNet2025
