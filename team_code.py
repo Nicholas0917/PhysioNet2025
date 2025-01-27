@@ -41,7 +41,7 @@ class Config:
         self.early_stop_patience = 5
         self.use_age = True
         self.use_sex = True
-        self.use_signal_stats = True
+        self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     def get_meta_feature_dim(self):
@@ -138,14 +138,15 @@ def train_model(data_folder, model_folder, verbose):
         print(f'Fold {fold + 1}')
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=8)
+        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=8)
 
         best_loss = float('inf')
         best_epoch = 0
         start_time = time.time()
 
         for epoch in range(num_epochs):
+            epoch_start_time = time.time()
             model.train()
             train_loss = 0.0
             for i, (features, label) in enumerate(train_loader):
@@ -181,7 +182,10 @@ def train_model(data_folder, model_folder, verbose):
 
             val_loss /= len(val_loader)
 
-            print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}')
+            epoch_end_time = time.time()
+            epoch_duration = epoch_end_time - epoch_start_time
+
+            print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
 
             if val_loss < best_loss:
                 best_loss = val_loss
