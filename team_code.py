@@ -131,6 +131,7 @@ def train_model(data_folder, model_folder, verbose):
     # Fit the model.
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)  # 每10个epoch学习率衰减到原来的0.1倍
     scaler = torch.amp.GradScaler('cuda')
     kf = KFold(n_splits=5)
 
@@ -165,6 +166,7 @@ def train_model(data_folder, model_folder, verbose):
                 train_loss += loss.item()
 
             train_loss /= len(train_loader)
+            scheduler.step()
 
             model.eval()
             val_loss = 0.0
