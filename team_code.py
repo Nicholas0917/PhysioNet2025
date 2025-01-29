@@ -34,15 +34,17 @@ from helper_code import *
 
 class Config:
     def __init__(self):
-        self.model_name = 'resnet152'
+        self.model_name = 'resnet50'
         self.num_epochs = 100
         self.learning_rate = 1e-4
+        self.dropout_rate = 0.2
         self.batch_size = 32
         self.early_stop_patience = 5
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.use_pretrained = False
 
     def get_meta_feature_dim(self):
         dim = 0
@@ -56,15 +58,19 @@ class Config:
 
     def print_config(self):
         print(">>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        print(">>>>>>>>>Training Parameters:<<<<<<<<<<")
         print(f"Model Name: {self.model_name}")
         print(f"Number of Epochs: {self.num_epochs}")
         print(f"Learning Rate: {self.learning_rate}")
+        print(f"Dropout Rate: {self.dropout_rate}")
         print(f"Batch Size: {self.batch_size}")
         print(f"Early Stop Patience: {self.early_stop_patience}")
+        print(">>>>>>>>>Meta Features:<<<<<<<<<<")
         print(f"Use Age: {self.use_age}")
         print(f"Use Sex: {self.use_sex}")
         print(f"Use Signal Stats: {self.use_signal_stats}")
         print(f"Meta Feature Dimension: {self.get_meta_feature_dim()}")
+        print(">>>>>>>>>Device:<<<<<<<<<<")
         print(f"Device: {self.device}")
 
 config = Config()
@@ -116,22 +122,22 @@ def train_model(data_folder, model_folder, verbose):
 
     # Define the model.
     if config.model_name == 'resnet18':
-        model = resnet18().to(device)
+        model = resnet18(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet34':
-        model = resnet34().to(device)
+        model = resnet34(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet50':
-        model = resnet50().to(device)
+        model = resnet50(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet101':
-        model = resnet101().to(device)
+        model = resnet101(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet152':
-        model = resnet152().to(device)
+        model = resnet152(pretrained=config.use_pretrained).to(device)
     else:
         raise ValueError('Invalid model name.')
 
     # Fit the model.
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)  # 每10个epoch学习率衰减到原来的0.1倍
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.amp.GradScaler('cuda')
     kf = KFold(n_splits=5)
 
@@ -139,8 +145,8 @@ def train_model(data_folder, model_folder, verbose):
         print(f'Fold {fold + 1}')
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=8)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=8)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
+        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4)
 
         best_loss = float('inf')
         best_epoch = 0
@@ -385,7 +391,7 @@ class BasicBlock(nn.Module):
         self.se = SELayer(planes)
         self.downsample = downsample
         self.stride = stride
-        self.dropout = nn.Dropout(.2)
+        self.dropout = nn.Dropout(config.dropout_rate)
 
     def forward(self, x):
         identity = x
@@ -421,7 +427,7 @@ class Bottleneck(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
         self.stride = stride
-        self.dropout = nn.Dropout(.2)
+        self.dropout = nn.Dropout(config.dropout_rate)
 
     def forward(self, x):
         identity = x
@@ -463,7 +469,7 @@ class ResNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.fc1 = nn.Linear(config.get_meta_feature_dim(), 32)
         self.fc = nn.Linear(512 * block.expansion + 32, out_channel)
-        #self.sig = nn.Sigmoid()
+        self.dropout = nn.Dropout(config.dropout_rate)
 
         for m in self.modules():
             if isinstance(m, nn.Conv1d):
@@ -499,7 +505,7 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x, ag):
-        # x.shape = [batch_size, 12, 4096], ag.shape = [batch_size, n]
+# x.shape = [batch_size, 12, 4096], ag.shape = [batch_size, n]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -514,6 +520,7 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         ag = self.fc1(ag)
         x = torch.cat((ag, x), dim=1)
+        x = self.dropout(x)  # 应用 Dropout
         x = self.fc(x).squeeze()
         return x
     

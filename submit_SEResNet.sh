@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=PhysioNet_baseline     # Job name      
 #SBATCH --time=48:00:00                   # Request 48 hours
-#SBATCH --cpus-per-task=8                 # Number of cores per task
+#SBATCH --cpus-per-task=4                 # Number of cores per task
 #SBATCH --partition=gpu                   # Partition (queue) name   
 #SBATCH --gres=gpu:1                      # Request a single GPU
 
