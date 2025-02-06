@@ -1,0 +1,86 @@
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Model Name: convnext_tiny
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 5
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Finding the Challenge data...
+Preprocessing data...
+Extracting features and labels from the data...
+Training the model on the data...
+Fold 1
+Traceback (most recent call last):
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/train_model.py", line 32, in <module>
+    run(get_parser().parse_args(sys.argv[1:]))
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/train_model.py", line 29, in run
+    train_model(args.data_folder, args.model_folder, args.verbose) ### Teams: Implement this function!!!
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py", line 172, in train_model
+    for i, (features, label) in enumerate(train_loader):
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 701, in __next__
+    data = self._next_data()
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1465, in _next_data
+    return self._process_data(data)
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 1491, in _process_data
+    data.reraise()
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/_utils.py", line 715, in reraise
+    raise exception
+FileNotFoundError: Caught FileNotFoundError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/_utils/worker.py", line 351, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[possibly-undefined]
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 50, in fetch
+    data = self.dataset.__getitems__(possibly_batched_index)
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/dataset.py", line 420, in __getitems__
+    return [self.dataset[self.indices[idx]] for idx in indices]
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/torch/utils/data/dataset.py", line 420, in <listcomp>
+    return [self.dataset[self.indices[idx]] for idx in indices]
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py", line 371, in __getitem__
+    imgs = np.load(record.replace('.hea', '_img.npy'))
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/numpy/lib/_npyio_impl.py", line 451, in load
+    fid = stack.enter_context(open(os.fspath(file), "rb"))
+FileNotFoundError: [Errno 2] No such file or directory: '/mnt/scratch/wmqn2362/PhysioNet25/train/311867'
+
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Model Name: convnext_tiny
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 5
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Traceback (most recent call last):
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/run_model.py", line 83, in <module>
+    run(get_parser().parse_args(sys.argv[1:]))
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/run_model.py", line 37, in run
+    model = load_model(args.model_folder, args.verbose) ### Teams: Implement this function!!!
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py", line 235, in load_model
+    model = joblib.load(model_filename)
+  File "/mnt/scratch/wmqn2362/conda_envs/PhysioNet25/lib/python3.10/site-packages/joblib/numpy_pickle.py", line 650, in load
+    with open(filename, 'rb') as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/users/wmqn2362/PhysioNet2025/ConvNext/Model/model.sav'
+Traceback (most recent call last):
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/evaluate_model.py", line 93, in <module>
+    run(get_parser().parse_args(sys.argv[1:]))
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/evaluate_model.py", line 77, in run
+    challenge_score, auroc, auprc, accuracy, f_measure = evaluate_model(args.data_folder, args.output_folder)
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/evaluate_model.py", line 51, in evaluate_model
+    output = load_text(output_filename)
+  File "/users/wmqn2362/PhysioNet2025/PhysioNet2025/helper_code.py", line 68, in load_text
+    with open(filename, 'r') as f:
+FileNotFoundError: [Errno 2] No such file or directory: '/users/wmqn2362/PhysioNet2025/ConvNext/Output/1000001.txt'
