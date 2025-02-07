@@ -19,10 +19,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
-from torch.utils.data import DataLoader, Dataset, Subset
+from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 import math
 import time
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score, f1_score
+
 
 from helper_code import *
 
@@ -135,17 +137,52 @@ def train_model(data_folder, model_folder, verbose):
         raise ValueError('Invalid model name.')
 
     # Fit the model.
-    criterion = nn.BCEWithLogitsLoss()
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = FocalLoss(alpha=0.8, logits=True)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.amp.GradScaler('cuda')
-    kf = KFold(n_splits=5)
+    # kf = KFold(n_splits=5)
+    kf = StratifiedKFold(n_splits=5)
 
-    for fold, (train_idx, val_idx) in enumerate(kf.split(dataset)):
+    def make_weights_for_balanced_classes(dataset):
+        targets = [dataset[i][1] for i in range(len(dataset))]
+        weights = np.zeros_like(targets, dtype=np.float32)
+        weights[np.isclose(targets, 0.0)] = 1.0
+        weights[np.isclose(targets, 1.0)] = 10.0
+        return weights
+
+    X = [dataset[i][0] for i in range(len(dataset))]
+    labels = [dataset[i][1] for i in range(len(dataset))]
+
+    # print('Positive samples:', np.sum(labels))
+    # print('Negative samples:', len(labels) - np.sum(labels))
+    # print('Positive/Negative ratio:', np.sum(labels) / (len(labels) - np.sum(labels)))
+
+    # for fold, (train_idx, val_idx) in enumerate(kf.split(dataset)):
+    for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
         print(f'Fold {fold + 1}')
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
+
+        # print the number of positive and negative samples in train and val
+        train_labels = [train_subset[i][1] for i in range(len(train_subset))]
+        val_labels = [val_subset[i][1] for i in range(len(val_subset))]
+        # print('Train Positive samples:', np.sum(train_labels))
+        # print('Train Negative samples:', len(train_labels) - np.sum(train_labels))
+        # print('Val Positive samples:', np.sum(val_labels))
+        # print('Val Negative samples:', len(val_labels) - np.sum(val_labels))
+
+        train_weights = make_weights_for_balanced_classes(train_subset)
+        train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
+
+        # print('Train weights:', train_weights)
+        # print('Positive weights:', np.sum(train_weights[train_weights == 1.0]))
+        # print('Negative weights:', np.sum(train_weights[train_weights == 10.0]))
+        # print('error:', np.sum(train_weights[train_weights == 0.0]))
+
+        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=4)
         val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4)
 
         best_loss = float('inf')
@@ -156,6 +193,8 @@ def train_model(data_folder, model_folder, verbose):
             epoch_start_time = time.time()
             model.train()
             train_loss = 0.0
+            train_targets = []
+            train_outputs = []
             for i, (features, label) in enumerate(train_loader):
                 signal, meta_features = features
                 signal = signal.to(device)
@@ -171,11 +210,21 @@ def train_model(data_folder, model_folder, verbose):
                 scaler.update()
                 train_loss += loss.item()
 
+                train_targets.extend(label.cpu().numpy())
+                train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
+
             train_loss /= len(train_loader)
             scheduler.step()
 
+            train_auroc = roc_auc_score(train_targets, np.round(train_outputs))
+            train_auprc = average_precision_score(train_targets, np.round(train_outputs))
+            train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
+            train_f1 = f1_score(train_targets, np.round(train_outputs))
+
             model.eval()
             val_loss = 0.0
+            val_targets = []
+            val_outputs = []
             with torch.no_grad():
                 for i, (features, label) in enumerate(val_loader):
                     signal, meta_features = features
@@ -188,12 +237,21 @@ def train_model(data_folder, model_folder, verbose):
                         loss = criterion(output, label)
                     val_loss += loss.item()
 
+                    val_targets.extend(label.cpu().numpy())
+                    val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
+
             val_loss /= len(val_loader)
+            val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
+            val_auprc = average_precision_score(val_targets, np.round(val_outputs))
+            val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
+            val_f1 = f1_score(val_targets, np.round(val_outputs))
 
             epoch_end_time = time.time()
             epoch_duration = epoch_end_time - epoch_start_time
 
             print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
+            print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
+            print(f'Val AUROC: {val_auroc:.4f}, Val AUPRC: {val_auprc:.4f}, Val Accuracy: {val_accuracy:.4f}, Val F1: {val_f1:.4f}\n')
 
             if val_loss < best_loss:
                 best_loss = val_loss
@@ -337,6 +395,33 @@ class ECGDataset(Dataset):
         label = float(load_label(record))
 
         return features, label
+
+################################################################################
+#
+# Loss Function
+#
+################################################################################
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=1, gamma=2, logits=True, reduce=True):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.logits = logits
+        self.reduce = reduce
+
+    def forward(self, inputs, targets):
+        if self.logits:
+            BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
+        else:
+            BCE_loss = F.binary_cross_entropy(inputs, targets, reduction='none')
+        pt = torch.exp(-BCE_loss)
+        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
+
+        if self.reduce:
+            return torch.mean(F_loss)
+        else:
+            return F_loss
 
 ################################################################################
 #
@@ -520,7 +605,7 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         ag = self.fc1(ag)
         x = torch.cat((ag, x), dim=1)
-        x = self.dropout(x)  # 应用 Dropout
+        x = self.dropout(x)
         x = self.fc(x).squeeze()
         return x
     

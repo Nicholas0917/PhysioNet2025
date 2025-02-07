@@ -1,0 +1,259 @@
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Model Name: resnet50
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 5
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Finding the Challenge data...
+Extracting features and labels from the data...
+Training the model on the data...
+Fold 1
+Epoch 1/100, Train Loss: 0.0923, Val Loss: 0.0714, Time: 124.51 seconds
+Train AUROC: 0.5011, Train AUPRC: 0.0220, Train Accuracy: 0.9785, Train F1: 0.0048
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 2/100, Train Loss: 0.0870, Val Loss: 0.0635, Time: 133.73 seconds
+Train AUROC: 0.5000, Train AUPRC: 0.0214, Train Accuracy: 0.9786, Train F1: 0.0000
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 3/100, Train Loss: 0.0851, Val Loss: 0.0697, Time: 150.13 seconds
+Train AUROC: 0.5000, Train AUPRC: 0.0214, Train Accuracy: 0.9786, Train F1: 0.0000
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 4/100, Train Loss: 0.0844, Val Loss: 0.0710, Time: 149.84 seconds
+Train AUROC: 0.5006, Train AUPRC: 0.0217, Train Accuracy: 0.9785, Train F1: 0.0024
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 5/100, Train Loss: 0.0838, Val Loss: 0.0701, Time: 147.81 seconds
+Train AUROC: 0.5004, Train AUPRC: 0.0220, Train Accuracy: 0.9786, Train F1: 0.0016
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 6/100, Train Loss: 0.0829, Val Loss: 0.0652, Time: 149.31 seconds
+Train AUROC: 0.5010, Train AUPRC: 0.0220, Train Accuracy: 0.9785, Train F1: 0.0040
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 7/100, Train Loss: 0.0827, Val Loss: 0.0698, Time: 130.92 seconds
+Train AUROC: 0.5018, Train AUPRC: 0.0227, Train Accuracy: 0.9785, Train F1: 0.0073
+Val AUROC: 0.5000, Val AUPRC: 0.0142, Val Accuracy: 0.9858, Val F1: 0.0000
+
+Epoch 8/100, Train Loss: 0.0827, Val Loss: 0.0642, Time: 134.77 seconds
+Train AUROC: 0.5012, Train AUPRC: 0.0222, Train Accuracy: 0.9785, Train F1: 0.0049
+Val AUROC: 0.5085, Val AUPRC: 0.0220, Val Accuracy: 0.9858, Val F1: 0.0333
+
+Fold 1 finished. Best Val Loss: 0.0635 at epoch 2. Time: 1121.03 seconds
+Fold 2
+Epoch 1/100, Train Loss: 0.0778, Val Loss: 0.0872, Time: 122.18 seconds
+Train AUROC: 0.5031, Train AUPRC: 0.0236, Train Accuracy: 0.9803, Train F1: 0.0122
+Val AUROC: 0.5229, Val AUPRC: 0.0410, Val Accuracy: 0.9790, Val F1: 0.0851
+
+Epoch 2/100, Train Loss: 0.0770, Val Loss: 0.0881, Time: 122.29 seconds
+Train AUROC: 0.5030, Train AUPRC: 0.0234, Train Accuracy: 0.9803, Train F1: 0.0122
+Val AUROC: 0.5000, Val AUPRC: 0.0208, Val Accuracy: 0.9792, Val F1: 0.0000
+
+Epoch 3/100, Train Loss: 0.0745, Val Loss: 0.0805, Time: 122.39 seconds
+Train AUROC: 0.5065, Train AUPRC: 0.0276, Train Accuracy: 0.9803, Train F1: 0.0259
+Val AUROC: 0.5114, Val AUPRC: 0.0303, Val Accuracy: 0.9790, Val F1: 0.0445
+
+Epoch 4/100, Train Loss: 0.0740, Val Loss: 0.0827, Time: 120.20 seconds
+Train AUROC: 0.5102, Train AUPRC: 0.0298, Train Accuracy: 0.9802, Train F1: 0.0398
+Val AUROC: 0.5211, Val AUPRC: 0.0366, Val Accuracy: 0.9787, Val F1: 0.0783
+
+Epoch 5/100, Train Loss: 0.0734, Val Loss: 0.0790, Time: 120.37 seconds
+Train AUROC: 0.5126, Train AUPRC: 0.0338, Train Accuracy: 0.9804, Train F1: 0.0490
+Val AUROC: 0.5163, Val AUPRC: 0.0341, Val Accuracy: 0.9789, Val F1: 0.0621
+
+Epoch 6/100, Train Loss: 0.0729, Val Loss: 0.0809, Time: 120.56 seconds
+Train AUROC: 0.5152, Train AUPRC: 0.0376, Train Accuracy: 0.9804, Train F1: 0.0587
+Val AUROC: 0.5260, Val AUPRC: 0.0414, Val Accuracy: 0.9787, Val F1: 0.0948
+
+Epoch 7/100, Train Loss: 0.0726, Val Loss: 0.0821, Time: 121.39 seconds
+Train AUROC: 0.5195, Train AUPRC: 0.0413, Train Accuracy: 0.9804, Train F1: 0.0742
+Val AUROC: 0.5441, Val AUPRC: 0.0587, Val Accuracy: 0.9787, Val F1: 0.1502
+
+Epoch 8/100, Train Loss: 0.0725, Val Loss: 0.0795, Time: 120.57 seconds
+Train AUROC: 0.5195, Train AUPRC: 0.0405, Train Accuracy: 0.9804, Train F1: 0.0740
+Val AUROC: 0.5236, Val AUPRC: 0.0399, Val Accuracy: 0.9788, Val F1: 0.0871
+
+Epoch 9/100, Train Loss: 0.0723, Val Loss: 0.0815, Time: 119.52 seconds
+Train AUROC: 0.5191, Train AUPRC: 0.0416, Train Accuracy: 0.9804, Train F1: 0.0728
+Val AUROC: 0.5195, Val AUPRC: 0.0366, Val Accuracy: 0.9789, Val F1: 0.0734
+
+Epoch 10/100, Train Loss: 0.0722, Val Loss: 0.0819, Time: 118.39 seconds
+Train AUROC: 0.5220, Train AUPRC: 0.0465, Train Accuracy: 0.9806, Train F1: 0.0831
+Val AUROC: 0.5196, Val AUPRC: 0.0379, Val Accuracy: 0.9790, Val F1: 0.0738
+
+Epoch 11/100, Train Loss: 0.0720, Val Loss: 0.0813, Time: 119.13 seconds
+Train AUROC: 0.5244, Train AUPRC: 0.0478, Train Accuracy: 0.9805, Train F1: 0.0911
+Val AUROC: 0.5180, Val AUPRC: 0.0363, Val Accuracy: 0.9790, Val F1: 0.0681
+
+Fold 2 finished. Best Val Loss: 0.0790 at epoch 5. Time: 1327.00 seconds
+Fold 3
+Epoch 1/100, Train Loss: 0.0669, Val Loss: 0.0951, Time: 118.49 seconds
+Train AUROC: 0.5169, Train AUPRC: 0.0355, Train Accuracy: 0.9823, Train F1: 0.0644
+Val AUROC: 0.5338, Val AUPRC: 0.0797, Val Accuracy: 0.9728, Val F1: 0.1254
+
+Epoch 2/100, Train Loss: 0.0664, Val Loss: 0.0948, Time: 119.12 seconds
+Train AUROC: 0.5132, Train AUPRC: 0.0307, Train Accuracy: 0.9822, Train F1: 0.0511
+Val AUROC: 0.5374, Val AUPRC: 0.0836, Val Accuracy: 0.9728, Val F1: 0.1373
+
+Epoch 3/100, Train Loss: 0.0662, Val Loss: 0.0958, Time: 118.58 seconds
+Train AUROC: 0.5142, Train AUPRC: 0.0325, Train Accuracy: 0.9822, Train F1: 0.0548
+Val AUROC: 0.5337, Val AUPRC: 0.0757, Val Accuracy: 0.9725, Val F1: 0.1246
+
+Epoch 4/100, Train Loss: 0.0664, Val Loss: 0.0955, Time: 118.90 seconds
+Train AUROC: 0.5144, Train AUPRC: 0.0325, Train Accuracy: 0.9822, Train F1: 0.0556
+Val AUROC: 0.5403, Val AUPRC: 0.0845, Val Accuracy: 0.9728, Val F1: 0.1464
+
+Epoch 5/100, Train Loss: 0.0663, Val Loss: 0.0955, Time: 118.02 seconds
+Train AUROC: 0.5144, Train AUPRC: 0.0311, Train Accuracy: 0.9821, Train F1: 0.0553
+Val AUROC: 0.5397, Val AUPRC: 0.0840, Val Accuracy: 0.9728, Val F1: 0.1446
+
+Epoch 6/100, Train Loss: 0.0662, Val Loss: 0.0958, Time: 119.39 seconds
+Train AUROC: 0.5142, Train AUPRC: 0.0313, Train Accuracy: 0.9822, Train F1: 0.0545
+Val AUROC: 0.5462, Val AUPRC: 0.0877, Val Accuracy: 0.9727, Val F1: 0.1642
+
+Epoch 7/100, Train Loss: 0.0661, Val Loss: 0.0954, Time: 118.98 seconds
+Train AUROC: 0.5157, Train AUPRC: 0.0341, Train Accuracy: 0.9823, Train F1: 0.0600
+Val AUROC: 0.5362, Val AUPRC: 0.0835, Val Accuracy: 0.9729, Val F1: 0.1336
+
+Epoch 8/100, Train Loss: 0.0659, Val Loss: 0.0960, Time: 118.71 seconds
+Train AUROC: 0.5122, Train AUPRC: 0.0293, Train Accuracy: 0.9821, Train F1: 0.0475
+Val AUROC: 0.5415, Val AUPRC: 0.0842, Val Accuracy: 0.9727, Val F1: 0.1498
+
+Fold 3 finished. Best Val Loss: 0.0948 at epoch 2. Time: 950.19 seconds
+Fold 4
+Epoch 1/100, Train Loss: 0.0722, Val Loss: 0.0728, Time: 119.40 seconds
+Train AUROC: 0.5195, Train AUPRC: 0.0426, Train Accuracy: 0.9804, Train F1: 0.0741
+Val AUROC: 0.5510, Val AUPRC: 0.0712, Val Accuracy: 0.9796, Val F1: 0.1728
+
+Epoch 2/100, Train Loss: 0.0717, Val Loss: 0.0726, Time: 118.55 seconds
+Train AUROC: 0.5228, Train AUPRC: 0.0469, Train Accuracy: 0.9805, Train F1: 0.0857
+Val AUROC: 0.5459, Val AUPRC: 0.0634, Val Accuracy: 0.9794, Val F1: 0.1569
+
+Epoch 3/100, Train Loss: 0.0721, Val Loss: 0.0727, Time: 120.05 seconds
+Train AUROC: 0.5223, Train AUPRC: 0.0448, Train Accuracy: 0.9804, Train F1: 0.0838
+Val AUROC: 0.5483, Val AUPRC: 0.0647, Val Accuracy: 0.9793, Val F1: 0.1634
+
+Epoch 4/100, Train Loss: 0.0717, Val Loss: 0.0727, Time: 118.16 seconds
+Train AUROC: 0.5273, Train AUPRC: 0.0531, Train Accuracy: 0.9806, Train F1: 0.1016
+Val AUROC: 0.5527, Val AUPRC: 0.0729, Val Accuracy: 0.9796, Val F1: 0.1775
+
+Epoch 5/100, Train Loss: 0.0716, Val Loss: 0.0717, Time: 119.98 seconds
+Train AUROC: 0.5254, Train AUPRC: 0.0515, Train Accuracy: 0.9806, Train F1: 0.0951
+Val AUROC: 0.5493, Val AUPRC: 0.0696, Val Accuracy: 0.9796, Val F1: 0.1681
+
+Epoch 6/100, Train Loss: 0.0718, Val Loss: 0.0758, Time: 118.41 seconds
+Train AUROC: 0.5258, Train AUPRC: 0.0514, Train Accuracy: 0.9806, Train F1: 0.0964
+Val AUROC: 0.5566, Val AUPRC: 0.0717, Val Accuracy: 0.9792, Val F1: 0.1855
+
+Epoch 7/100, Train Loss: 0.0717, Val Loss: 0.0719, Time: 119.68 seconds
+Train AUROC: 0.5243, Train AUPRC: 0.0482, Train Accuracy: 0.9805, Train F1: 0.0909
+Val AUROC: 0.5425, Val AUPRC: 0.0598, Val Accuracy: 0.9793, Val F1: 0.1470
+
+Epoch 8/100, Train Loss: 0.0716, Val Loss: 0.0723, Time: 117.98 seconds
+Train AUROC: 0.5262, Train AUPRC: 0.0516, Train Accuracy: 0.9805, Train F1: 0.0979
+Val AUROC: 0.5493, Val AUPRC: 0.0687, Val Accuracy: 0.9796, Val F1: 0.1676
+
+Epoch 9/100, Train Loss: 0.0720, Val Loss: 0.0731, Time: 119.40 seconds
+Train AUROC: 0.5255, Train AUPRC: 0.0491, Train Accuracy: 0.9804, Train F1: 0.0952
+Val AUROC: 0.5542, Val AUPRC: 0.0724, Val Accuracy: 0.9795, Val F1: 0.1808
+
+Epoch 10/100, Train Loss: 0.0720, Val Loss: 0.0730, Time: 116.99 seconds
+Train AUROC: 0.5242, Train AUPRC: 0.0479, Train Accuracy: 0.9804, Train F1: 0.0908
+Val AUROC: 0.5559, Val AUPRC: 0.0744, Val Accuracy: 0.9795, Val F1: 0.1856
+
+Epoch 11/100, Train Loss: 0.0717, Val Loss: 0.0726, Time: 115.83 seconds
+Train AUROC: 0.5236, Train AUPRC: 0.0465, Train Accuracy: 0.9804, Train F1: 0.0884
+Val AUROC: 0.5485, Val AUPRC: 0.0679, Val Accuracy: 0.9796, Val F1: 0.1652
+
+Fold 4 finished. Best Val Loss: 0.0717 at epoch 5. Time: 1304.45 seconds
+Fold 5
+Epoch 1/100, Train Loss: 0.0757, Val Loss: 0.0579, Time: 115.73 seconds
+Train AUROC: 0.5231, Train AUPRC: 0.0465, Train Accuracy: 0.9792, Train F1: 0.0866
+Val AUROC: 0.5544, Val AUPRC: 0.0767, Val Accuracy: 0.9846, Val F1: 0.1845
+
+Epoch 2/100, Train Loss: 0.0757, Val Loss: 0.0577, Time: 116.01 seconds
+Train AUROC: 0.5251, Train AUPRC: 0.0494, Train Accuracy: 0.9793, Train F1: 0.0938
+Val AUROC: 0.5555, Val AUPRC: 0.0777, Val Accuracy: 0.9846, Val F1: 0.1875
+
+Epoch 3/100, Train Loss: 0.0756, Val Loss: 0.0609, Time: 115.85 seconds
+Train AUROC: 0.5262, Train AUPRC: 0.0520, Train Accuracy: 0.9794, Train F1: 0.0977
+Val AUROC: 0.5629, Val AUPRC: 0.0794, Val Accuracy: 0.9843, Val F1: 0.2046
+
+Epoch 4/100, Train Loss: 0.0756, Val Loss: 0.0585, Time: 115.85 seconds
+Train AUROC: 0.5268, Train AUPRC: 0.0517, Train Accuracy: 0.9793, Train F1: 0.0995
+Val AUROC: 0.5598, Val AUPRC: 0.0799, Val Accuracy: 0.9845, Val F1: 0.1982
+
+Epoch 5/100, Train Loss: 0.0756, Val Loss: 0.0589, Time: 115.82 seconds
+Train AUROC: 0.5265, Train AUPRC: 0.0505, Train Accuracy: 0.9793, Train F1: 0.0986
+Val AUROC: 0.5544, Val AUPRC: 0.0781, Val Accuracy: 0.9847, Val F1: 0.1852
+
+Epoch 6/100, Train Loss: 0.0755, Val Loss: 0.0592, Time: 115.50 seconds
+Train AUROC: 0.5247, Train AUPRC: 0.0481, Train Accuracy: 0.9792, Train F1: 0.0922
+Val AUROC: 0.5631, Val AUPRC: 0.0858, Val Accuracy: 0.9846, Val F1: 0.2083
+
+Epoch 7/100, Train Loss: 0.0755, Val Loss: 0.0585, Time: 115.79 seconds
+Train AUROC: 0.5272, Train AUPRC: 0.0515, Train Accuracy: 0.9793, Train F1: 0.1007
+Val AUROC: 0.5587, Val AUPRC: 0.0802, Val Accuracy: 0.9845, Val F1: 0.1960
+
+Epoch 8/100, Train Loss: 0.0757, Val Loss: 0.0571, Time: 115.80 seconds
+Train AUROC: 0.5251, Train AUPRC: 0.0498, Train Accuracy: 0.9793, Train F1: 0.0939
+Val AUROC: 0.5566, Val AUPRC: 0.0788, Val Accuracy: 0.9846, Val F1: 0.1905
+
+Epoch 9/100, Train Loss: 0.0757, Val Loss: 0.0590, Time: 115.97 seconds
+Train AUROC: 0.5270, Train AUPRC: 0.0510, Train Accuracy: 0.9793, Train F1: 0.1000
+Val AUROC: 0.5555, Val AUPRC: 0.0792, Val Accuracy: 0.9847, Val F1: 0.1882
+
+Epoch 10/100, Train Loss: 0.0756, Val Loss: 0.0593, Time: 115.69 seconds
+Train AUROC: 0.5264, Train AUPRC: 0.0514, Train Accuracy: 0.9793, Train F1: 0.0982
+Val AUROC: 0.5631, Val AUPRC: 0.0858, Val Accuracy: 0.9846, Val F1: 0.2083
+
+Epoch 11/100, Train Loss: 0.0754, Val Loss: 0.0591, Time: 115.56 seconds
+Train AUROC: 0.5280, Train AUPRC: 0.0543, Train Accuracy: 0.9794, Train F1: 0.1040
+Val AUROC: 0.5619, Val AUPRC: 0.0820, Val Accuracy: 0.9845, Val F1: 0.2039
+
+Epoch 12/100, Train Loss: 0.0756, Val Loss: 0.0599, Time: 115.83 seconds
+Train AUROC: 0.5280, Train AUPRC: 0.0534, Train Accuracy: 0.9794, Train F1: 0.1037
+Val AUROC: 0.5630, Val AUPRC: 0.0831, Val Accuracy: 0.9845, Val F1: 0.2068
+
+Epoch 13/100, Train Loss: 0.0757, Val Loss: 0.0595, Time: 115.91 seconds
+Train AUROC: 0.5265, Train AUPRC: 0.0499, Train Accuracy: 0.9792, Train F1: 0.0984
+Val AUROC: 0.5619, Val AUPRC: 0.0820, Val Accuracy: 0.9845, Val F1: 0.2039
+
+Epoch 14/100, Train Loss: 0.0759, Val Loss: 0.0592, Time: 115.71 seconds
+Train AUROC: 0.5261, Train AUPRC: 0.0495, Train Accuracy: 0.9792, Train F1: 0.0970
+Val AUROC: 0.5641, Val AUPRC: 0.0861, Val Accuracy: 0.9846, Val F1: 0.2107
+
+Fold 5 finished. Best Val Loss: 0.0571 at epoch 8. Time: 1621.04 seconds
+Done.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Model Name: resnet50
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 5
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Challenge score: 0.425
+AUROC: 0.851
+AUPRC: 0.184
+Accuracy: 0.979
+F-measure: 0.148
+
