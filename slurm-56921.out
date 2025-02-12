@@ -1,0 +1,263 @@
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Model Name: resnet50
+Number of Epochs: 50
+Learning Rate: 0.0001
+Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 5
+WarmUp Epochs: 10
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Starting WarmUp Training...
+Epoch 1/10, Time: 594.15s, Loss: 0.1367
+Epoch 2/10, Time: 395.43s, Loss: 0.0914
+Epoch 3/10, Time: 395.29s, Loss: 0.0725
+Epoch 4/10, Time: 395.37s, Loss: 0.0585
+Epoch 5/10, Time: 397.11s, Loss: 0.0672
+Epoch 6/10, Time: 394.66s, Loss: 0.0348
+Epoch 7/10, Time: 394.34s, Loss: 0.0933
+Epoch 8/10, Time: 393.63s, Loss: 0.0418
+Epoch 9/10, Time: 395.09s, Loss: 0.1030
+Epoch 10/10, Time: 395.52s, Loss: 0.0865
+Fold 1
+Epoch 11/50, Time: 189.88s, Loss: 0.0489
+Labeled samples: 48005, Unlabeled samples: 67180
+Train AUROC: 0.9112, AUPRC: 0.3299, F1: 0.3776, Accuracy: 0.9747
+Validation Loss: 0.0007, AUROC: 0.9100, AUPRC: 0.3558, F1: 0.3883, Accuracy: 0.9731
+Epoch 12/50, Time: 278.10s, Loss: 0.0643
+Labeled samples: 109908, Unlabeled samples: 5277
+Train AUROC: 0.8817, AUPRC: 0.2549, F1: 0.0198, Accuracy: 0.9760
+Validation Loss: 0.0007, AUROC: 0.8789, AUPRC: 0.2721, F1: 0.0231, Accuracy: 0.9736
+Epoch 13/50, Time: 311.29s, Loss: 0.0647
+Labeled samples: 112141, Unlabeled samples: 3044
+Train AUROC: 0.8550, AUPRC: 0.2134, F1: 0.0000, Accuracy: 0.9759
+Validation Loss: 0.0008, AUROC: 0.8534, AUPRC: 0.2249, F1: 0.0000, Accuracy: 0.9734
+Epoch 14/50, Time: 312.67s, Loss: 0.0687
+Labeled samples: 112371, Unlabeled samples: 2814
+Train AUROC: 0.8336, AUPRC: 0.1879, F1: 0.0000, Accuracy: 0.9759
+Validation Loss: 0.0008, AUROC: 0.8313, AUPRC: 0.1912, F1: 0.0000, Accuracy: 0.9734
+Epoch 15/50, Time: 313.58s, Loss: 0.0624
+Labeled samples: 112407, Unlabeled samples: 2778
+Train AUROC: 0.8225, AUPRC: 0.1730, F1: 0.0000, Accuracy: 0.9759
+Validation Loss: 0.0008, AUROC: 0.8205, AUPRC: 0.1763, F1: 0.0000, Accuracy: 0.9734
+Epoch 16/50, Time: 312.59s, Loss: 0.0616
+Labeled samples: 112407, Unlabeled samples: 2778
+Train AUROC: 0.8177, AUPRC: 0.1664, F1: 0.0000, Accuracy: 0.9759
+Validation Loss: 0.0008, AUROC: 0.8167, AUPRC: 0.1720, F1: 0.0000, Accuracy: 0.9734
+Early stopping triggered
+Fold 2
+Epoch 11/50, Time: 313.14s, Loss: 0.0629
+Labeled samples: 112334, Unlabeled samples: 2851
+Train AUROC: 0.8132, AUPRC: 0.1683, F1: 0.0000, Accuracy: 0.9752
+Validation Loss: 0.0008, AUROC: 0.8131, AUPRC: 0.1642, F1: 0.0000, Accuracy: 0.9759
+Epoch 12/50, Time: 312.66s, Loss: 0.0702
+Labeled samples: 112334, Unlabeled samples: 2851
+Train AUROC: 0.8104, AUPRC: 0.1617, F1: 0.0000, Accuracy: 0.9752
+Validation Loss: 0.0008, AUROC: 0.8103, AUPRC: 0.1613, F1: 0.0000, Accuracy: 0.9759
+Epoch 13/50, Time: 312.72s, Loss: 0.0711
+Labeled samples: 112334, Unlabeled samples: 2851
+Train AUROC: 0.8097, AUPRC: 0.1580, F1: 0.0000, Accuracy: 0.9752
+Validation Loss: 0.0008, AUROC: 0.8081, AUPRC: 0.1548, F1: 0.0000, Accuracy: 0.9759
+Epoch 14/50, Time: 312.73s, Loss: 0.0675
+Labeled samples: 112334, Unlabeled samples: 2851
+Train AUROC: 0.8079, AUPRC: 0.1549, F1: 0.0000, Accuracy: 0.9752
+Validation Loss: 0.0008, AUROC: 0.8063, AUPRC: 0.1508, F1: 0.0000, Accuracy: 0.9759
+Epoch 15/50, Time: 312.60s, Loss: 0.0717
+Labeled samples: 112334, Unlabeled samples: 2851
+Train AUROC: 0.8059, AUPRC: 0.1550, F1: 0.0000, Accuracy: 0.9752
+Validation Loss: 0.0008, AUROC: 0.8057, AUPRC: 0.1494, F1: 0.0000, Accuracy: 0.9759
+Epoch 16/50, Time: 312.54s, Loss: 0.0743
+Labeled samples: 112334, Unlabeled samples: 2851
+Train AUROC: 0.8052, AUPRC: 0.1526, F1: 0.0000, Accuracy: 0.9752
+Validation Loss: 0.0008, AUROC: 0.8047, AUPRC: 0.1477, F1: 0.0000, Accuracy: 0.9759
+Early stopping triggered
+Fold 3
+Epoch 11/50, Time: 312.23s, Loss: 0.0749
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.8016, AUPRC: 0.1448, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8082, AUPRC: 0.1605, F1: 0.0000, Accuracy: 0.9764
+Epoch 12/50, Time: 312.46s, Loss: 0.0677
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.8018, AUPRC: 0.1450, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8087, AUPRC: 0.1618, F1: 0.0000, Accuracy: 0.9764
+Epoch 13/50, Time: 310.50s, Loss: 0.0640
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7991, AUPRC: 0.1403, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8065, AUPRC: 0.1555, F1: 0.0000, Accuracy: 0.9764
+Epoch 14/50, Time: 311.83s, Loss: 0.0663
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7982, AUPRC: 0.1406, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8063, AUPRC: 0.1596, F1: 0.0000, Accuracy: 0.9764
+Epoch 15/50, Time: 312.12s, Loss: 0.0711
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7983, AUPRC: 0.1381, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8066, AUPRC: 0.1546, F1: 0.0000, Accuracy: 0.9764
+Epoch 16/50, Time: 310.89s, Loss: 0.0712
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7980, AUPRC: 0.1407, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8062, AUPRC: 0.1593, F1: 0.0000, Accuracy: 0.9764
+Epoch 17/50, Time: 311.56s, Loss: 0.0669
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7982, AUPRC: 0.1386, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8066, AUPRC: 0.1569, F1: 0.0000, Accuracy: 0.9764
+Epoch 18/50, Time: 312.98s, Loss: 0.0650
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7994, AUPRC: 0.1367, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0007, AUROC: 0.8075, AUPRC: 0.1569, F1: 0.0000, Accuracy: 0.9764
+Epoch 19/50, Time: 312.35s, Loss: 0.0656
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7987, AUPRC: 0.1371, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0007, AUROC: 0.8068, AUPRC: 0.1547, F1: 0.0000, Accuracy: 0.9764
+Epoch 20/50, Time: 312.28s, Loss: 0.0651
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7982, AUPRC: 0.1361, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0007, AUROC: 0.8071, AUPRC: 0.1550, F1: 0.0000, Accuracy: 0.9764
+Epoch 21/50, Time: 311.87s, Loss: 0.0625
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7972, AUPRC: 0.1340, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8050, AUPRC: 0.1511, F1: 0.0000, Accuracy: 0.9764
+Epoch 22/50, Time: 311.71s, Loss: 0.0727
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7967, AUPRC: 0.1342, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0007, AUROC: 0.8055, AUPRC: 0.1523, F1: 0.0000, Accuracy: 0.9764
+Epoch 23/50, Time: 311.87s, Loss: 0.0644
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7969, AUPRC: 0.1336, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0007, AUROC: 0.8051, AUPRC: 0.1504, F1: 0.0000, Accuracy: 0.9764
+Epoch 24/50, Time: 311.17s, Loss: 0.0646
+Labeled samples: 112320, Unlabeled samples: 2866
+Train AUROC: 0.7967, AUPRC: 0.1319, F1: 0.0000, Accuracy: 0.9751
+Validation Loss: 0.0008, AUROC: 0.8049, AUPRC: 0.1480, F1: 0.0000, Accuracy: 0.9764
+Early stopping triggered
+Fold 4
+Epoch 11/50, Time: 312.29s, Loss: 0.0675
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.8012, AUPRC: 0.1364, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7885, AUPRC: 0.1224, F1: 0.0000, Accuracy: 0.9768
+Epoch 12/50, Time: 312.86s, Loss: 0.0747
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.8003, AUPRC: 0.1362, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7870, AUPRC: 0.1207, F1: 0.0000, Accuracy: 0.9768
+Epoch 13/50, Time: 311.89s, Loss: 0.0695
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.8002, AUPRC: 0.1350, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7858, AUPRC: 0.1220, F1: 0.0000, Accuracy: 0.9768
+Epoch 14/50, Time: 329.76s, Loss: 0.0646
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.7989, AUPRC: 0.1331, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7858, AUPRC: 0.1190, F1: 0.0000, Accuracy: 0.9768
+Epoch 15/50, Time: 313.31s, Loss: 0.0593
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.7988, AUPRC: 0.1314, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7854, AUPRC: 0.1170, F1: 0.0000, Accuracy: 0.9768
+Epoch 16/50, Time: 315.82s, Loss: 0.0705
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.7985, AUPRC: 0.1308, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7851, AUPRC: 0.1172, F1: 0.0000, Accuracy: 0.9768
+Epoch 17/50, Time: 314.25s, Loss: 0.0663
+Labeled samples: 112310, Unlabeled samples: 2876
+Train AUROC: 0.7980, AUPRC: 0.1296, F1: 0.0000, Accuracy: 0.9750
+Validation Loss: 0.0008, AUROC: 0.7835, AUPRC: 0.1161, F1: 0.0000, Accuracy: 0.9768
+Early stopping triggered
+Fold 5
+Epoch 11/50, Time: 315.42s, Loss: 0.0649
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7941, AUPRC: 0.1304, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7981, AUPRC: 0.1266, F1: 0.0000, Accuracy: 0.9744
+Epoch 12/50, Time: 312.56s, Loss: 0.0687
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7944, AUPRC: 0.1311, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7981, AUPRC: 0.1289, F1: 0.0000, Accuracy: 0.9744
+Epoch 13/50, Time: 312.57s, Loss: 0.0700
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7960, AUPRC: 0.1305, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7996, AUPRC: 0.1274, F1: 0.0000, Accuracy: 0.9744
+Epoch 14/50, Time: 313.71s, Loss: 0.0715
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7960, AUPRC: 0.1290, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7997, AUPRC: 0.1261, F1: 0.0000, Accuracy: 0.9744
+Epoch 15/50, Time: 312.93s, Loss: 0.0615
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7952, AUPRC: 0.1284, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7989, AUPRC: 0.1263, F1: 0.0000, Accuracy: 0.9744
+Epoch 16/50, Time: 318.81s, Loss: 0.0670
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7945, AUPRC: 0.1279, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7978, AUPRC: 0.1251, F1: 0.0000, Accuracy: 0.9744
+Epoch 17/50, Time: 317.92s, Loss: 0.0708
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7937, AUPRC: 0.1290, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7969, AUPRC: 0.1270, F1: 0.0000, Accuracy: 0.9744
+Epoch 18/50, Time: 327.71s, Loss: 0.0607
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7933, AUPRC: 0.1290, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7967, AUPRC: 0.1268, F1: 0.0000, Accuracy: 0.9744
+Epoch 19/50, Time: 314.70s, Loss: 0.0724
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7922, AUPRC: 0.1295, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7954, AUPRC: 0.1277, F1: 0.0000, Accuracy: 0.9744
+Epoch 20/50, Time: 314.01s, Loss: 0.0659
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7918, AUPRC: 0.1288, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7953, AUPRC: 0.1264, F1: 0.0000, Accuracy: 0.9744
+Epoch 21/50, Time: 313.85s, Loss: 0.0612
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7920, AUPRC: 0.1294, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7956, AUPRC: 0.1254, F1: 0.0000, Accuracy: 0.9744
+Epoch 22/50, Time: 314.16s, Loss: 0.0633
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7923, AUPRC: 0.1293, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7965, AUPRC: 0.1270, F1: 0.0000, Accuracy: 0.9744
+Epoch 23/50, Time: 313.80s, Loss: 0.0675
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7908, AUPRC: 0.1295, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7951, AUPRC: 0.1261, F1: 0.0000, Accuracy: 0.9744
+Epoch 24/50, Time: 313.69s, Loss: 0.0641
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7906, AUPRC: 0.1288, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7944, AUPRC: 0.1261, F1: 0.0000, Accuracy: 0.9744
+Epoch 25/50, Time: 314.26s, Loss: 0.0707
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7907, AUPRC: 0.1289, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7949, AUPRC: 0.1269, F1: 0.0000, Accuracy: 0.9744
+Epoch 26/50, Time: 314.69s, Loss: 0.0616
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7908, AUPRC: 0.1292, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7946, AUPRC: 0.1264, F1: 0.0000, Accuracy: 0.9744
+Epoch 27/50, Time: 311.44s, Loss: 0.0679
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7909, AUPRC: 0.1282, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7950, AUPRC: 0.1267, F1: 0.0000, Accuracy: 0.9744
+Epoch 28/50, Time: 323.05s, Loss: 0.0673
+Labeled samples: 112377, Unlabeled samples: 2809
+Train AUROC: 0.7914, AUPRC: 0.1288, F1: 0.0000, Accuracy: 0.9756
+Validation Loss: 0.0008, AUROC: 0.7958, AUPRC: 0.1257, F1: 0.0000, Accuracy: 0.9744
+Early stopping triggered
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Model Name: resnet50
+Number of Epochs: 50
+Learning Rate: 0.0001
+Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 5
+WarmUp Epochs: 10
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Challenge score: 0.348
+AUROC: 0.800
+AUPRC: 0.126
+Accuracy: 0.976
+F-measure: 0.000
+
