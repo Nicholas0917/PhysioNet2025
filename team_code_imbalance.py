@@ -24,9 +24,7 @@ import math
 import time
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score, f1_score
-from scipy.signal import resample
-from concurrent.futures import ThreadPoolExecutor
-from functools import partial
+
 
 from helper_code import *
 
@@ -39,11 +37,6 @@ from helper_code import *
 class Config:
     def __init__(self):
         self.model_name = 'resnet50'
-        self.use_pretrained = True
-        self.pretrain_num_epochs = 100
-        self.pretrain_learning_rate = 1e-4
-        self.pretrain_batch_size = 128
-        self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-4
         self.dropout_rate = 0.2
@@ -53,6 +46,7 @@ class Config:
         self.use_sex = True
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.use_pretrained = False
 
     def get_meta_feature_dim(self):
         dim = 0
@@ -66,26 +60,18 @@ class Config:
 
     def print_config(self):
         print(">>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        print(f"Model Name: {self.model_name}")
-        print(">>>>>>>>>Pretraining Parameters:<<<<<<<<<<")
-        print(f"Number of Epochs: {self.pretrain_num_epochs}")
-        print(f"Learning Rate: {self.pretrain_learning_rate}")
-        print(f"Batch Size: {self.pretrain_batch_size}")
-        print(f"Early Stop Patience: {self.pretrain_early_stop_patience}")
-
         print(">>>>>>>>>Training Parameters:<<<<<<<<<<")
+        print(f"Model Name: {self.model_name}")
         print(f"Number of Epochs: {self.num_epochs}")
         print(f"Learning Rate: {self.learning_rate}")
         print(f"Dropout Rate: {self.dropout_rate}")
         print(f"Batch Size: {self.batch_size}")
         print(f"Early Stop Patience: {self.early_stop_patience}")
-
         print(">>>>>>>>>Meta Features:<<<<<<<<<<")
         print(f"Use Age: {self.use_age}")
         print(f"Use Sex: {self.use_sex}")
         print(f"Use Signal Stats: {self.use_signal_stats}")
         print(f"Meta Feature Dimension: {self.get_meta_feature_dim()}")
-
         print(">>>>>>>>>Device:<<<<<<<<<<")
         print(f"Device: {self.device}")
 
@@ -103,69 +89,60 @@ config.print_config()
 
 # Train your model.
 def train_model(data_folder, model_folder, verbose):
-
+    
     ############################################################################
-    # Load the data.
+    # Find the data files.
+    if verbose:
+        print('Finding the Challenge data...')
+
     records = find_records(data_folder)
     num_records = len(records)
-    
-    print(f'Total number of records: {num_records}')
+    for i in range(num_records):
+        records[i] = os.path.join(data_folder, records[i])
+
     if num_records == 0:
         raise FileNotFoundError('No data were provided.')
-    
-    # divide the records according to the source
-    code15_records = []
-    PTBXL_records = []
-    SaMiTrop_records = []
 
-    for record in records:
-        record_path = os.path.join(data_folder, record)
-        header = load_header(record_path)
-
-        if get_source(header) == 'PTB-XL':
-            PTBXL_records.append(record_path)
-        elif get_source(header) == 'CODE-15%':
-            code15_records.append(record_path)
-        elif get_source(header) == 'SaMi-Trop':
-            SaMiTrop_records.append(record_path)
-        else:
-            raise ValueError('Invalid source.')
-      
-    # Pretrain
+    # Extract the features and labels from the data.
     if verbose:
-        print('Pretraining the model on the CODE%15 data...')
+        print('Extracting features and labels from the data...')
 
-    print("Pretrain Datastes Size: ",len(code15_records))
-    dataset = ECGDataset(code15_records) 
+    # get data using data_loader
+    dataset = ECGDataset(records)
 
     ############################################################################
-    # Pretrain the models.
+    # Train the models.
+    if verbose:
+        print('Training the model on the data...')
 
-    num_epochs = config.pretrain_num_epochs
-    learning_rate = config.pretrain_learning_rate
-    batch_size = config.pretrain_batch_size
-    early_stop_patience = config.pretrain_early_stop_patience
+    # Define the parameters using config.
+    num_epochs = config.num_epochs
+    learning_rate = config.learning_rate
+    batch_size = config.batch_size
+    early_stop_patience = config.early_stop_patience
     device = config.device
 
     # Define the model.
     if config.model_name == 'resnet18':
-        model = resnet18().to(device)
+        model = resnet18(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet34':
-        model = resnet34().to(device)
+        model = resnet34(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet50':
-        model = resnet50().to(device)
+        model = resnet50(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet101':
-        model = resnet101().to(device)
+        model = resnet101(pretrained=config.use_pretrained).to(device)
     elif config.model_name == 'resnet152':
-        model = resnet152().to(device)
+        model = resnet152(pretrained=config.use_pretrained).to(device)
     else:
         raise ValueError('Invalid model name.')
 
     # Fit the model.
+    # criterion = nn.BCEWithLogitsLoss()
     criterion = FocalLoss(alpha=0.8, logits=True)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.amp.GradScaler('cuda')
+    # kf = KFold(n_splits=5)
     kf = StratifiedKFold(n_splits=5)
 
     def make_weights_for_balanced_classes(dataset):
@@ -178,138 +155,31 @@ def train_model(data_folder, model_folder, verbose):
     X = [dataset[i][0] for i in range(len(dataset))]
     labels = [dataset[i][1] for i in range(len(dataset))]
 
+    # print('Positive samples:', np.sum(labels))
+    # print('Negative samples:', len(labels) - np.sum(labels))
+    # print('Positive/Negative ratio:', np.sum(labels) / (len(labels) - np.sum(labels)))
+
+    # for fold, (train_idx, val_idx) in enumerate(kf.split(dataset)):
     for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
         print(f'Fold {fold + 1}')
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
 
+        # print the number of positive and negative samples in train and val
+        train_labels = [train_subset[i][1] for i in range(len(train_subset))]
+        val_labels = [val_subset[i][1] for i in range(len(val_subset))]
+        # print('Train Positive samples:', np.sum(train_labels))
+        # print('Train Negative samples:', len(train_labels) - np.sum(train_labels))
+        # print('Val Positive samples:', np.sum(val_labels))
+        # print('Val Negative samples:', len(val_labels) - np.sum(val_labels))
+
         train_weights = make_weights_for_balanced_classes(train_subset)
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=4)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4)
-
-        best_loss = float('inf')
-        best_epoch = 0
-        start_time = time.time()
-
-        for epoch in range(num_epochs):
-            epoch_start_time = time.time()
-            model.train()
-            train_loss = 0.0
-            train_targets = []
-            train_outputs = []
-            for i, (features, label) in enumerate(train_loader):
-                signal, meta_features = features
-                signal = signal.to(device)
-                meta_features = meta_features.to(device)
-                label = label.to(device)
-
-                optimizer.zero_grad()
-                with torch.amp.autocast('cuda'):
-                    output = model(signal, meta_features)
-                    loss = criterion(output, label)
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-                train_loss += loss.item()
-
-                train_targets.extend(label.cpu().numpy())
-                train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
-
-            train_loss /= len(train_loader)
-            scheduler.step()
-
-            train_auroc = roc_auc_score(train_targets, np.round(train_outputs))
-            train_auprc = average_precision_score(train_targets, np.round(train_outputs))
-            train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
-            train_f1 = f1_score(train_targets, np.round(train_outputs))
-
-            model.eval()
-            val_loss = 0.0
-            val_targets = []
-            val_outputs = []
-            with torch.no_grad():
-                for i, (features, label) in enumerate(val_loader):
-                    signal, meta_features = features
-                    signal = signal.to(device)
-                    meta_features = meta_features.to(device)
-                    label = label.to(device)
-
-                    with torch.amp.autocast('cuda'):
-                        output = model(signal, meta_features)
-                        loss = criterion(output, label)
-                    val_loss += loss.item()
-
-                    val_targets.extend(label.cpu().numpy())
-                    val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
-
-            val_loss /= len(val_loader)
-            val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
-            val_auprc = average_precision_score(val_targets, np.round(val_outputs))
-            val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
-            val_f1 = f1_score(val_targets, np.round(val_outputs))
-
-            epoch_end_time = time.time()
-            epoch_duration = epoch_end_time - epoch_start_time
-
-            print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
-            print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
-            print(f'Val AUROC: {val_auroc:.4f}, Val AUPRC: {val_auprc:.4f}, Val Accuracy: {val_accuracy:.4f}, Val F1: {val_f1:.4f}\n')
-
-            if val_loss < best_loss:
-                best_loss = val_loss
-                best_epoch = epoch
-                best_model = model.state_dict()
-            else:
-                if epoch - best_epoch > early_stop_patience:
-                    break
-
-        end_time = time.time()
-        print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
-
-    ############################################################################
-    # fine-tune stage
-    if verbose:
-        print('Training the model on the fine-tune data...')
-        
-    finetune_records = PTBXL_records + SaMiTrop_records
-    # finetune_signals, finetune_features = batch_extract_features(finetune_records)
-    # finetune_signals, finetune_features = extract_features(finetune_records)
-    # dataset = ECGDataset(finetune_records, finetune_signals, finetune_features)
-    print("Fine-tune Datastes Size: ",len(finetune_records))
-    dataset = ECGDataset(finetune_records)
-
-    ############################################################################
-    # Train the models.
-    # Define the parameters using config.
-    num_epochs = config.num_epochs
-    learning_rate = config.learning_rate
-    batch_size = config.batch_size
-    early_stop_patience = config.early_stop_patience
-    device = config.device
-
-    # Fit the model.
-    # criterion = nn.BCEWithLogitsLoss()
-    criterion = FocalLoss(alpha=0.8, logits=True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    scaler = torch.amp.GradScaler('cuda')
-    # kf = KFold(n_splits=3)
-    kf = StratifiedKFold(n_splits=3)
-
-    X = [dataset[i][0] for i in range(len(dataset))]
-    labels = [dataset[i][1] for i in range(len(dataset))]
-
-    # for fold, (train_idx, val_idx) in enumerate(kf.split(records)):
-    for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
-        print(f'Fold {fold + 1}')
-        train_subset = Subset(dataset, train_idx)
-        val_subset = Subset(dataset, val_idx)
-
-        
-        train_weights = make_weights_for_balanced_classes(train_subset)
-        train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
+        # print('Train weights:', train_weights)
+        # print('Positive weights:', np.sum(train_weights[train_weights == 1.0]))
+        # print('Negative weights:', np.sum(train_weights[train_weights == 10.0]))
+        # print('error:', np.sum(train_weights[train_weights == 0.0]))
 
         # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
         train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=4)
@@ -378,7 +248,7 @@ def train_model(data_folder, model_folder, verbose):
 
             epoch_end_time = time.time()
             epoch_duration = epoch_end_time - epoch_start_time
-            
+
             print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
             print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
             print(f'Val AUROC: {val_auroc:.4f}, Val AUPRC: {val_auprc:.4f}, Val Accuracy: {val_accuracy:.4f}, Val F1: {val_f1:.4f}\n')
@@ -390,14 +260,14 @@ def train_model(data_folder, model_folder, verbose):
             else:
                 if epoch - best_epoch > early_stop_patience:
                     break
-    
+
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds')
 
-    ############################################################################
-    # Save the best model for this fold
-    os.makedirs(model_folder, exist_ok=True)
-    save_model(model_folder, best_model)
+        ############################################################################
+        # Save the best model for this fold
+        os.makedirs(model_folder, exist_ok=True)
+        save_model(model_folder, best_model)
 
     if verbose:
         print('Done.')
@@ -458,71 +328,46 @@ def run_model(record, model, verbose):
 #
 ################################################################################
 
-# helper function to load the source
-def get_source(string):
-    source_string = '# Source:'
-    source, has_source = get_variable(string, source_string)
-    return source
-
 # Extract your features.
 def extract_features(record):
     header = load_header(record)
-    source = get_source(header)
     age = get_age(header) if config.use_age else 0
     sex = get_sex(header) if config.use_sex else 'Unknown'
     
-    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
+    one_hot_encoding_sex = np.zeros(3, dtype=bool)
     if sex == 'Female':
-        one_hot_encoding_sex[0] = True
+        one_hot_encoding_sex[0] = 1
     elif sex == 'Male':
-        one_hot_encoding_sex[1] = True
+        one_hot_encoding_sex[1] = 1
     else:
-        one_hot_encoding_sex[2] = True
+        one_hot_encoding_sex[2] = 1
 
     signal, fields = load_signals(record)
-    signal = signal.astype(np.float32)
 
-    # transfer fs
-    if source == 'PTB-XL':
-        original_fs = 500
-        target_fs = 400
-        target_length = int(signal.shape[0] * target_fs / original_fs)
-        # resampled_signal = np.empty((target_length, signal.shape[1]), dtype=np.float32)
-        resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
-        signal = resampled_signal
-        
-    if np.isnan(signal).any():
-        np.nan_to_num(signal, copy=False)
+    num_finite_samples = np.size(np.isfinite(signal))
+    if num_finite_samples > 0:
+        signal_mean = np.nanmean(signal)
+    else:
+        signal_mean = 0.0
+    if num_finite_samples > 1:
+        signal_std = np.nanstd(signal)
+    else:
+        signal_std = 0.0
 
-    current_length = signal.shape[0]
-    if current_length != 4096:
-        standardized_signal = np.empty((4096, signal.shape[1]), dtype=np.float32)
-        if current_length < 4096:
-            standardized_signal[:current_length] = signal
-            standardized_signal[current_length:] = 0
-        else:
-            standardized_signal[:] = signal[:4096]
-        signal = standardized_signal
+    if signal.shape[0] < 4096:
+        signal = np.pad(signal, ((0, 4096 - signal.shape[0]), (0, 0)), 'constant')
 
-    signal = np.ascontiguousarray(signal.T)
-
-    # get meta features
-    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-    ptr = 0
-    
+    meta_features = []
     if config.use_age:
-        meta_features[ptr] = age
-        ptr += 1
+        meta_features.append(age)
     if config.use_sex:
-        meta_features[ptr:ptr+3] = one_hot_encoding_sex
-        ptr += 3
+        meta_features.extend(one_hot_encoding_sex)
     if config.use_signal_stats:
-        valid_samples = np.isfinite(signal).sum()
-        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-        ptr += 2
+        meta_features.extend([signal_mean, signal_std])
 
-    return [signal, meta_features]
+    signal = signal.T
+
+    return [np.asarray(signal, dtype=np.float32), np.asarray(meta_features, dtype=np.float32)]
 
 # Save your trained model.
 def save_model(model_folder, model):
@@ -545,6 +390,7 @@ class ECGDataset(Dataset):
 
     def __getitem__(self, idx):
         record = self.records[idx]
+
         features = extract_features(record)
         label = float(load_label(record))
 
@@ -760,7 +606,7 @@ class ResNet(nn.Module):
         ag = self.fc1(ag)
         x = torch.cat((ag, x), dim=1)
         x = self.dropout(x)
-        x = self.fc(x).squeeze(1)
+        x = self.fc(x).squeeze()
         return x
     
 def resnet18(pretrained=False, **kwargs):
