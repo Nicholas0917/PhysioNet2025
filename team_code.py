@@ -24,7 +24,9 @@ import math
 import time
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score, f1_score
-
+from scipy.signal import resample
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from helper_code import *
 
@@ -40,7 +42,7 @@ class Config:
         self.use_pretrained = True
         self.pretrain_num_epochs = 100
         self.pretrain_learning_rate = 1e-4
-        self.pretrain_batch_size = 32
+        self.pretrain_batch_size = 128
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-4
@@ -101,27 +103,40 @@ config.print_config()
 
 # Train your model.
 def train_model(data_folder, model_folder, verbose):
-    
+
     ############################################################################
+    # Load the data.
+    records = find_records(data_folder)
+    num_records = len(records)
+    
+    print(f'Total number of records: {num_records}')
+    if num_records == 0:
+        raise FileNotFoundError('No data were provided.')
+    
+    # divide the records according to the source
+    code15_records = []
+    PTBXL_records = []
+    SaMiTrop_records = []
+
+    for record in records:
+        record_path = os.path.join(data_folder, record)
+        header = load_header(record_path)
+
+        if get_source(header) == 'PTB-XL':
+            PTBXL_records.append(record_path)
+        elif get_source(header) == 'CODE-15%':
+            code15_records.append(record_path)
+        elif get_source(header) == 'SaMi-Trop':
+            SaMiTrop_records.append(record_path)
+        else:
+            raise ValueError('Invalid source.')
+      
     # Pretrain
     if verbose:
         print('Pretraining the model on the CODE%15 data...')
-    CODE_folder = os.path.join(data_folder, 'CODE15')
 
-    records = find_records(CODE_folder)
-    num_records = len(records)
-    for i in range(num_records):
-        records[i] = os.path.join(CODE_folder, records[i])
-
-    if num_records == 0:
-        raise FileNotFoundError('No data were provided.')
-
-    # Extract the features and labels from the data.
-    if verbose:
-        print('Extracting features and labels from the data...')
-
-    # get data using data_loader
-    dataset = ECGDataset(records)
+    print("Pretrain Datastes Size: ",len(code15_records))
+    dataset = ECGDataset(code15_records) 
 
     ############################################################################
     # Pretrain the models.
@@ -255,33 +270,18 @@ def train_model(data_folder, model_folder, verbose):
 
     ############################################################################
     # fine-tune stage
-    SaMiTrop_folder = os.path.join(data_folder, 'SaMiTrop') # 800 positive samples
-    Negatives_folder = os.path.join(data_folder, 'Negatives') # 1000 negative samples
-    SaMiTrop_records = find_records(SaMiTrop_folder)
-    Negatives_records = find_records(Negatives_folder)
-    
-    SaMiTrop_num_records = len(SaMiTrop_records)
-    for i in range(SaMiTrop_num_records):
-        SaMiTrop_records[i] = os.path.join(SaMiTrop_folder, SaMiTrop_records[i])
-    Negatives_num_records = len(Negatives_records)
-    for i in range(Negatives_num_records):
-        Negatives_records[i] = os.path.join(Negatives_folder, Negatives_records[i])
-
-    records = SaMiTrop_records + Negatives_records
-    num_records = len(records)
-    print(f'Total number of records: {num_records}')
-
-    if num_records == 0:
-        raise FileNotFoundError('No data were provided.')
-
-    # get data using data_loader
-    dataset = ECGDataset(records)
+    if verbose:
+        print('Training the model on the fine-tune data...')
+        
+    finetune_records = PTBXL_records + SaMiTrop_records
+    # finetune_signals, finetune_features = batch_extract_features(finetune_records)
+    # finetune_signals, finetune_features = extract_features(finetune_records)
+    # dataset = ECGDataset(finetune_records, finetune_signals, finetune_features)
+    print("Fine-tune Datastes Size: ",len(finetune_records))
+    dataset = ECGDataset(finetune_records)
 
     ############################################################################
     # Train the models.
-    if verbose:
-        print('Training the model on the fine-tune data...')
-
     # Define the parameters using config.
     num_epochs = config.num_epochs
     learning_rate = config.learning_rate
@@ -290,8 +290,8 @@ def train_model(data_folder, model_folder, verbose):
     device = config.device
 
     # Fit the model.
-    criterion = nn.BCEWithLogitsLoss()
-    # criterion = FocalLoss(alpha=0.8, logits=True)
+    # criterion = nn.BCEWithLogitsLoss()
+    criterion = FocalLoss(alpha=0.8, logits=True)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.amp.GradScaler('cuda')
@@ -307,7 +307,12 @@ def train_model(data_folder, model_folder, verbose):
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
+        
+        train_weights = make_weights_for_balanced_classes(train_subset)
+        train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
+
+        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=4)
         val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4)
 
         best_loss = float('inf')
@@ -453,46 +458,71 @@ def run_model(record, model, verbose):
 #
 ################################################################################
 
+# helper function to load the source
+def get_source(string):
+    source_string = '# Source:'
+    source, has_source = get_variable(string, source_string)
+    return source
+
 # Extract your features.
 def extract_features(record):
     header = load_header(record)
+    source = get_source(header)
     age = get_age(header) if config.use_age else 0
     sex = get_sex(header) if config.use_sex else 'Unknown'
     
-    one_hot_encoding_sex = np.zeros(3, dtype=bool)
+    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
     if sex == 'Female':
-        one_hot_encoding_sex[0] = 1
+        one_hot_encoding_sex[0] = True
     elif sex == 'Male':
-        one_hot_encoding_sex[1] = 1
+        one_hot_encoding_sex[1] = True
     else:
-        one_hot_encoding_sex[2] = 1
+        one_hot_encoding_sex[2] = True
 
     signal, fields = load_signals(record)
+    signal = signal.astype(np.float32)
 
-    num_finite_samples = np.size(np.isfinite(signal))
-    if num_finite_samples > 0:
-        signal_mean = np.nanmean(signal)
-    else:
-        signal_mean = 0.0
-    if num_finite_samples > 1:
-        signal_std = np.nanstd(signal)
-    else:
-        signal_std = 0.0
+    # transfer fs
+    if source == 'PTB-XL':
+        original_fs = 500
+        target_fs = 400
+        target_length = int(signal.shape[0] * target_fs / original_fs)
+        # resampled_signal = np.empty((target_length, signal.shape[1]), dtype=np.float32)
+        resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
+        signal = resampled_signal
+        
+    if np.isnan(signal).any():
+        np.nan_to_num(signal, copy=False)
 
-    if signal.shape[0] < 4096:
-        signal = np.pad(signal, ((0, 4096 - signal.shape[0]), (0, 0)), 'constant')
+    current_length = signal.shape[0]
+    if current_length != 4096:
+        standardized_signal = np.empty((4096, signal.shape[1]), dtype=np.float32)
+        if current_length < 4096:
+            standardized_signal[:current_length] = signal
+            standardized_signal[current_length:] = 0
+        else:
+            standardized_signal[:] = signal[:4096]
+        signal = standardized_signal
 
-    meta_features = []
+    signal = np.ascontiguousarray(signal.T)
+
+    # get meta features
+    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
+    ptr = 0
+    
     if config.use_age:
-        meta_features.append(age)
+        meta_features[ptr] = age
+        ptr += 1
     if config.use_sex:
-        meta_features.extend(one_hot_encoding_sex)
+        meta_features[ptr:ptr+3] = one_hot_encoding_sex
+        ptr += 3
     if config.use_signal_stats:
-        meta_features.extend([signal_mean, signal_std])
+        valid_samples = np.isfinite(signal).sum()
+        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
+        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
+        ptr += 2
 
-    signal = signal.T
-
-    return [np.asarray(signal, dtype=np.float32), np.asarray(meta_features, dtype=np.float32)]
+    return [signal, meta_features]
 
 # Save your trained model.
 def save_model(model_folder, model):
@@ -515,7 +545,6 @@ class ECGDataset(Dataset):
 
     def __getitem__(self, idx):
         record = self.records[idx]
-
         features = extract_features(record)
         label = float(load_label(record))
 
@@ -731,7 +760,7 @@ class ResNet(nn.Module):
         ag = self.fc1(ag)
         x = torch.cat((ag, x), dim=1)
         x = self.dropout(x)
-        x = self.fc(x).squeeze()
+        x = self.fc(x).squeeze(1)
         return x
     
 def resnet18(pretrained=False, **kwargs):
