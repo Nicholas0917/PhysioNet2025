@@ -40,11 +40,11 @@ class Config:
     def __init__(self):
         self.model_name = 'resnet50'
         self.use_pretrained = True
-        self.pretrain_num_epochs = 100
+        self.pretrain_num_epochs = 1
         self.pretrain_learning_rate = 1e-4
         self.pretrain_batch_size = 128
         self.pretrain_early_stop_patience = 3
-        self.num_epochs = 100
+        self.num_epochs = 1
         self.learning_rate = 1e-4
         self.dropout_rate = 0.25
         self.batch_size = 32
@@ -189,8 +189,8 @@ def train_model(data_folder, model_folder, verbose):
         train_weights = make_weights_for_balanced_classes(train_subset)
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=4)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=6)
+        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=6)
 
         best_loss = float('inf')
         best_epoch = 0
@@ -271,6 +271,8 @@ def train_model(data_folder, model_folder, verbose):
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
+    pretrained_model = model
+    
     ############################################################################
     # fine-tune stage
     if verbose:
@@ -301,22 +303,26 @@ def train_model(data_folder, model_folder, verbose):
     X = [dataset[i][0] for i in range(len(dataset))]
     labels = [dataset[i][1] for i in range(len(dataset))]
 
+    models = []
+
     # for fold, (train_idx, val_idx) in enumerate(kf.split(records)):
     for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
         print(f'Fold {fold + 1}')
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
-
         
         train_weights = make_weights_for_balanced_classes(train_subset)
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 
-        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=4)
-        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=4)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=4)
+        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=6)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=6)
+        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=6)
 
         best_loss = float('inf')
         best_epoch = 0
+
+        model = pretrained_model
+
         start_time = time.time()
 
         for epoch in range(num_epochs):
@@ -393,11 +399,9 @@ def train_model(data_folder, model_folder, verbose):
     
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds')
+        models.append(best_model)
 
-    ############################################################################
-    # Save the best model for this fold
-    os.makedirs(model_folder, exist_ok=True)
-    save_model(model_folder, best_model)
+    save_model(model_folder=model_folder, models=models)
 
     if verbose:
         print('Done.')
@@ -406,17 +410,17 @@ def train_model(data_folder, model_folder, verbose):
 # Load your trained models. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function. If you do not train one of the models, then you can return None for the model.
 def load_model(model_folder, verbose):
-    model_filename = os.path.join(model_folder, 'model.sav')
-    model = joblib.load(model_filename)
-    return model
 
-# Run your trained model. This function is *required*. You should edit this function to add your code, but do *not* change the
-# arguments of this function.
-def run_model(record, model, verbose):
-    # Load the model.
-    model_state_dict = model['model']
+    print(model_folder)
+
+    model_path = os.path.join(model_folder, 'ensemble_models.pth')
     
-    # Define the model architecture
+    if not os.path.isfile(model_path):
+        raise FileNotFoundError(f"No model file found at {model_path}")
+    
+    checkpoint = torch.load(model_path, map_location=config.device, weights_only=True)
+    models_state = checkpoint['models']    
+    
     if config.model_name == 'resnet18':
         model = resnet18().to(config.device)
     elif config.model_name == 'resnet34':
@@ -428,29 +432,40 @@ def run_model(record, model, verbose):
     elif config.model_name == 'resnet152':
         model = resnet152().to(config.device)
     else:
-        raise ValueError('Invalid model name.')
-    
-    # Load the state dictionary into the model
-    model.load_state_dict(model_state_dict)
-    model.eval()
+        raise ValueError(f'Unsupported model: {config.model_name}')
 
-    # Extract the features.
+    models = []
+    for state in models_state:
+        
+        model.load_state_dict(state)
+        model.eval()        
+        models.append(model)
+    
+    if verbose:
+        print(f'Successfully loaded {len(models)} models from: {model_folder}')
+        print('Model files:', model_files)
+    
+    return models
+
+# Run your trained model. This function is *required*. You should edit this function to add your code, but do *not* change the
+# arguments of this function.
+def run_model(record, model, verbose):
+
+    models = model
+
     signal, meta_features = extract_features(record)
+    signal_tensor = torch.FloatTensor(signal).unsqueeze(0).to(config.device)
+    meta_tensor = torch.FloatTensor(meta_features).unsqueeze(0).to(config.device)
 
-    # extend batch dimension
-    signal = np.expand_dims(signal, axis=0)
-    meta_features = np.expand_dims(meta_features, axis=0)
+    all_probs = []
+    with torch.no_grad():
+        for model in models:
+            output = model(signal_tensor, meta_tensor)
+            prob = torch.sigmoid(output).detach().cpu().numpy().item()
+            all_probs.append(prob)
     
-    # transfer to device
-    signal = torch.from_numpy(signal).to(config.device)
-    meta_features = torch.from_numpy(meta_features).to(config.device)    
-
-    # Get the model outputs.
-    probability_output = model(signal, meta_features)
-    probability_output = torch.sigmoid(probability_output).detach().cpu().numpy().item()
-    binary_output = probability_output > 0.5
-
-    return binary_output, probability_output
+    avg_prob = np.mean(all_probs)
+    return int(avg_prob > 0.5), float(avg_prob)
 
 ################################################################################
 #
@@ -539,10 +554,12 @@ def extract_features(record):
     return [signal, meta_features]
 
 # Save your trained model.
-def save_model(model_folder, model):
-    d = {'model': model}
-    filename = os.path.join(model_folder, 'model.sav')
-    joblib.dump(d, filename, protocol=0)
+def save_model(model_folder, models):
+    os.makedirs(model_folder, exist_ok=True)
+    save_path = os.path.join(model_folder, 'ensemble_models.pth')
+    
+    torch.save({'models': models}, save_path)
+    print(f'Ensemble models saved to {save_path}\n')
 
 ################################################################################
 #
