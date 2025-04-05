@@ -43,18 +43,16 @@ class Config:
         self.pretrain_num_epochs = 100
         self.pretrain_learning_rate = 1e-4
         self.pretrain_batch_size = 128
-        self.pretrain_early_stop_patience = 5
+        self.pretrain_early_stop_patience = 3
         self.num_epochs = 100
         self.learning_rate = 1e-4
         self.dropout_rate = 0.25
         self.batch_size = 32
-        self.early_stop_patience = 5
+        self.early_stop_patience = 3
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # self.tmp_folder = './tmp'
-        self.tmp_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
 
     def get_meta_feature_dim(self):
         dim = 0
@@ -93,12 +91,6 @@ class Config:
 
 config = Config()
 config.print_config()
-
-# if '/mnt/scratch/wmqn2362/PhysioNet25/tmp' exist
-if not os.path.exists('/mnt/scratch/wmqn2362/PhysioNet25/tmp'):
-    config.tmp_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
-else:
-    config.tmp_folder = './tmp'
 
 ################################################################################
 #
@@ -139,14 +131,15 @@ def train_model(data_folder, model_folder, verbose):
         else:
             raise ValueError('Invalid source.')
       
+    Code15_records_pretrain = code15_records[3000:]
+    Code15_records_finetune = code15_records[:3000]
+      
     # Pretrain
     if verbose:
         print('Pretraining the model on the CODE%15 data...')
 
-    print("Pretrain Datastes Size: ",len(code15_records))
-    for record in code15_records:
-        extract_features(record)
-    dataset = ECGDataset(code15_records) 
+    print("Pretrain Datastes Size: ",len(Code15_records_pretrain))
+    dataset = ECGDataset(Code15_records_pretrain) 
 
     ############################################################################
     # Pretrain the models.
@@ -278,18 +271,13 @@ def train_model(data_folder, model_folder, verbose):
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
-    for record in code15_records:
-        delete_record_files(record)
     ############################################################################
     # fine-tune stage
     if verbose:
-        print('Training the model on the fine-tune data...')
-
-    finetune_records = PTBXL_records + SaMiTrop_records
+        print('Training the model on the fine-tune data...\n')
+        
+    finetune_records = PTBXL_records + SaMiTrop_records + Code15_records_finetune
     print("Fine-tune Datastes Size: ",len(finetune_records))
-    
-    for record in finetune_records:
-        extract_features(record)
     dataset = ECGDataset(finetune_records)
 
     ############################################################################
@@ -308,7 +296,7 @@ def train_model(data_folder, model_folder, verbose):
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.amp.GradScaler('cuda')
     # kf = KFold(n_splits=3)
-    kf = StratifiedKFold(n_splits=3)
+    kf = StratifiedKFold(n_splits=5)
 
     X = [dataset[i][0] for i in range(len(dataset))]
     labels = [dataset[i][1] for i in range(len(dataset))]
@@ -406,8 +394,6 @@ def train_model(data_folder, model_folder, verbose):
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds')
 
-    for record in finetune_records:
-        delete_record_files(record)
     ############################################################################
     # Save the best model for this fold
     os.makedirs(model_folder, exist_ok=True)
@@ -427,24 +413,6 @@ def load_model(model_folder, verbose):
 # Run your trained model. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function.
 def run_model(record, model, verbose):
-    
-    extract_features(record)
-
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join("./tmp", f"{base_name}_signal.npy")
-    meta_path = os.path.join("./tmp", f"{base_name}_meta.npy")
-
-    signal = np.load(signal_path).astype(np.float32)
-    meta_features = np.load(meta_path).astype(np.float32)
-
-    # extend batch dimension
-    signal = np.expand_dims(signal, axis=0)
-    meta_features = np.expand_dims(meta_features, axis=0)
-    
-    # transfer to device
-    signal = torch.from_numpy(signal).to(config.device)
-    meta_features = torch.from_numpy(meta_features).to(config.device)    
-
     # Load the model.
     model_state_dict = model['model']
     
@@ -465,6 +433,17 @@ def run_model(record, model, verbose):
     # Load the state dictionary into the model
     model.load_state_dict(model_state_dict)
     model.eval()
+
+    # Extract the features.
+    signal, meta_features = extract_features(record)
+
+    # extend batch dimension
+    signal = np.expand_dims(signal, axis=0)
+    meta_features = np.expand_dims(meta_features, axis=0)
+    
+    # transfer to device
+    signal = torch.from_numpy(signal).to(config.device)
+    meta_features = torch.from_numpy(meta_features).to(config.device)    
 
     # Get the model outputs.
     probability_output = model(signal, meta_features)
@@ -487,9 +466,6 @@ def get_source(string):
 
 # Extract your features.
 def extract_features(record):
-    os.makedirs(config.tmp_folder, exist_ok=True)
-    base_name = os.path.splitext(os.path.basename(record))[0]
-
     header = load_header(record)
     source = get_source(header)
     age = get_age(header) if config.use_age else 0
@@ -511,6 +487,7 @@ def extract_features(record):
         original_fs = 500
         target_fs = 400
         target_length = int(signal.shape[0] * target_fs / original_fs)
+        # resampled_signal = np.empty((target_length, signal.shape[1]), dtype=np.float32)
         resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
         signal = resampled_signal
 
@@ -523,17 +500,24 @@ def extract_features(record):
         else:
             standardized_signal[:] = signal[:4096]
         signal = standardized_signal
-        
+    
     # filter the signal using a 0.5hz - 40hz bandpass filter
     nyquist = 0.5 * 400
     low = 0.5 / nyquist
     high = 40 / nyquist
     b, a = butter(4, [low, high], btype='band')  # 4-order
     signal = filtfilt(b, a, signal, axis=0)
-        
+    
     if np.isnan(signal).any():
         np.nan_to_num(signal, copy=False)
 
+    # normalize the signal
+    # min-max normalization
+    signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
+    # z-score normalization
+    # signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
+
+    signal = signal.astype(np.float32)
     signal = np.ascontiguousarray(signal.T)
 
     # get meta features
@@ -552,22 +536,7 @@ def extract_features(record):
         meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
         ptr += 2
 
-    # save the signal and meta features
-    signal_path = os.path.join(config.tmp_folder, f'{base_name}_signal.npy')
-    meta_path = os.path.join(config.tmp_folder, f'{base_name}_meta.npy')
-    
-    np.save(signal_path, signal.astype(np.float32))
-    np.save(meta_path, meta_features.astype(np.float32))
-
-def delete_record_files(record):
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join(config.tmp_folder, f'{base_name}_signal.npy')
-    meta_path = os.path.join(config.tmp_folder, f'{base_name}_meta.npy')
-
-    if os.path.exists(signal_path):
-        os.remove(signal_path)
-    if os.path.exists(meta_path):
-        os.remove(meta_path)
+    return [signal, meta_features]
 
 # Save your trained model.
 def save_model(model_folder, model):
@@ -577,35 +546,21 @@ def save_model(model_folder, model):
 
 ################################################################################
 #
-# ECGDataset
+# Dataset
 #
 ################################################################################
 
 class ECGDataset(Dataset):
     def __init__(self, records):
         self.records = records
-        
-        self.feature_paths = [
-            (
-                os.path.join(config.tmp_folder, f"{os.path.splitext(os.path.basename(r))[0]}_signal.npy"),  # 使用全局变量
-                os.path.join(config.tmp_folder, f"{os.path.splitext(os.path.basename(r))[0]}_meta.npy")  # 使用全局变量
-            ) 
-            for r in records
-        ]
 
     def __len__(self):
         return len(self.records)
 
     def __getitem__(self, idx):
-        signal_path, meta_path = self.feature_paths[idx]
-        
-        signal = np.load(signal_path)
-        meta = np.load(meta_path)
-        
         record = self.records[idx]
+        features = extract_features(record)
         label = float(load_label(record))
-
-        features = [signal, meta]
 
         return features, label
 
