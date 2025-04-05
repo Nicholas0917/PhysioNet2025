@@ -513,9 +513,9 @@ def extract_features(record):
 
     # normalize the signal
     # min-max normalization
-    signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
+    # signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
     # z-score normalization
-    # signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
+    signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
 
     signal = signal.astype(np.float32)
     signal = np.ascontiguousarray(signal.T)
