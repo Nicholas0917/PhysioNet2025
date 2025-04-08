@@ -1,0 +1,437 @@
+min-max
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: resnet50
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 0.0001
+Batch Size: 128
+Early Stop Patience: 3
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.25
+Batch Size: 32
+Early Stop Patience: 3
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Total number of records: 360369
+Pretraining the model on the CODE%15 data...
+Pretrain Datastes Size:  339755
+Fold 1
+Epoch 1/100, Train Loss: 0.0791, Val Loss: 0.0309, Time: 472.05 seconds
+Train AUROC: 0.6246, Train AUPRC: 0.2794, Train Accuracy: 0.8456, Train F1: 0.3857
+Val AUROC: 0.6364, Val AUPRC: 0.0610, Val Accuracy: 0.9552, Val F1: 0.2068
+
+Epoch 2/100, Train Loss: 0.0622, Val Loss: 0.0340, Time: 465.27 seconds
+Train AUROC: 0.6892, Train AUPRC: 0.3773, Train Accuracy: 0.8724, Train F1: 0.5161
+Val AUROC: 0.6246, Val AUPRC: 0.0532, Val Accuracy: 0.9527, Val F1: 0.1868
+
+Epoch 3/100, Train Loss: 0.0496, Val Loss: 0.0557, Time: 451.85 seconds
+Train AUROC: 0.7680, Train AUPRC: 0.4889, Train Accuracy: 0.8959, Train F1: 0.6441
+Val AUROC: 0.6494, Val AUPRC: 0.0412, Val Accuracy: 0.8957, Val F1: 0.1262
+
+Epoch 4/100, Train Loss: 0.0382, Val Loss: 0.0570, Time: 478.77 seconds
+Train AUROC: 0.8404, Train AUPRC: 0.6081, Train Accuracy: 0.9213, Train F1: 0.7493
+Val AUROC: 0.6318, Val AUPRC: 0.0392, Val Accuracy: 0.9092, Val F1: 0.1266
+
+Epoch 5/100, Train Loss: 0.0298, Val Loss: 0.0489, Time: 458.51 seconds
+Train AUROC: 0.8884, Train AUPRC: 0.7001, Train Accuracy: 0.9408, Train F1: 0.8179
+Val AUROC: 0.5982, Val AUPRC: 0.0400, Val Accuracy: 0.9483, Val F1: 0.1479
+
+Fold 1 finished. Best Val Loss: 0.0309 at epoch 1. Time: 2326.45 seconds 
+
+Fold 2
+Epoch 1/100, Train Loss: 0.0361, Val Loss: 0.0190, Time: 468.03 seconds
+Train AUROC: 0.8672, Train AUPRC: 0.6718, Train Accuracy: 0.9354, Train F1: 0.7953
+Val AUROC: 0.7887, Val AUPRC: 0.2000, Val Accuracy: 0.9678, Val F1: 0.4174
+
+Epoch 2/100, Train Loss: 0.0249, Val Loss: 0.0238, Time: 482.59 seconds
+Train AUROC: 0.9129, Train AUPRC: 0.7594, Train Accuracy: 0.9537, Train F1: 0.8574
+Val AUROC: 0.7624, Val AUPRC: 0.1513, Val Accuracy: 0.9606, Val F1: 0.3512
+
+Epoch 3/100, Train Loss: 0.0186, Val Loss: 0.0267, Time: 474.15 seconds
+Train AUROC: 0.9390, Train AUPRC: 0.8203, Train Accuracy: 0.9660, Train F1: 0.8965
+Val AUROC: 0.7253, Val AUPRC: 0.1311, Val Accuracy: 0.9630, Val F1: 0.3311
+
+Epoch 4/100, Train Loss: 0.0153, Val Loss: 0.0384, Time: 466.74 seconds
+Train AUROC: 0.9511, Train AUPRC: 0.8522, Train Accuracy: 0.9724, Train F1: 0.9160
+Val AUROC: 0.7403, Val AUPRC: 0.1088, Val Accuracy: 0.9481, Val F1: 0.2791
+
+Epoch 5/100, Train Loss: 0.0127, Val Loss: 0.0437, Time: 446.84 seconds
+Train AUROC: 0.9609, Train AUPRC: 0.8801, Train Accuracy: 0.9777, Train F1: 0.9325
+Val AUROC: 0.7353, Val AUPRC: 0.1013, Val Accuracy: 0.9449, Val F1: 0.2648
+
+Fold 2 finished. Best Val Loss: 0.0190 at epoch 1. Time: 2338.35 seconds 
+
+Fold 3
+Epoch 1/100, Train Loss: 0.0199, Val Loss: 0.0120, Time: 466.12 seconds
+Train AUROC: 0.9346, Train AUPRC: 0.8262, Train Accuracy: 0.9669, Train F1: 0.8985
+Val AUROC: 0.9895, Val AUPRC: 0.4897, Val Accuracy: 0.9800, Val F1: 0.6576
+
+Epoch 2/100, Train Loss: 0.0121, Val Loss: 0.0120, Time: 478.55 seconds
+Train AUROC: 0.9603, Train AUPRC: 0.8865, Train Accuracy: 0.9789, Train F1: 0.9356
+Val AUROC: 0.9897, Val AUPRC: 0.4964, Val Accuracy: 0.9806, Val F1: 0.6636
+
+Epoch 3/100, Train Loss: 0.0087, Val Loss: 0.0149, Time: 441.63 seconds
+Train AUROC: 0.9727, Train AUPRC: 0.9163, Train Accuracy: 0.9847, Train F1: 0.9534
+Val AUROC: 0.9884, Val AUPRC: 0.4655, Val Accuracy: 0.9780, Val F1: 0.6354
+
+Epoch 4/100, Train Loss: 0.0067, Val Loss: 0.0141, Time: 470.87 seconds
+Train AUROC: 0.9804, Train AUPRC: 0.9371, Train Accuracy: 0.9886, Train F1: 0.9654
+Val AUROC: 0.9875, Val AUPRC: 0.4961, Val Accuracy: 0.9807, Val F1: 0.6643
+
+Epoch 5/100, Train Loss: 0.0056, Val Loss: 0.0119, Time: 465.76 seconds
+Train AUROC: 0.9842, Train AUPRC: 0.9483, Train Accuracy: 0.9907, Train F1: 0.9717
+Val AUROC: 0.9898, Val AUPRC: 0.5379, Val Accuracy: 0.9836, Val F1: 0.7003
+
+Epoch 6/100, Train Loss: 0.0049, Val Loss: 0.0148, Time: 463.55 seconds
+Train AUROC: 0.9870, Train AUPRC: 0.9571, Train Accuracy: 0.9923, Train F1: 0.9766
+Val AUROC: 0.9879, Val AUPRC: 0.4959, Val Accuracy: 0.9807, Val F1: 0.6639
+
+Epoch 7/100, Train Loss: 0.0042, Val Loss: 0.0110, Time: 441.27 seconds
+Train AUROC: 0.9886, Train AUPRC: 0.9618, Train Accuracy: 0.9932, Train F1: 0.9792
+Val AUROC: 0.9883, Val AUPRC: 0.5722, Val Accuracy: 0.9859, Val F1: 0.7296
+
+Epoch 8/100, Train Loss: 0.0037, Val Loss: 0.0134, Time: 449.46 seconds
+Train AUROC: 0.9903, Train AUPRC: 0.9667, Train Accuracy: 0.9941, Train F1: 0.9819
+Val AUROC: 0.9875, Val AUPRC: 0.5344, Val Accuracy: 0.9836, Val F1: 0.6982
+
+Epoch 9/100, Train Loss: 0.0035, Val Loss: 0.0124, Time: 475.77 seconds
+Train AUROC: 0.9906, Train AUPRC: 0.9685, Train Accuracy: 0.9944, Train F1: 0.9829
+Val AUROC: 0.9871, Val AUPRC: 0.5696, Val Accuracy: 0.9858, Val F1: 0.7279
+
+Epoch 10/100, Train Loss: 0.0031, Val Loss: 0.0121, Time: 461.06 seconds
+Train AUROC: 0.9915, Train AUPRC: 0.9719, Train Accuracy: 0.9950, Train F1: 0.9847
+Val AUROC: 0.9852, Val AUPRC: 0.5650, Val Accuracy: 0.9857, Val F1: 0.7249
+
+Epoch 11/100, Train Loss: 0.0028, Val Loss: 0.0121, Time: 473.00 seconds
+Train AUROC: 0.9927, Train AUPRC: 0.9750, Train Accuracy: 0.9956, Train F1: 0.9865
+Val AUROC: 0.9849, Val AUPRC: 0.5695, Val Accuracy: 0.9859, Val F1: 0.7286
+
+Fold 3 finished. Best Val Loss: 0.0110 at epoch 7. Time: 5087.05 seconds 
+
+Fold 4
+Epoch 1/100, Train Loss: 0.0046, Val Loss: 0.0048, Time: 464.02 seconds
+Train AUROC: 0.9873, Train AUPRC: 0.9595, Train Accuracy: 0.9927, Train F1: 0.9778
+Val AUROC: 0.9964, Val AUPRC: 0.7328, Val Accuracy: 0.9930, Val F1: 0.8458
+
+Epoch 2/100, Train Loss: 0.0039, Val Loss: 0.0041, Time: 466.68 seconds
+Train AUROC: 0.9891, Train AUPRC: 0.9639, Train Accuracy: 0.9936, Train F1: 0.9803
+Val AUROC: 0.9968, Val AUPRC: 0.7519, Val Accuracy: 0.9937, Val F1: 0.8584
+
+Epoch 3/100, Train Loss: 0.0038, Val Loss: 0.0042, Time: 465.21 seconds
+Train AUROC: 0.9896, Train AUPRC: 0.9655, Train Accuracy: 0.9939, Train F1: 0.9812
+Val AUROC: 0.9966, Val AUPRC: 0.7412, Val Accuracy: 0.9933, Val F1: 0.8514
+
+Epoch 4/100, Train Loss: 0.0036, Val Loss: 0.0042, Time: 466.92 seconds
+Train AUROC: 0.9905, Train AUPRC: 0.9675, Train Accuracy: 0.9942, Train F1: 0.9824
+Val AUROC: 0.9966, Val AUPRC: 0.7441, Val Accuracy: 0.9934, Val F1: 0.8533
+
+Epoch 5/100, Train Loss: 0.0034, Val Loss: 0.0037, Time: 451.94 seconds
+Train AUROC: 0.9910, Train AUPRC: 0.9694, Train Accuracy: 0.9946, Train F1: 0.9834
+Val AUROC: 0.9971, Val AUPRC: 0.7683, Val Accuracy: 0.9942, Val F1: 0.8690
+
+Epoch 6/100, Train Loss: 0.0032, Val Loss: 0.0036, Time: 475.97 seconds
+Train AUROC: 0.9917, Train AUPRC: 0.9718, Train Accuracy: 0.9950, Train F1: 0.9847
+Val AUROC: 0.9971, Val AUPRC: 0.7733, Val Accuracy: 0.9944, Val F1: 0.8722
+
+Epoch 7/100, Train Loss: 0.0032, Val Loss: 0.0040, Time: 473.23 seconds
+Train AUROC: 0.9918, Train AUPRC: 0.9720, Train Accuracy: 0.9950, Train F1: 0.9848
+Val AUROC: 0.9969, Val AUPRC: 0.7576, Val Accuracy: 0.9939, Val F1: 0.8621
+
+Epoch 8/100, Train Loss: 0.0030, Val Loss: 0.0045, Time: 443.67 seconds
+Train AUROC: 0.9922, Train AUPRC: 0.9728, Train Accuracy: 0.9952, Train F1: 0.9853
+Val AUROC: 0.9965, Val AUPRC: 0.7387, Val Accuracy: 0.9932, Val F1: 0.8497
+
+Epoch 9/100, Train Loss: 0.0031, Val Loss: 0.0045, Time: 479.15 seconds
+Train AUROC: 0.9921, Train AUPRC: 0.9730, Train Accuracy: 0.9953, Train F1: 0.9854
+Val AUROC: 0.9963, Val AUPRC: 0.7447, Val Accuracy: 0.9934, Val F1: 0.8538
+
+Epoch 10/100, Train Loss: 0.0030, Val Loss: 0.0038, Time: 457.53 seconds
+Train AUROC: 0.9919, Train AUPRC: 0.9730, Train Accuracy: 0.9952, Train F1: 0.9854
+Val AUROC: 0.9971, Val AUPRC: 0.7701, Val Accuracy: 0.9943, Val F1: 0.8701
+
+Fold 4 finished. Best Val Loss: 0.0036 at epoch 6. Time: 4644.33 seconds 
+
+Fold 5
+Epoch 1/100, Train Loss: 0.0030, Val Loss: 0.0034, Time: 469.84 seconds
+Train AUROC: 0.9925, Train AUPRC: 0.9730, Train Accuracy: 0.9953, Train F1: 0.9855
+Val AUROC: 0.9973, Val AUPRC: 0.7826, Val Accuracy: 0.9947, Val F1: 0.8780
+
+Epoch 2/100, Train Loss: 0.0030, Val Loss: 0.0032, Time: 456.52 seconds
+Train AUROC: 0.9916, Train AUPRC: 0.9724, Train Accuracy: 0.9951, Train F1: 0.9850
+Val AUROC: 0.9974, Val AUPRC: 0.7911, Val Accuracy: 0.9949, Val F1: 0.8834
+
+Epoch 3/100, Train Loss: 0.0031, Val Loss: 0.0031, Time: 472.80 seconds
+Train AUROC: 0.9919, Train AUPRC: 0.9719, Train Accuracy: 0.9950, Train F1: 0.9848
+Val AUROC: 0.9974, Val AUPRC: 0.7926, Val Accuracy: 0.9950, Val F1: 0.8843
+
+Epoch 4/100, Train Loss: 0.0030, Val Loss: 0.0033, Time: 466.26 seconds
+Train AUROC: 0.9919, Train AUPRC: 0.9728, Train Accuracy: 0.9952, Train F1: 0.9852
+Val AUROC: 0.9974, Val AUPRC: 0.7892, Val Accuracy: 0.9949, Val F1: 0.8822
+
+Epoch 5/100, Train Loss: 0.0029, Val Loss: 0.0033, Time: 466.46 seconds
+Train AUROC: 0.9924, Train AUPRC: 0.9731, Train Accuracy: 0.9952, Train F1: 0.9855
+Val AUROC: 0.9972, Val AUPRC: 0.7770, Val Accuracy: 0.9945, Val F1: 0.8745
+
+Epoch 6/100, Train Loss: 0.0030, Val Loss: 0.0033, Time: 474.75 seconds
+Train AUROC: 0.9923, Train AUPRC: 0.9731, Train Accuracy: 0.9952, Train F1: 0.9855
+Val AUROC: 0.9974, Val AUPRC: 0.7873, Val Accuracy: 0.9948, Val F1: 0.8810
+
+Epoch 7/100, Train Loss: 0.0029, Val Loss: 0.0031, Time: 470.41 seconds
+Train AUROC: 0.9922, Train AUPRC: 0.9736, Train Accuracy: 0.9953, Train F1: 0.9857
+Val AUROC: 0.9975, Val AUPRC: 0.7955, Val Accuracy: 0.9951, Val F1: 0.8861
+
+Epoch 8/100, Train Loss: 0.0029, Val Loss: 0.0037, Time: 446.94 seconds
+Train AUROC: 0.9922, Train AUPRC: 0.9731, Train Accuracy: 0.9952, Train F1: 0.9854
+Val AUROC: 0.9971, Val AUPRC: 0.7710, Val Accuracy: 0.9943, Val F1: 0.8707
+
+Epoch 9/100, Train Loss: 0.0029, Val Loss: 0.0030, Time: 471.33 seconds
+Train AUROC: 0.9924, Train AUPRC: 0.9730, Train Accuracy: 0.9952, Train F1: 0.9854
+Val AUROC: 0.9975, Val AUPRC: 0.7994, Val Accuracy: 0.9952, Val F1: 0.8885
+
+Epoch 10/100, Train Loss: 0.0029, Val Loss: 0.0031, Time: 469.47 seconds
+Train AUROC: 0.9926, Train AUPRC: 0.9744, Train Accuracy: 0.9955, Train F1: 0.9861
+Val AUROC: 0.9976, Val AUPRC: 0.8018, Val Accuracy: 0.9953, Val F1: 0.8900
+
+Epoch 11/100, Train Loss: 0.0030, Val Loss: 0.0036, Time: 444.76 seconds
+Train AUROC: 0.9919, Train AUPRC: 0.9728, Train Accuracy: 0.9951, Train F1: 0.9852
+Val AUROC: 0.9972, Val AUPRC: 0.7784, Val Accuracy: 0.9945, Val F1: 0.8754
+
+Epoch 12/100, Train Loss: 0.0030, Val Loss: 0.0038, Time: 438.91 seconds
+Train AUROC: 0.9924, Train AUPRC: 0.9731, Train Accuracy: 0.9953, Train F1: 0.9855
+Val AUROC: 0.9969, Val AUPRC: 0.7584, Val Accuracy: 0.9939, Val F1: 0.8626
+
+Epoch 13/100, Train Loss: 0.0029, Val Loss: 0.0035, Time: 446.51 seconds
+Train AUROC: 0.9926, Train AUPRC: 0.9742, Train Accuracy: 0.9954, Train F1: 0.9861
+Val AUROC: 0.9972, Val AUPRC: 0.7765, Val Accuracy: 0.9945, Val F1: 0.8742
+
+Fold 5 finished. Best Val Loss: 0.0030 at epoch 9. Time: 5994.96 seconds 
+
+Training the model on the fine-tune data...
+
+Fine-tune Datastes Size:  20614
+Fold 1
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 1/100, Train Loss: 0.0899, Val Loss: 0.0364, Time: 39.26 seconds
+Train AUROC: 0.8289, Train AUPRC: 0.6505, Train Accuracy: 0.8783, Train F1: 0.7590
+Val AUROC: 0.7447, Val AUPRC: 0.1892, Val Accuracy: 0.9464, Val F1: 0.4043
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 2/100, Train Loss: 0.0301, Val Loss: 0.0454, Time: 38.82 seconds
+Train AUROC: 0.9293, Train AUPRC: 0.8306, Train Accuracy: 0.9455, Train F1: 0.8961
+Val AUROC: 0.7362, Val AUPRC: 0.1604, Val Accuracy: 0.9365, Val F1: 0.3610
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 3/100, Train Loss: 0.0192, Val Loss: 0.0492, Time: 39.26 seconds
+Train AUROC: 0.9575, Train AUPRC: 0.8938, Train Accuracy: 0.9666, Train F1: 0.9368
+Val AUROC: 0.7108, Val AUPRC: 0.1792, Val Accuracy: 0.9529, Val F1: 0.3975
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 4/100, Train Loss: 0.0144, Val Loss: 0.0499, Time: 40.36 seconds
+Train AUROC: 0.9708, Train AUPRC: 0.9229, Train Accuracy: 0.9765, Train F1: 0.9551
+Val AUROC: 0.6513, Val AUPRC: 0.1370, Val Accuracy: 0.9561, Val F1: 0.3370
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 5/100, Train Loss: 0.0116, Val Loss: 0.0532, Time: 39.22 seconds
+Train AUROC: 0.9758, Train AUPRC: 0.9370, Train Accuracy: 0.9810, Train F1: 0.9633
+Val AUROC: 0.6659, Val AUPRC: 0.1883, Val Accuracy: 0.9646, Val F1: 0.4016
+
+Fold 1 finished. Best Val Loss: 0.0364 at epoch 1. Time: 196.92 seconds 
+
+Fold 2
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 1/100, Train Loss: 0.0847, Val Loss: 0.0417, Time: 40.79 seconds
+Train AUROC: 0.8308, Train AUPRC: 0.6453, Train Accuracy: 0.8790, Train F1: 0.7580
+Val AUROC: 0.7834, Val AUPRC: 0.1829, Val Accuracy: 0.9292, Val F1: 0.3787
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 2/100, Train Loss: 0.0302, Val Loss: 0.0436, Time: 38.76 seconds
+Train AUROC: 0.9284, Train AUPRC: 0.8277, Train Accuracy: 0.9437, Train F1: 0.8944
+Val AUROC: 0.7457, Val AUPRC: 0.1955, Val Accuracy: 0.9483, Val F1: 0.4132
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 3/100, Train Loss: 0.0203, Val Loss: 0.0386, Time: 40.15 seconds
+Train AUROC: 0.9569, Train AUPRC: 0.8890, Train Accuracy: 0.9655, Train F1: 0.9343
+Val AUROC: 0.7109, Val AUPRC: 0.2055, Val Accuracy: 0.9597, Val F1: 0.4315
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 4/100, Train Loss: 0.0151, Val Loss: 0.0393, Time: 38.55 seconds
+Train AUROC: 0.9682, Train AUPRC: 0.9182, Train Accuracy: 0.9745, Train F1: 0.9520
+Val AUROC: 0.7017, Val AUPRC: 0.2492, Val Accuracy: 0.9682, Val F1: 0.4739
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 5/100, Train Loss: 0.0126, Val Loss: 0.0501, Time: 39.23 seconds
+Train AUROC: 0.9733, Train AUPRC: 0.9328, Train Accuracy: 0.9787, Train F1: 0.9605
+Val AUROC: 0.7284, Val AUPRC: 0.1787, Val Accuracy: 0.9476, Val F1: 0.3933
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 6/100, Train Loss: 0.0115, Val Loss: 0.0419, Time: 39.38 seconds
+Train AUROC: 0.9765, Train AUPRC: 0.9396, Train Accuracy: 0.9814, Train F1: 0.9647
+Val AUROC: 0.7192, Val AUPRC: 0.2282, Val Accuracy: 0.9626, Val F1: 0.4577
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 7/100, Train Loss: 0.0102, Val Loss: 0.0432, Time: 40.41 seconds
+Train AUROC: 0.9793, Train AUPRC: 0.9455, Train Accuracy: 0.9830, Train F1: 0.9684
+Val AUROC: 0.6871, Val AUPRC: 0.2202, Val Accuracy: 0.9663, Val F1: 0.4418
+
+Fold 2 finished. Best Val Loss: 0.0386 at epoch 3. Time: 277.27 seconds 
+
+Fold 3
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 1/100, Train Loss: 0.0847, Val Loss: 0.0356, Time: 40.43 seconds
+Train AUROC: 0.8362, Train AUPRC: 0.6598, Train Accuracy: 0.8835, Train F1: 0.7681
+Val AUROC: 0.7073, Val AUPRC: 0.1576, Val Accuracy: 0.9462, Val F1: 0.3657
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 2/100, Train Loss: 0.0295, Val Loss: 0.0401, Time: 40.96 seconds
+Train AUROC: 0.9287, Train AUPRC: 0.8293, Train Accuracy: 0.9449, Train F1: 0.8953
+Val AUROC: 0.7383, Val AUPRC: 0.1858, Val Accuracy: 0.9471, Val F1: 0.4011
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 3/100, Train Loss: 0.0205, Val Loss: 0.0488, Time: 39.70 seconds
+Train AUROC: 0.9546, Train AUPRC: 0.8838, Train Accuracy: 0.9639, Train F1: 0.9311
+Val AUROC: 0.7087, Val AUPRC: 0.1503, Val Accuracy: 0.9423, Val F1: 0.3533
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 4/100, Train Loss: 0.0158, Val Loss: 0.0454, Time: 41.41 seconds
+Train AUROC: 0.9682, Train AUPRC: 0.9189, Train Accuracy: 0.9750, Train F1: 0.9523
+Val AUROC: 0.6927, Val AUPRC: 0.1783, Val Accuracy: 0.9573, Val F1: 0.3973
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 5/100, Train Loss: 0.0106, Val Loss: 0.0482, Time: 40.96 seconds
+Train AUROC: 0.9793, Train AUPRC: 0.9450, Train Accuracy: 0.9831, Train F1: 0.9682
+Val AUROC: 0.6783, Val AUPRC: 0.1878, Val Accuracy: 0.9624, Val F1: 0.4061
+
+Fold 3 finished. Best Val Loss: 0.0356 at epoch 1. Time: 203.45 seconds 
+
+Fold 4
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 1/100, Train Loss: 0.0833, Val Loss: 0.0447, Time: 39.72 seconds
+Train AUROC: 0.8402, Train AUPRC: 0.6617, Train Accuracy: 0.8844, Train F1: 0.7715
+Val AUROC: 0.6931, Val AUPRC: 0.1223, Val Accuracy: 0.9318, Val F1: 0.3062
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 2/100, Train Loss: 0.0292, Val Loss: 0.0461, Time: 40.87 seconds
+Train AUROC: 0.9315, Train AUPRC: 0.8296, Train Accuracy: 0.9450, Train F1: 0.8966
+Val AUROC: 0.7061, Val AUPRC: 0.1396, Val Accuracy: 0.9374, Val F1: 0.3351
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 3/100, Train Loss: 0.0204, Val Loss: 0.0435, Time: 39.87 seconds
+Train AUROC: 0.9569, Train AUPRC: 0.8912, Train Accuracy: 0.9650, Train F1: 0.9353
+Val AUROC: 0.6796, Val AUPRC: 0.1487, Val Accuracy: 0.9517, Val F1: 0.3560
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 4/100, Train Loss: 0.0136, Val Loss: 0.0492, Time: 40.16 seconds
+Train AUROC: 0.9737, Train AUPRC: 0.9315, Train Accuracy: 0.9789, Train F1: 0.9600
+Val AUROC: 0.6675, Val AUPRC: 0.1715, Val Accuracy: 0.9612, Val F1: 0.3846
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 5/100, Train Loss: 0.0131, Val Loss: 0.0606, Time: 40.55 seconds
+Train AUROC: 0.9737, Train AUPRC: 0.9319, Train Accuracy: 0.9785, Train F1: 0.9602
+Val AUROC: 0.6897, Val AUPRC: 0.1409, Val Accuracy: 0.9449, Val F1: 0.3420
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 6/100, Train Loss: 0.0099, Val Loss: 0.0617, Time: 41.32 seconds
+Train AUROC: 0.9789, Train AUPRC: 0.9460, Train Accuracy: 0.9831, Train F1: 0.9685
+Val AUROC: 0.6343, Val AUPRC: 0.1071, Val Accuracy: 0.9496, Val F1: 0.2877
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 7/100, Train Loss: 0.0078, Val Loss: 0.0771, Time: 39.66 seconds
+Train AUROC: 0.9838, Train AUPRC: 0.9580, Train Accuracy: 0.9871, Train F1: 0.9756
+Val AUROC: 0.6825, Val AUPRC: 0.1229, Val Accuracy: 0.9377, Val F1: 0.3110
+
+Fold 4 finished. Best Val Loss: 0.0435 at epoch 3. Time: 282.15 seconds 
+
+Fold 5
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 1/100, Train Loss: 0.0700, Val Loss: 0.6257, Time: 41.46 seconds
+Train AUROC: 0.8817, Train AUPRC: 0.7577, Train Accuracy: 0.9172, Train F1: 0.8391
+Val AUROC: 0.6738, Val AUPRC: 0.0546, Val Accuracy: 0.5667, Val F1: 0.1114
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 2/100, Train Loss: 0.0151, Val Loss: 0.7658, Time: 40.58 seconds
+Train AUROC: 0.9649, Train AUPRC: 0.9175, Train Accuracy: 0.9745, Train F1: 0.9504
+Val AUROC: 0.6934, Val AUPRC: 0.0580, Val Accuracy: 0.5718, Val F1: 0.1171
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 3/100, Train Loss: 0.0096, Val Loss: 0.8999, Time: 39.97 seconds
+Train AUROC: 0.9807, Train AUPRC: 0.9528, Train Accuracy: 0.9851, Train F1: 0.9721
+Val AUROC: 0.6865, Val AUPRC: 0.0565, Val Accuracy: 0.5585, Val F1: 0.1139
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 4/100, Train Loss: 0.0072, Val Loss: 0.9103, Time: 40.22 seconds
+Train AUROC: 0.9870, Train AUPRC: 0.9658, Train Accuracy: 0.9894, Train F1: 0.9803
+Val AUROC: 0.6768, Val AUPRC: 0.0550, Val Accuracy: 0.5660, Val F1: 0.1122
+
+/users/wmqn2362/PhysioNet2025/PhysioNet2025/team_code.py:355: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=True):
+Epoch 5/100, Train Loss: 0.0058, Val Loss: 1.4024, Time: 40.46 seconds
+Train AUROC: 0.9874, Train AUPRC: 0.9681, Train Accuracy: 0.9902, Train F1: 0.9814
+Val AUROC: 0.6796, Val AUPRC: 0.0551, Val Accuracy: 0.5451, Val F1: 0.1110
+
+Fold 5 finished. Best Val Loss: 0.6257 at epoch 1. Time: 202.70 seconds 
+
+Ensemble models saved to /users/wmqn2362/PhysioNet2025/SEResNet_With_Pretrain_2/Model/ensemble_models.pth
+
+Done.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: resnet50
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 0.0001
+Batch Size: 128
+Early Stop Patience: 3
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.25
+Batch Size: 32
+Early Stop Patience: 3
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Challenge score: 0.720
+AUROC: 0.934
+AUPRC: 0.634
+Accuracy: 0.979
+F-measure: 0.598
+
