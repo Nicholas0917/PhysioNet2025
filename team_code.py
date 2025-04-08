@@ -189,8 +189,8 @@ def train_model(data_folder, model_folder, verbose):
         train_weights = make_weights_for_balanced_classes(train_subset)
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 
-        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=6)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=6)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=16)
+        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=16)
 
         best_loss = float('inf')
         best_epoch = 0
@@ -311,9 +311,9 @@ def train_model(data_folder, model_folder, verbose):
         train_weights = make_weights_for_balanced_classes(train_subset)
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 
-        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=6)
-        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=6)
-        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=6)
+        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=16)
+        train_loader = DataLoader(train_subset, batch_size=batch_size, sampler=train_sampler, num_workers=16)
+        val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False, num_workers=16)
 
         best_loss = float('inf')
         best_epoch = 0
