@@ -40,11 +40,11 @@ class Config:
     def __init__(self):
         self.model_name = 'resnet50'
         self.use_pretrained = True
-        self.pretrain_num_epochs = 1
+        self.pretrain_num_epochs = 100
         self.pretrain_learning_rate = 1e-4
         self.pretrain_batch_size = 128
         self.pretrain_early_stop_patience = 3
-        self.num_epochs = 1
+        self.num_epochs = 100
         self.learning_rate = 1e-4
         self.dropout_rate = 0.25
         self.batch_size = 32
@@ -131,8 +131,8 @@ def train_model(data_folder, model_folder, verbose):
         else:
             raise ValueError('Invalid source.')
       
-    Code15_records_pretrain = code15_records[3000:]
-    Code15_records_finetune = code15_records[:3000]
+    Code15_records_pretrain = code15_records
+    Code15_records_finetune = []
       
     # Pretrain
     if verbose:
@@ -271,7 +271,7 @@ def train_model(data_folder, model_folder, verbose):
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
-    pretrained_model = model
+    pretrained_model = model.state_dict().copy()
     
     ############################################################################
     # fine-tune stage
@@ -294,16 +294,13 @@ def train_model(data_folder, model_folder, verbose):
     # Fit the model.
     # criterion = nn.BCEWithLogitsLoss()
     criterion = FocalLoss(alpha=0.8, logits=True)
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    scaler = torch.amp.GradScaler('cuda')
     # kf = KFold(n_splits=3)
     kf = StratifiedKFold(n_splits=5)
 
     X = [dataset[i][0] for i in range(len(dataset))]
     labels = [dataset[i][1] for i in range(len(dataset))]
-
-    models = []
+    
+    finetuned_models = []
 
     # for fold, (train_idx, val_idx) in enumerate(kf.split(records)):
     for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
@@ -321,7 +318,24 @@ def train_model(data_folder, model_folder, verbose):
         best_loss = float('inf')
         best_epoch = 0
 
-        model = pretrained_model
+        # model = pretrained_model
+        if config.model_name == 'resnet18':
+            model = resnet18().to(device)
+        elif config.model_name == 'resnet34':
+            model = resnet34().to(device)
+        elif config.model_name == 'resnet50':
+            model = resnet50().to(device)
+        elif config.model_name == 'resnet101':
+            model = resnet101().to(device)
+        elif config.model_name == 'resnet152':
+            model = resnet152().to(device)
+        else:
+            raise ValueError('Invalid model name.')
+        model.load_state_dict(pretrained_model)
+        
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+        scaler = torch.amp.GradScaler('cuda')
 
         start_time = time.time()
 
@@ -338,10 +352,11 @@ def train_model(data_folder, model_folder, verbose):
                 label = label.to(device)
 
                 optimizer.zero_grad()
-                with torch.amp.autocast('cuda'):
+                with torch.cuda.amp.autocast(enabled=True):
                     output = model(signal, meta_features)
                     loss = criterion(output, label)
                 scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
                 scaler.step(optimizer)
                 scaler.update()
                 train_loss += loss.item()
@@ -398,10 +413,10 @@ def train_model(data_folder, model_folder, verbose):
                     break
     
         end_time = time.time()
-        print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds')
-        models.append(best_model)
+        print(f'Fold {fold + 1} finished. Best Val Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
+        finetuned_models.append(best_model)
 
-    save_model(model_folder=model_folder, models=models)
+    save_model(model_folder=model_folder, models=finetuned_models)
 
     if verbose:
         print('Done.')
@@ -411,39 +426,37 @@ def train_model(data_folder, model_folder, verbose):
 # arguments of this function. If you do not train one of the models, then you can return None for the model.
 def load_model(model_folder, verbose):
 
-    print(model_folder)
-
     model_path = os.path.join(model_folder, 'ensemble_models.pth')
     
     if not os.path.isfile(model_path):
         raise FileNotFoundError(f"No model file found at {model_path}")
     
     checkpoint = torch.load(model_path, map_location=config.device, weights_only=True)
-    models_state = checkpoint['models']    
     
-    if config.model_name == 'resnet18':
-        model = resnet18().to(config.device)
-    elif config.model_name == 'resnet34':
-        model = resnet34().to(config.device)
-    elif config.model_name == 'resnet50':
-        model = resnet50().to(config.device)
-    elif config.model_name == 'resnet101':
-        model = resnet101().to(config.device)
-    elif config.model_name == 'resnet152':
-        model = resnet152().to(config.device)
-    else:
-        raise ValueError(f'Unsupported model: {config.model_name}')
-
+    model_keys = sorted(checkpoint.keys(), key=lambda x: int(x[5:]))
+    models_state = [checkpoint[key] for key in model_keys]
+    
     models = []
     for state in models_state:
-        
+        if config.model_name == 'resnet18':
+            model = resnet18().to(config.device)
+        elif config.model_name == 'resnet34':
+            model = resnet34().to(config.device)
+        elif config.model_name == 'resnet50':
+            model = resnet50().to(config.device)
+        elif config.model_name == 'resnet101':
+            model = resnet101().to(config.device)
+        elif config.model_name == 'resnet152':
+            model = resnet152().to(config.device)
+        else:
+            raise ValueError(f'Unsupported model: {config.model_name}')
+
         model.load_state_dict(state)
-        model.eval()        
+        model.eval()
         models.append(model)
     
     if verbose:
         print(f'Successfully loaded {len(models)} models from: {model_folder}')
-        print('Model files:', model_files)
     
     return models
 
@@ -463,7 +476,7 @@ def run_model(record, model, verbose):
             output = model(signal_tensor, meta_tensor)
             prob = torch.sigmoid(output).detach().cpu().numpy().item()
             all_probs.append(prob)
-    
+
     avg_prob = np.mean(all_probs)
     return int(avg_prob > 0.5), float(avg_prob)
 
@@ -528,9 +541,9 @@ def extract_features(record):
 
     # normalize the signal
     # min-max normalization
-    signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
+    # signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
     # z-score normalization
-    # signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
+    signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
 
     signal = signal.astype(np.float32)
     signal = np.ascontiguousarray(signal.T)
@@ -555,10 +568,15 @@ def extract_features(record):
 
 # Save your trained model.
 def save_model(model_folder, models):
+    
     os.makedirs(model_folder, exist_ok=True)
     save_path = os.path.join(model_folder, 'ensemble_models.pth')
     
-    torch.save({'models': models}, save_path)
+    model_dict = {}
+    for i, model in enumerate(models, start=1):
+        model_dict[f'model{i}'] = model
+    
+    torch.save(model_dict, save_path)
     print(f'Ensemble models saved to {save_path}\n')
 
 ################################################################################
