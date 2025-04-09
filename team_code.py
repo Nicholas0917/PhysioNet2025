@@ -41,12 +41,12 @@ class Config:
         self.model_name = 'resnet50'
         self.use_pretrained = True
         self.pretrain_num_epochs = 100
-        self.pretrain_learning_rate = 1e-4
+        self.pretrain_learning_rate = 2e-4
         self.pretrain_batch_size = 128
         self.pretrain_early_stop_patience = 3
         self.num_epochs = 100
         self.learning_rate = 1e-4
-        self.dropout_rate = 0.25
+        self.dropout_rate = 0.3
         self.batch_size = 32
         self.early_stop_patience = 3
         self.use_age = True
@@ -131,8 +131,8 @@ def train_model(data_folder, model_folder, verbose):
         else:
             raise ValueError('Invalid source.')
       
-    Code15_records_pretrain = code15_records
-    Code15_records_finetune = []
+    Code15_records_pretrain = code15_records[1000:]
+    Code15_records_finetune = code15_records[:1000]
       
     # Pretrain
     if verbose:
