@@ -149,10 +149,9 @@ def train_model(data_folder, model_folder, verbose):
             SaMiTrop_records.append(record_path)
         else:
             raise ValueError('Invalid source.')
-      
+    
     Code15_records_pretrain = code15_records
     Code15_records_finetune = []
-
     # Pretrain
     if verbose:
         print('Pretraining the model on the CODE%15 data...')
