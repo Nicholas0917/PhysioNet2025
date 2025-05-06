@@ -49,7 +49,7 @@ class Config:
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-4  # Increased learning rate
-        self.dropout_rate = 0.2
+        self.dropout_rate = 0.25
         self.net1d_dropout_rate = 0.25
         self.batch_size = 32
         self.early_stop_patience = 8
