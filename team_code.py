@@ -49,11 +49,11 @@ class Config:
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-4  # Increased learning rate
-        self.dropout_rate = 0.3
-        self.net1d_dropout_rate = 0.2
+        self.dropout_rate = 0.2
+        self.net1d_dropout_rate = 0.25
         self.batch_size = 32
         self.early_stop_patience = 8
-        self.num_preprocess_workers = 2  # Keep at 1 to limit memory usage
+        self.num_preprocess_workers = 8  # Keep at 1 to limit memory usage
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
