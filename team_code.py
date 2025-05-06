@@ -20,7 +20,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
-from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 import math
 import time
 from sklearn.model_selection import KFold, StratifiedKFold
@@ -48,13 +47,6 @@ class Config:
         self.pretrain_batch_size = 256  # Increased with gradient accumulation
         self.gradient_accumulation_steps = 4  # For effective batch size of 256
         self.pretrain_early_stop_patience = 5
-        self.model_name = 'ecgfounder'
-        self.use_pretrained = True
-        self.pretrain_num_epochs = 30
-        self.pretrain_learning_rate = 5e-4  # Increased learning rate
-        self.pretrain_batch_size = 256  # Increased with gradient accumulation
-        self.gradient_accumulation_steps = 4  # For effective batch size of 256
-        self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-4  # Increased learning rate
         self.dropout_rate = 0.3
@@ -62,13 +54,10 @@ class Config:
         self.batch_size = 32
         self.early_stop_patience = 8
         self.num_preprocess_workers = 2  # Keep at 1 to limit memory usage
-        self.early_stop_patience = 8
-        self.num_preprocess_workers = 2  # Keep at 1 to limit memory usage
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
         self.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
 
     def get_meta_feature_dim(self):
@@ -90,13 +79,6 @@ class Config:
         print(f"Batch Size: {self.pretrain_batch_size}")
         print(f"Early Stop Patience: {self.pretrain_early_stop_patience}")
 
-        print(f"Model Name: {self.model_name}")
-        print(">>>>>>>>>Pretraining Parameters:<<<<<<<<<<")
-        print(f"Number of Epochs: {self.pretrain_num_epochs}")
-        print(f"Learning Rate: {self.pretrain_learning_rate}")
-        print(f"Batch Size: {self.pretrain_batch_size}")
-        print(f"Early Stop Patience: {self.pretrain_early_stop_patience}")
-
         print(">>>>>>>>>Training Parameters:<<<<<<<<<<")
         print(f"Number of Epochs: {self.num_epochs}")
         print(f"Learning Rate: {self.learning_rate}")
@@ -105,30 +87,17 @@ class Config:
         print(f"Batch Size: {self.batch_size}")
         print(f"Early Stop Patience: {self.early_stop_patience}")
 
-
         print(">>>>>>>>>Meta Features:<<<<<<<<<<")
         print(f"Use Age: {self.use_age}")
         print(f"Use Sex: {self.use_sex}")
         print(f"Use Signal Stats: {self.use_signal_stats}")
         print(f"Meta Feature Dimension: {self.get_meta_feature_dim()}")
 
-
         print(">>>>>>>>>Device:<<<<<<<<<<")
         print(f"Device: {self.device}")
 
 config = Config()
 config.print_config()
-
-# Set deterministic CUDA backend
-if torch.cuda.is_available():
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-
-# if '/mnt/scratch/wmqn2362/PhysioNet25/tmp' exist
-if os.path.exists('/mnt/scratch/wmqn2362/PhysioNet25/tmp'):
-    config.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
-else:
-    config.cache_folder = './tmp'
 
 # Set deterministic CUDA backend
 if torch.cuda.is_available():
@@ -153,20 +122,13 @@ else:
 # Train your model.
 def train_model(data_folder, model_folder, verbose):
 
-
     ############################################################################
-    # Load the data.
-    start_time = time.time()
     # Load the data.
     start_time = time.time()
     records = find_records(data_folder)
     end_time = time.time()
     print(f"Load the data time: {end_time - start_time:.4f}seconds")
-    end_time = time.time()
-    print(f"Load the data time: {end_time - start_time:.4f}seconds")
     num_records = len(records)
-    
-    print(f'Total number of records: {num_records}')
     
     print(f'Total number of records: {num_records}')
     if num_records == 0:
@@ -398,9 +360,7 @@ def train_model(data_folder, model_folder, verbose):
     
     ############################################################################
     # fine-tune stage
-    # fine-tune stage
     if verbose:
-        print('Training the model on the fine-tune data...')
         print('Training the model on the fine-tune data...')
 
     finetune_records = PTBXL_records + SaMiTrop_records + Code15_records_finetune
@@ -517,33 +477,12 @@ def train_model(data_folder, model_folder, verbose):
 
     X = [dataset[i][0] for i in range(len(dataset))]
     labels = [dataset[i][1] for i in range(len(dataset))]
-    kf = StratifiedKFold(n_splits=5)
 
-    X = [dataset[i][0] for i in range(len(dataset))]
-    labels = [dataset[i][1] for i in range(len(dataset))]
-
-    # for fold, (train_idx, val_idx) in enumerate(kf.split(records)):
-    for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
     # for fold, (train_idx, val_idx) in enumerate(kf.split(records)):
     for fold, (train_idx, val_idx) in enumerate(kf.split(X, labels)):
         print(f'Fold {fold + 1}')
         train_subset = Subset(dataset, train_idx)
         val_subset = Subset(dataset, val_idx)
-
-        train_weights = make_weights_for_balanced_classes(train_subset)
-        train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
-
-        # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=config.num_preprocess_workers)
-        train_loader = DataLoader(train_subset, 
-                                  batch_size=batch_size, 
-                                  sampler=train_sampler, 
-                                  num_workers=config.num_preprocess_workers
-                                  )
-        val_loader = DataLoader(val_subset, 
-                                batch_size=batch_size, 
-                                shuffle=False, 
-                                num_workers=config.num_preprocess_workers
-                                )
 
         train_weights = make_weights_for_balanced_classes(train_subset)
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
@@ -570,8 +509,6 @@ def train_model(data_folder, model_folder, verbose):
             train_loss = 0.0
             train_targets = []
             train_outputs = []
-            train_targets = []
-            train_outputs = []
             for i, (features, label) in enumerate(train_loader):
                 signal, meta_features = features
                 signal = signal.to(device)
@@ -590,9 +527,6 @@ def train_model(data_folder, model_folder, verbose):
                 train_targets.extend(label.cpu().numpy())
                 train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
 
-                train_targets.extend(label.cpu().numpy())
-                train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
-
             train_loss /= len(train_loader)
             scheduler.step()
 
@@ -601,15 +535,8 @@ def train_model(data_folder, model_folder, verbose):
             train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
             train_f1 = f1_score(train_targets, np.round(train_outputs))
 
-            train_auroc = roc_auc_score(train_targets, np.round(train_outputs))
-            train_auprc = average_precision_score(train_targets, np.round(train_outputs))
-            train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
-            train_f1 = f1_score(train_targets, np.round(train_outputs))
-
             model.eval()
             val_loss = 0.0
-            val_targets = []
-            val_outputs = []
             val_targets = []
             val_outputs = []
             with torch.no_grad():
@@ -627,14 +554,7 @@ def train_model(data_folder, model_folder, verbose):
                     val_targets.extend(label.cpu().numpy())
                     val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
 
-                    val_targets.extend(label.cpu().numpy())
-                    val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
-
             val_loss /= len(val_loader)
-            val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
-            val_auprc = average_precision_score(val_targets, np.round(val_outputs))
-            val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
-            val_f1 = f1_score(val_targets, np.round(val_outputs))
             val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
             val_auprc = average_precision_score(val_targets, np.round(val_outputs))
             val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
@@ -655,16 +575,9 @@ def train_model(data_folder, model_folder, verbose):
                 if epoch - best_epoch > early_stop_patience:
                     break
     
-    
         end_time = time.time()
         print(f'Fold {fold + 1} finished. Best Valid Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
-    # for record in finetune_records:
-    #     delete_record_files(record)
-    ############################################################################
-    # Save the best model for this fold
-    os.makedirs(model_folder, exist_ok=True)
-    save_model(model_folder, best_model)
     # for record in finetune_records:
     #     delete_record_files(record)
     ############################################################################
@@ -679,31 +592,6 @@ def train_model(data_folder, model_folder, verbose):
 # Load your trained models. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function. If you do not train one of the models, then you can return None for the model.
 def load_model(model_folder, verbose):
-    # Check model directory
-    model_dir = os.path.join(model_folder, 'Model')
-    model_filename = os.path.join(model_dir, 'model.pth')
-    
-    if not os.path.exists(model_filename):
-        raise FileNotFoundError(f"Model file {model_filename} not found")
-    
-    try:
-        checkpoint = torch.load(model_filename, map_location=config.device)
-        
-        # Create and initialize model
-        model = HybridModel(
-            device=config.device,
-            pth_path=model_filename
-        )
-        
-        # Load fine-tuned weights
-        model.load_state_dict(checkpoint['state_dict'])
-        
-        if verbose:
-            print(f"Successfully loaded model from {model_filename}")
-        return model
-    except Exception as e:
-        print(f"Failed to load model: {str(e)}")
-        raise
     # Check model directory
     model_dir = os.path.join(model_folder, 'Model')
     model_filename = os.path.join(model_dir, 'model.pth')
@@ -750,41 +638,7 @@ def run_model(record, model, verbose):
         one_hot_encoding_sex[0] = True
     elif sex == 'Male':
         one_hot_encoding_sex[1] = True
-    
-    data_preprocess(record)
-
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join(config.cache_folder, f"{base_name}_signal.npy")
-    signal = np.load(signal_path).astype(np.float32)
-
-    # Load meta data from original record
-    header = load_header(record)
-    age = get_age(header) if config.use_age else 0
-    sex = get_sex(header) if config.use_sex else 'Unknown'
-    
-    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-    if sex == 'Female':
-        one_hot_encoding_sex[0] = True
-    elif sex == 'Male':
-        one_hot_encoding_sex[1] = True
     else:
-        one_hot_encoding_sex[2] = True
-
-    # get meta features
-    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-    ptr = 0
-    
-    if config.use_age:
-        meta_features[ptr] = age
-        ptr += 1
-    if config.use_sex:
-        meta_features[ptr:ptr+3] = one_hot_encoding_sex
-        ptr += 3
-    if config.use_signal_stats:
-        valid_samples = np.isfinite(signal).sum()
-        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-        ptr += 2
         one_hot_encoding_sex[2] = True
 
     # get meta features
@@ -814,16 +668,11 @@ def run_model(record, model, verbose):
     # Set model to evaluation mode
     model.eval()
 
-    # Set model to evaluation mode
-    model.eval()
-
     # Get the model outputs.
     with torch.no_grad():
         probability_output = model(signal, meta_features)
     probability_output = torch.sigmoid(probability_output.view(-1)[0]).detach().cpu().numpy().item()
     binary_output = probability_output > 0.5
-
-    # delete_record_files(record)
 
     # delete_record_files(record)
 
@@ -834,22 +683,6 @@ def run_model(record, model, verbose):
 # Optional functions. You can change or remove these functions and/or add new functions.
 #
 ################################################################################
-def print_memory_usage(extra_info=""):
-    process = psutil.Process(os.getpid())
-    mem_info = process.memory_info()
-    vm = psutil.virtual_memory()
-    print(f"\n====== Memory Usage {extra_info} ======")
-    print(f"Process RSS: {mem_info.rss / 1024 ** 3:.2f} GB")
-    print(f"Process VMS: {mem_info.vms / 1024 ** 3:.2f} GB")
-    print(f"System Available: {vm.available / 1024 ** 3:.2f} GB / {vm.total / 1024 ** 3:.2f} GB")
-    print(f"Memory Used %: {vm.percent}%")
-    print("===================================\n")
-
-# helper function to load the source
-def get_source(string):
-    source_string = '# Source:'
-    source, has_source = get_variable(string, source_string)
-    return source
 def print_memory_usage(extra_info=""):
     process = psutil.Process(os.getpid())
     mem_info = process.memory_info()
@@ -878,20 +711,15 @@ def data_preprocess(record):
 
     header = load_header(record)
     source = get_source(header)
-    source = get_source(header)
     age = get_age(header) if config.use_age else 0
     sex = get_sex(header) if config.use_sex else 'Unknown'
     
     one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
     if sex == 'Female':
-        one_hot_encoding_sex[0] = True
         one_hot_encoding_sex[0] = True
     elif sex == 'Male':
         one_hot_encoding_sex[1] = True
-        one_hot_encoding_sex[1] = True
     else:
-        one_hot_encoding_sex[2] = True
         one_hot_encoding_sex[2] = True
 
     signal, fields = load_signals(record)
@@ -955,91 +783,13 @@ def data_preprocess(record):
     meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
     ptr = 0
     
-    signal = signal.astype(np.float32)
-
-    # Standardize all data to 500Hz
-    if source == 'PTB-XL':
-        original_fs = 500  # Already at target fs
-    elif source == 'CODE-15%':
-        original_fs = 400  # Example - confirm actual source fs
-    elif source == 'SaMi-Trop':
-        original_fs = 400  # Example - confirm actual source fs
-        
-    target_fs = 500
-    if original_fs != target_fs:
-        target_length = int(signal.shape[0] * target_fs / original_fs)
-        resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
-        signal = resampled_signal
-
-    current_length = signal.shape[0]
-    if current_length != 5000:
-        standardized_signal = np.empty((5000, signal.shape[1]), dtype=np.float32)
-        if current_length < 5000:
-            standardized_signal[:current_length] = signal
-            standardized_signal[current_length:] = 0
-        else:
-            standardized_signal[:] = signal[:5000]
-        signal = standardized_signal
-        
-    # Apply 1Hz highpass filter to suppress baseline drift
-    nyquist = 0.5 * 500
-    highpass_cutoff = 1 / nyquist
-    b, a = butter(2, highpass_cutoff, btype='high')  # 2nd order
-    signal = filtfilt(b, a, signal, axis=0)
-    
-    # Apply 30Hz lowpass filter to reduce high-frequency noise
-    lowpass_cutoff = 30 / nyquist
-    b, a = butter(2, lowpass_cutoff, btype='low')  # 2nd order
-    signal = filtfilt(b, a, signal, axis=0)
-    
-    # Apply 50/60Hz notch filter to eliminate electrical interference
-    notch_freq = 50  # or 60 depending on region
-    bandwidth = 5
-    freq = notch_freq / nyquist
-    bw = bandwidth / nyquist
-    b, a = butter(2, [freq - bw/2, freq + bw/2], btype='bandstop')
-    signal = filtfilt(b, a, signal, axis=0)
-        
-    if np.isnan(signal).any():
-        np.nan_to_num(signal, copy=False)
-
-    signal = np.ascontiguousarray(signal.T)
-
-    # normalize the signal
-    # min-max normalization
-    # signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
-    # z-score normalization
-    signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
-
-    # get meta features
-    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-    ptr = 0
-    
     if config.use_age:
-        meta_features[ptr] = age
-        ptr += 1
         meta_features[ptr] = age
         ptr += 1
     if config.use_sex:
         meta_features[ptr:ptr+3] = one_hot_encoding_sex
         ptr += 3
-        meta_features[ptr:ptr+3] = one_hot_encoding_sex
-        ptr += 3
     if config.use_signal_stats:
-        valid_samples = np.isfinite(signal).sum()
-        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-        ptr += 2
-
-    # save only the signal
-    np.save(signal_path, signal.astype(np.float32))
-
-def delete_record_files(record):
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join(config.cache_folder, f'{base_name}_signal.npy')
-
-    if os.path.exists(signal_path):
-        os.remove(signal_path)
         valid_samples = np.isfinite(signal).sum()
         meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
         meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
@@ -1070,24 +820,9 @@ def save_model(model_folder, state_dict):
     filename = os.path.join(model_dir, 'model.pth')
     torch.save(checkpoint, filename)
     print(f"Model saved to {filename}")
-def save_model(model_folder, state_dict):
-    model_dir = os.path.join(model_folder, 'Model')
-    os.makedirs(model_dir, exist_ok=True)
-    
-    # Save config with additional metadata
-    config_dict = config.__dict__.copy()
-    config_dict['meta_input_dim'] = config.get_meta_feature_dim()
-    checkpoint = {
-        'state_dict': state_dict,
-        'config': config_dict
-    }
-    filename = os.path.join(model_dir, 'model.pth')
-    torch.save(checkpoint, filename)
-    print(f"Model saved to {filename}")
 
 ################################################################################
 #
-# ECGDataset
 # ECGDataset
 #
 ################################################################################
@@ -1097,23 +832,11 @@ class ECGDataset(Dataset):
         self.records = records
         # Don't preload all paths to save memory
         self.cache_folder = config.cache_folder
-        # Don't preload all paths to save memory
-        self.cache_folder = config.cache_folder
 
     def __len__(self):
         return len(self.records)
 
     def __getitem__(self, idx):
-        base_name = os.path.splitext(os.path.basename(self.records[idx]))[0]
-        signal_path = os.path.join(self.cache_folder, f"{base_name}_signal.npy")
-        
-        try:
-            with open(signal_path, 'rb') as f:
-                signal = np.load(f)
-        except Exception as e:
-            print(f"Error loading {signal_path}: {str(e)}")
-            raise
-        
         base_name = os.path.splitext(os.path.basename(self.records[idx]))[0]
         signal_path = os.path.join(self.cache_folder, f"{base_name}_signal.npy")
         
@@ -1158,44 +881,11 @@ class ECGDataset(Dataset):
             ptr += 2
 
         features = [signal, meta_features]
-        
-        # Load meta data from original record
-        header = load_header(record)
-        source = get_source(header)
-        age = get_age(header) if config.use_age else 0
-        sex = get_sex(header) if config.use_sex else 'Unknown'
-        
-        one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-        if sex == 'Female':
-            one_hot_encoding_sex[0] = True
-        elif sex == 'Male':
-            one_hot_encoding_sex[1] = True
-        else:
-            one_hot_encoding_sex[2] = True
-
-        # get meta features
-        meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-        ptr = 0
-        
-        if config.use_age:
-            meta_features[ptr] = age
-            ptr += 1
-        if config.use_sex:
-            meta_features[ptr:ptr+3] = one_hot_encoding_sex
-            ptr += 3
-        if config.use_signal_stats:
-            valid_samples = np.isfinite(signal).sum()
-            meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-            meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-            ptr += 2
-
-        features = [signal, meta_features]
 
         return features, label
 
 ################################################################################
 #
-# Loss Function
 # Loss Function
 #
 ################################################################################
