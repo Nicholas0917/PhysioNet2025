@@ -1,0 +1,741 @@
+# DA: Gaussian Noise + Scaling
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: ecgfounder
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 0.0005
+Batch Size: 256
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.3
+Use Shift Augmentation: False, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: False, Max Probability: 0.3, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 1.0, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.02, Probability: 0.3
+Use Cutout Augmentation: False, Max Ratio: 0.4, Probability: 0.3
+>>>>>>>>>Power Line Noise:<<<<<<<<<<
+Add 50Hz Power Noise: False, Probability: 0.5
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+Load the data time: 1.7786seconds
+Total number of records: 361185
+Pretraining the model on the CODE%15 data...
+Fold 1
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/autograd/graph.py:744: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+Epoch 1/50, Train Loss: 0.1091, Valid Loss: 0.0340, Time: 849.76 seconds
+Train AUROC: 0.6177, Train AUPRC: 0.2240, Train Accuracy: 0.7506, Train F1: 0.3552
+Valid AUROC: 0.6173, Valid AUPRC: 0.0572, Valid Accuracy: 0.9607, Valid F1: 0.2023
+
+Epoch 2/50, Train Loss: 0.0766, Valid Loss: 0.0355, Time: 923.17 seconds
+Train AUROC: 0.6219, Train AUPRC: 0.2796, Train Accuracy: 0.8478, Train F1: 0.3809
+Valid AUROC: 0.6386, Valid AUPRC: 0.0680, Valid Accuracy: 0.9601, Valid F1: 0.2259
+
+Epoch 3/50, Train Loss: 0.0722, Valid Loss: 0.0356, Time: 948.38 seconds
+Train AUROC: 0.6414, Train AUPRC: 0.3140, Train Accuracy: 0.8588, Train F1: 0.4244
+Valid AUROC: 0.6673, Valid AUPRC: 0.0781, Valid Accuracy: 0.9558, Valid F1: 0.2412
+
+Epoch 4/50, Train Loss: 0.0703, Valid Loss: 0.0347, Time: 868.97 seconds
+Train AUROC: 0.6479, Train AUPRC: 0.3271, Train Accuracy: 0.8625, Train F1: 0.4392
+Valid AUROC: 0.6568, Valid AUPRC: 0.0773, Valid Accuracy: 0.9593, Valid F1: 0.2435
+
+Epoch 5/50, Train Loss: 0.0689, Valid Loss: 0.0316, Time: 777.56 seconds
+Train AUROC: 0.6618, Train AUPRC: 0.3438, Train Accuracy: 0.8655, Train F1: 0.4663
+Valid AUROC: 0.6568, Valid AUPRC: 0.0862, Valid Accuracy: 0.9642, Valid F1: 0.2648
+
+Epoch 6/50, Train Loss: 0.0674, Valid Loss: 0.0292, Time: 888.55 seconds
+Train AUROC: 0.6671, Train AUPRC: 0.3530, Train Accuracy: 0.8682, Train F1: 0.4775
+Valid AUROC: 0.6687, Valid AUPRC: 0.0853, Valid Accuracy: 0.9598, Valid F1: 0.2586
+
+Epoch 7/50, Train Loss: 0.0647, Valid Loss: 0.0267, Time: 996.93 seconds
+Train AUROC: 0.6759, Train AUPRC: 0.3681, Train Accuracy: 0.8708, Train F1: 0.4953
+Valid AUROC: 0.6262, Valid AUPRC: 0.0809, Valid Accuracy: 0.9706, Valid F1: 0.2584
+
+Epoch 8/50, Train Loss: 0.0624, Valid Loss: 0.0324, Time: 1081.01 seconds
+Train AUROC: 0.6886, Train AUPRC: 0.3819, Train Accuracy: 0.8753, Train F1: 0.5175
+Valid AUROC: 0.6786, Valid AUPRC: 0.0868, Valid Accuracy: 0.9573, Valid F1: 0.2582
+
+Epoch 9/50, Train Loss: 0.0610, Valid Loss: 0.0329, Time: 1076.31 seconds
+Train AUROC: 0.6944, Train AUPRC: 0.3901, Train Accuracy: 0.8763, Train F1: 0.5280
+Valid AUROC: 0.6939, Valid AUPRC: 0.0892, Valid Accuracy: 0.9530, Valid F1: 0.2570
+
+Epoch 10/50, Train Loss: 0.0594, Valid Loss: 0.0265, Time: 974.53 seconds
+Train AUROC: 0.7057, Train AUPRC: 0.4031, Train Accuracy: 0.8787, Train F1: 0.5466
+Valid AUROC: 0.6400, Valid AUPRC: 0.0781, Valid Accuracy: 0.9655, Valid F1: 0.2507
+
+Epoch 11/50, Train Loss: 0.0580, Valid Loss: 0.0260, Time: 924.96 seconds
+Train AUROC: 0.7118, Train AUPRC: 0.4126, Train Accuracy: 0.8805, Train F1: 0.5575
+Valid AUROC: 0.6551, Valid AUPRC: 0.0864, Valid Accuracy: 0.9648, Valid F1: 0.2657
+
+Epoch 12/50, Train Loss: 0.0579, Valid Loss: 0.0268, Time: 1055.89 seconds
+Train AUROC: 0.7171, Train AUPRC: 0.4166, Train Accuracy: 0.8811, Train F1: 0.5647
+Valid AUROC: 0.6557, Valid AUPRC: 0.0813, Valid Accuracy: 0.9621, Valid F1: 0.2537
+
+Epoch 13/50, Train Loss: 0.0537, Valid Loss: 0.0284, Time: 891.03 seconds
+Train AUROC: 0.7452, Train AUPRC: 0.4572, Train Accuracy: 0.8879, Train F1: 0.6101
+Valid AUROC: 0.6472, Valid AUPRC: 0.0701, Valid Accuracy: 0.9581, Valid F1: 0.2284
+
+Epoch 14/50, Train Loss: 0.0504, Valid Loss: 0.0256, Time: 753.73 seconds
+Train AUROC: 0.7647, Train AUPRC: 0.4777, Train Accuracy: 0.8938, Train F1: 0.6358
+Valid AUROC: 0.6292, Valid AUPRC: 0.0712, Valid Accuracy: 0.9655, Valid F1: 0.2369
+
+Epoch 15/50, Train Loss: 0.0472, Valid Loss: 0.0298, Time: 991.57 seconds
+Train AUROC: 0.7882, Train AUPRC: 0.5142, Train Accuracy: 0.9004, Train F1: 0.6706
+Valid AUROC: 0.6465, Valid AUPRC: 0.0686, Valid Accuracy: 0.9573, Valid F1: 0.2247
+
+Epoch 16/50, Train Loss: 0.0442, Valid Loss: 0.0301, Time: 983.52 seconds
+Train AUROC: 0.8130, Train AUPRC: 0.5483, Train Accuracy: 0.9072, Train F1: 0.7029
+Valid AUROC: 0.6220, Valid AUPRC: 0.0558, Valid Accuracy: 0.9572, Valid F1: 0.1965
+
+Epoch 17/50, Train Loss: 0.0409, Valid Loss: 0.0302, Time: 1124.40 seconds
+Train AUROC: 0.8283, Train AUPRC: 0.5795, Train Accuracy: 0.9152, Train F1: 0.7280
+Valid AUROC: 0.6505, Valid AUPRC: 0.0701, Valid Accuracy: 0.9568, Valid F1: 0.2272
+
+Epoch 18/50, Train Loss: 0.0372, Valid Loss: 0.0302, Time: 1255.64 seconds
+Train AUROC: 0.8503, Train AUPRC: 0.6202, Train Accuracy: 0.9235, Train F1: 0.7600
+Valid AUROC: 0.6211, Valid AUPRC: 0.0567, Valid Accuracy: 0.9585, Valid F1: 0.1996
+
+Epoch 19/50, Train Loss: 0.0305, Valid Loss: 0.0315, Time: 1411.06 seconds
+Train AUROC: 0.8886, Train AUPRC: 0.6943, Train Accuracy: 0.9395, Train F1: 0.8147
+Valid AUROC: 0.6317, Valid AUPRC: 0.0745, Valid Accuracy: 0.9664, Valid F1: 0.2441
+
+Epoch 20/50, Train Loss: 0.0275, Valid Loss: 0.0342, Time: 1310.68 seconds
+Train AUROC: 0.9041, Train AUPRC: 0.7215, Train Accuracy: 0.9456, Train F1: 0.8342
+Valid AUROC: 0.5979, Valid AUPRC: 0.0610, Valid Accuracy: 0.9705, Valid F1: 0.2143
+
+Fold 1 finished. Best Valid Loss: 0.0256 at epoch 14. Time: 20087.68 seconds 
+
+Fold 2
+Epoch 1/50, Train Loss: 0.0559, Valid Loss: 0.0210, Time: 6043.45 seconds
+Train AUROC: 0.7805, Train AUPRC: 0.5226, Train Accuracy: 0.9049, Train F1: 0.6707
+Valid AUROC: 0.8660, Valid AUPRC: 0.2783, Valid Accuracy: 0.9697, Valid F1: 0.4891
+
+Epoch 2/50, Train Loss: 0.0500, Valid Loss: 0.0296, Time: 5669.44 seconds
+Train AUROC: 0.7973, Train AUPRC: 0.5428, Train Accuracy: 0.9078, Train F1: 0.6918
+Valid AUROC: 0.8693, Valid AUPRC: 0.1890, Valid Accuracy: 0.9467, Valid F1: 0.3616
+
+Epoch 3/50, Train Loss: 0.0445, Valid Loss: 0.0191, Time: 2858.20 seconds
+Train AUROC: 0.8195, Train AUPRC: 0.5785, Train Accuracy: 0.9166, Train F1: 0.7236
+Valid AUROC: 0.7953, Valid AUPRC: 0.2080, Valid Accuracy: 0.9683, Valid F1: 0.4263
+
+Epoch 4/50, Train Loss: 0.0402, Valid Loss: 0.0329, Time: 2122.02 seconds
+Train AUROC: 0.8456, Train AUPRC: 0.6208, Train Accuracy: 0.9242, Train F1: 0.7586
+Valid AUROC: 0.8482, Valid AUPRC: 0.1485, Valid Accuracy: 0.9331, Valid F1: 0.3032
+
+Epoch 5/50, Train Loss: 0.0361, Valid Loss: 0.0179, Time: 1765.51 seconds
+Train AUROC: 0.8672, Train AUPRC: 0.6608, Train Accuracy: 0.9328, Train F1: 0.7892
+Valid AUROC: 0.7438, Valid AUPRC: 0.1653, Valid Accuracy: 0.9684, Valid F1: 0.3823
+
+Epoch 6/50, Train Loss: 0.0310, Valid Loss: 0.0214, Time: 1696.98 seconds
+Train AUROC: 0.8862, Train AUPRC: 0.6963, Train Accuracy: 0.9408, Train F1: 0.8153
+Valid AUROC: 0.7561, Valid AUPRC: 0.1433, Valid Accuracy: 0.9595, Valid F1: 0.3400
+
+Epoch 7/50, Train Loss: 0.0266, Valid Loss: 0.0196, Time: 1555.17 seconds
+Train AUROC: 0.9062, Train AUPRC: 0.7412, Train Accuracy: 0.9499, Train F1: 0.8458
+Valid AUROC: 0.7340, Valid AUPRC: 0.1381, Valid Accuracy: 0.9632, Valid F1: 0.3403
+
+Epoch 8/50, Train Loss: 0.0244, Valid Loss: 0.0219, Time: 1446.83 seconds
+Train AUROC: 0.9162, Train AUPRC: 0.7607, Train Accuracy: 0.9540, Train F1: 0.8590
+Valid AUROC: 0.7251, Valid AUPRC: 0.1255, Valid Accuracy: 0.9611, Valid F1: 0.3207
+
+Epoch 9/50, Train Loss: 0.0219, Valid Loss: 0.0216, Time: 1568.13 seconds
+Train AUROC: 0.9281, Train AUPRC: 0.7870, Train Accuracy: 0.9592, Train F1: 0.8761
+Valid AUROC: 0.7113, Valid AUPRC: 0.1276, Valid Accuracy: 0.9653, Valid F1: 0.3302
+
+Epoch 10/50, Train Loss: 0.0202, Valid Loss: 0.0223, Time: 1572.68 seconds
+Train AUROC: 0.9325, Train AUPRC: 0.8021, Train Accuracy: 0.9624, Train F1: 0.8853
+Valid AUROC: 0.7013, Valid AUPRC: 0.1169, Valid Accuracy: 0.9642, Valid F1: 0.3137
+
+Epoch 11/50, Train Loss: 0.0183, Valid Loss: 0.0227, Time: 1557.85 seconds
+Train AUROC: 0.9419, Train AUPRC: 0.8220, Train Accuracy: 0.9666, Train F1: 0.8981
+Valid AUROC: 0.6750, Valid AUPRC: 0.1105, Valid Accuracy: 0.9684, Valid F1: 0.3095
+
+Fold 2 finished. Best Valid Loss: 0.0179 at epoch 5. Time: 27856.27 seconds 
+
+Fold 3
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/autograd/graph.py:744: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+Epoch 1/50, Train Loss: 0.0365, Valid Loss: 0.0081, Time: 1519.46 seconds
+Train AUROC: 0.8625, Train AUPRC: 0.6592, Train Accuracy: 0.9329, Train F1: 0.7866
+Valid AUROC: 0.9867, Valid AUPRC: 0.5904, Valid Accuracy: 0.9871, Valid F1: 0.7449
+
+Epoch 2/50, Train Loss: 0.0299, Valid Loss: 0.0097, Time: 1477.15 seconds
+Train AUROC: 0.8879, Train AUPRC: 0.7057, Train Accuracy: 0.9426, Train F1: 0.8209
+Valid AUROC: 0.9756, Valid AUPRC: 0.5081, Valid Accuracy: 0.9826, Valid F1: 0.6801
+
+Epoch 3/50, Train Loss: 0.0251, Valid Loss: 0.0075, Time: 1577.61 seconds
+Train AUROC: 0.9114, Train AUPRC: 0.7533, Train Accuracy: 0.9524, Train F1: 0.8537
+Valid AUROC: 0.9526, Valid AUPRC: 0.5411, Valid Accuracy: 0.9861, Valid F1: 0.7167
+
+Epoch 4/50, Train Loss: 0.0218, Valid Loss: 0.0106, Time: 1458.90 seconds
+Train AUROC: 0.9267, Train AUPRC: 0.7853, Train Accuracy: 0.9588, Train F1: 0.8749
+Valid AUROC: 0.9649, Valid AUPRC: 0.4585, Valid Accuracy: 0.9795, Valid F1: 0.6393
+
+Epoch 5/50, Train Loss: 0.0195, Valid Loss: 0.0097, Time: 1578.04 seconds
+Train AUROC: 0.9348, Train AUPRC: 0.8089, Train Accuracy: 0.9639, Train F1: 0.8895
+Valid AUROC: 0.9380, Valid AUPRC: 0.4599, Valid Accuracy: 0.9817, Valid F1: 0.6515
+
+Epoch 6/50, Train Loss: 0.0171, Valid Loss: 0.0102, Time: 1547.80 seconds
+Train AUROC: 0.9454, Train AUPRC: 0.8335, Train Accuracy: 0.9686, Train F1: 0.9049
+Valid AUROC: 0.9350, Valid AUPRC: 0.4390, Valid Accuracy: 0.9803, Valid F1: 0.6332
+
+Epoch 7/50, Train Loss: 0.0156, Valid Loss: 0.0100, Time: 1532.05 seconds
+Train AUROC: 0.9497, Train AUPRC: 0.8467, Train Accuracy: 0.9714, Train F1: 0.9128
+Valid AUROC: 0.9149, Valid AUPRC: 0.4269, Valid Accuracy: 0.9809, Valid F1: 0.6294
+
+Epoch 8/50, Train Loss: 0.0146, Valid Loss: 0.0085, Time: 1575.45 seconds
+Train AUROC: 0.9551, Train AUPRC: 0.8593, Train Accuracy: 0.9737, Train F1: 0.9205
+Valid AUROC: 0.8896, Valid AUPRC: 0.4466, Valid Accuracy: 0.9841, Valid F1: 0.6554
+
+Epoch 9/50, Train Loss: 0.0132, Valid Loss: 0.0138, Time: 1584.10 seconds
+Train AUROC: 0.9602, Train AUPRC: 0.8743, Train Accuracy: 0.9767, Train F1: 0.9294
+Valid AUROC: 0.8899, Valid AUPRC: 0.3551, Valid Accuracy: 0.9766, Valid F1: 0.5671
+
+Fold 3 finished. Best Valid Loss: 0.0075 at epoch 3. Time: 13850.57 seconds 
+
+
+Evaluating on pretrain dataset...
+/users/wmqn2362/PhysioNet2025/Founder_PhysioNet/team_code.py:451: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at ../torch/csrc/utils/tensor_new.cpp:274.)
+  all_loss = criterion(torch.tensor(pretrain_outputs), torch.tensor(pretrain_targets)).item()
+Pretrain Dataset Metrics:
+AUROC: 0.9959, AUPRC: 0.8990
+Accuracy: 0.9831, F1: 0.6799
+Loss: 0.1497
+
+
+Evaluating on finetune dataset...
+Finetune Dataset Metrics:
+AUROC: 0.7140, AUPRC: 0.3228
+Accuracy: 0.9260, F1: 0.2023
+Loss: 0.1423
+
+Training the model on the fine-tune data...
+Fine-tune Datastes Size:  18430
+Fold 1
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+Epoch 1/100, Train Loss: 0.3750, Valid Loss: 0.0446, Time: 103.66 seconds
+Train AUROC: 0.6839, Train AUPRC: 0.6461, Train Accuracy: 0.6993, Train F1: 0.5630
+Valid AUROC: 0.9183, Valid AUPRC: 0.6236, Valid Accuracy: 0.9604, Valid F1: 0.7788
+
+Epoch 2/100, Train Loss: 0.1021, Valid Loss: 0.0440, Time: 109.65 seconds
+Train AUROC: 0.7824, Train AUPRC: 0.7252, Train Accuracy: 0.7910, Train F1: 0.7456
+Valid AUROC: 0.9256, Valid AUPRC: 0.5444, Valid Accuracy: 0.9425, Valid F1: 0.7166
+
+Epoch 3/100, Train Loss: 0.0833, Valid Loss: 0.0412, Time: 92.97 seconds
+Train AUROC: 0.8230, Train AUPRC: 0.7572, Train Accuracy: 0.8282, Train F1: 0.8023
+Valid AUROC: 0.9248, Valid AUPRC: 0.5615, Valid Accuracy: 0.9468, Valid F1: 0.7308
+
+Epoch 4/100, Train Loss: 0.0773, Valid Loss: 0.2321, Time: 90.04 seconds
+Train AUROC: 0.8375, Train AUPRC: 0.7808, Train Accuracy: 0.8409, Train F1: 0.8219
+Valid AUROC: 0.8825, Valid AUPRC: 0.3273, Valid Accuracy: 0.8576, Valid F1: 0.5070
+
+Epoch 5/100, Train Loss: 0.0737, Valid Loss: 0.3007, Time: 82.17 seconds
+Train AUROC: 0.8446, Train AUPRC: 0.7864, Train Accuracy: 0.8480, Train F1: 0.8298
+Valid AUROC: 0.8736, Valid AUPRC: 0.3120, Valid Accuracy: 0.8497, Valid F1: 0.4908
+
+Epoch 6/100, Train Loss: 0.0731, Valid Loss: 0.8091, Time: 110.17 seconds
+Train AUROC: 0.8460, Train AUPRC: 0.7867, Train Accuracy: 0.8489, Train F1: 0.8322
+Valid AUROC: 0.8683, Valid AUPRC: 0.2939, Valid Accuracy: 0.8342, Valid F1: 0.4682
+
+Epoch 7/100, Train Loss: 0.0692, Valid Loss: 0.0319, Time: 92.60 seconds
+Train AUROC: 0.8565, Train AUPRC: 0.8027, Train Accuracy: 0.8595, Train F1: 0.8438
+Valid AUROC: 0.9330, Valid AUPRC: 0.6422, Valid Accuracy: 0.9617, Valid F1: 0.7905
+
+Epoch 8/100, Train Loss: 0.0695, Valid Loss: 0.3666, Time: 98.20 seconds
+Train AUROC: 0.8570, Train AUPRC: 0.7972, Train Accuracy: 0.8597, Train F1: 0.8441
+Valid AUROC: 0.8854, Valid AUPRC: 0.3390, Valid Accuracy: 0.8657, Valid F1: 0.5208
+
+Epoch 9/100, Train Loss: 0.0686, Valid Loss: 0.0314, Time: 106.14 seconds
+Train AUROC: 0.8560, Train AUPRC: 0.7967, Train Accuracy: 0.8590, Train F1: 0.8427
+Valid AUROC: 0.9323, Valid AUPRC: 0.6191, Valid Accuracy: 0.9577, Valid F1: 0.7739
+
+Epoch 10/100, Train Loss: 0.0673, Valid Loss: 0.3378, Time: 106.15 seconds
+Train AUROC: 0.8557, Train AUPRC: 0.7962, Train Accuracy: 0.8590, Train F1: 0.8418
+Valid AUROC: 0.8746, Valid AUPRC: 0.3147, Valid Accuracy: 0.8516, Valid F1: 0.4940
+
+Epoch 11/100, Train Loss: 0.0641, Valid Loss: 0.1798, Time: 93.55 seconds
+Train AUROC: 0.8687, Train AUPRC: 0.8140, Train Accuracy: 0.8713, Train F1: 0.8571
+Valid AUROC: 0.8951, Valid AUPRC: 0.3555, Valid Accuracy: 0.8722, Valid F1: 0.5369
+
+Epoch 12/100, Train Loss: 0.0639, Valid Loss: 0.0331, Time: 100.17 seconds
+Train AUROC: 0.8673, Train AUPRC: 0.8133, Train Accuracy: 0.8698, Train F1: 0.8561
+Valid AUROC: 0.9319, Valid AUPRC: 0.6009, Valid Accuracy: 0.9542, Valid F1: 0.7603
+
+Epoch 13/100, Train Loss: 0.0631, Valid Loss: 0.2180, Time: 102.87 seconds
+Train AUROC: 0.8683, Train AUPRC: 0.8132, Train Accuracy: 0.8704, Train F1: 0.8579
+Valid AUROC: 0.8985, Valid AUPRC: 0.3591, Valid Accuracy: 0.8728, Valid F1: 0.5397
+
+Epoch 14/100, Train Loss: 0.0642, Valid Loss: 0.0273, Time: 97.58 seconds
+Train AUROC: 0.8682, Train AUPRC: 0.8123, Train Accuracy: 0.8710, Train F1: 0.8564
+Valid AUROC: 0.9327, Valid AUPRC: 0.6389, Valid Accuracy: 0.9612, Valid F1: 0.7881
+
+Epoch 15/100, Train Loss: 0.0632, Valid Loss: 0.0515, Time: 83.21 seconds
+Train AUROC: 0.8681, Train AUPRC: 0.8121, Train Accuracy: 0.8705, Train F1: 0.8568
+Valid AUROC: 0.9171, Valid AUPRC: 0.4683, Valid Accuracy: 0.9213, Valid F1: 0.6506
+
+Epoch 16/100, Train Loss: 0.0623, Valid Loss: 0.1153, Time: 106.58 seconds
+Train AUROC: 0.8694, Train AUPRC: 0.8159, Train Accuracy: 0.8711, Train F1: 0.8598
+Valid AUROC: 0.9030, Valid AUPRC: 0.3980, Valid Accuracy: 0.8953, Valid F1: 0.5832
+
+Epoch 17/100, Train Loss: 0.0596, Valid Loss: 0.2465, Time: 86.01 seconds
+Train AUROC: 0.8780, Train AUPRC: 0.8261, Train Accuracy: 0.8800, Train F1: 0.8685
+Valid AUROC: 0.8941, Valid AUPRC: 0.3679, Valid Accuracy: 0.8817, Valid F1: 0.5524
+
+Epoch 18/100, Train Loss: 0.0589, Valid Loss: 0.0317, Time: 77.11 seconds
+Train AUROC: 0.8753, Train AUPRC: 0.8225, Train Accuracy: 0.8767, Train F1: 0.8670
+Valid AUROC: 0.9406, Valid AUPRC: 0.6314, Valid Accuracy: 0.9588, Valid F1: 0.7816
+
+Epoch 19/100, Train Loss: 0.0592, Valid Loss: 0.0759, Time: 80.07 seconds
+Train AUROC: 0.8821, Train AUPRC: 0.8272, Train Accuracy: 0.8837, Train F1: 0.8729
+Valid AUROC: 0.9101, Valid AUPRC: 0.4245, Valid Accuracy: 0.9056, Valid F1: 0.6090
+
+Epoch 20/100, Train Loss: 0.0586, Valid Loss: 0.0297, Time: 88.86 seconds
+Train AUROC: 0.8804, Train AUPRC: 0.8309, Train Accuracy: 0.8818, Train F1: 0.8725
+Valid AUROC: 0.9414, Valid AUPRC: 0.6249, Valid Accuracy: 0.9574, Valid F1: 0.7767
+
+Epoch 21/100, Train Loss: 0.0590, Valid Loss: 0.1877, Time: 94.87 seconds
+Train AUROC: 0.8791, Train AUPRC: 0.8273, Train Accuracy: 0.8804, Train F1: 0.8709
+Valid AUROC: 0.9027, Valid AUPRC: 0.3869, Valid Accuracy: 0.8890, Valid F1: 0.5708
+
+Epoch 22/100, Train Loss: 0.0589, Valid Loss: 0.0260, Time: 84.69 seconds
+Train AUROC: 0.8814, Train AUPRC: 0.8316, Train Accuracy: 0.8826, Train F1: 0.8741
+Valid AUROC: 0.9375, Valid AUPRC: 0.6290, Valid Accuracy: 0.9588, Valid F1: 0.7803
+
+Epoch 23/100, Train Loss: 0.0533, Valid Loss: 0.1506, Time: 85.74 seconds
+Train AUROC: 0.8913, Train AUPRC: 0.8380, Train Accuracy: 0.8931, Train F1: 0.8819
+Valid AUROC: 0.9028, Valid AUPRC: 0.3875, Valid Accuracy: 0.8893, Valid F1: 0.5714
+
+Epoch 24/100, Train Loss: 0.0565, Valid Loss: 1.5979, Time: 90.23 seconds
+Train AUROC: 0.8831, Train AUPRC: 0.8318, Train Accuracy: 0.8844, Train F1: 0.8753
+Valid AUROC: 0.8797, Valid AUPRC: 0.3086, Valid Accuracy: 0.8410, Valid F1: 0.4832
+
+Epoch 25/100, Train Loss: 0.0533, Valid Loss: 0.0653, Time: 88.37 seconds
+Train AUROC: 0.8940, Train AUPRC: 0.8424, Train Accuracy: 0.8958, Train F1: 0.8851
+Valid AUROC: 0.9188, Valid AUPRC: 0.4867, Valid Accuracy: 0.9273, Valid F1: 0.6675
+
+Epoch 26/100, Train Loss: 0.0550, Valid Loss: 0.0247, Time: 99.15 seconds
+Train AUROC: 0.8898, Train AUPRC: 0.8399, Train Accuracy: 0.8913, Train F1: 0.8816
+Valid AUROC: 0.9374, Valid AUPRC: 0.6787, Valid Accuracy: 0.9672, Valid F1: 0.8153
+
+Epoch 27/100, Train Loss: 0.0532, Valid Loss: 0.0346, Time: 84.37 seconds
+Train AUROC: 0.8930, Train AUPRC: 0.8433, Train Accuracy: 0.8941, Train F1: 0.8856
+Valid AUROC: 0.9300, Valid AUPRC: 0.5580, Valid Accuracy: 0.9449, Valid F1: 0.7268
+
+Epoch 28/100, Train Loss: 0.0521, Valid Loss: 0.2646, Time: 82.06 seconds
+Train AUROC: 0.8941, Train AUPRC: 0.8444, Train Accuracy: 0.8953, Train F1: 0.8865
+Valid AUROC: 0.8981, Valid AUPRC: 0.3698, Valid Accuracy: 0.8806, Valid F1: 0.5528
+
+Epoch 29/100, Train Loss: 0.0539, Valid Loss: 0.0239, Time: 78.13 seconds
+Train AUROC: 0.8934, Train AUPRC: 0.8433, Train Accuracy: 0.8947, Train F1: 0.8857
+Valid AUROC: 0.9411, Valid AUPRC: 0.6529, Valid Accuracy: 0.9626, Valid F1: 0.7971
+
+Epoch 30/100, Train Loss: 0.0524, Valid Loss: 0.0177, Time: 90.30 seconds
+Train AUROC: 0.8929, Train AUPRC: 0.8441, Train Accuracy: 0.8945, Train F1: 0.8848
+Valid AUROC: 0.9438, Valid AUPRC: 0.7700, Valid Accuracy: 0.9788, Valid F1: 0.8725
+
+Epoch 31/100, Train Loss: 0.0528, Valid Loss: 0.0225, Time: 79.02 seconds
+Train AUROC: 0.8920, Train AUPRC: 0.8437, Train Accuracy: 0.8931, Train F1: 0.8849
+Valid AUROC: 0.9391, Valid AUPRC: 0.6999, Valid Accuracy: 0.9702, Valid F1: 0.8292
+
+Epoch 32/100, Train Loss: 0.0504, Valid Loss: 0.0218, Time: 95.27 seconds
+Train AUROC: 0.9001, Train AUPRC: 0.8551, Train Accuracy: 0.9012, Train F1: 0.8938
+Valid AUROC: 0.9419, Valid AUPRC: 0.6979, Valid Accuracy: 0.9696, Valid F1: 0.8277
+
+Epoch 33/100, Train Loss: 0.0534, Valid Loss: 0.0158, Time: 95.44 seconds
+Train AUROC: 0.8929, Train AUPRC: 0.8386, Train Accuracy: 0.8945, Train F1: 0.8835
+Valid AUROC: 0.9458, Valid AUPRC: 0.7779, Valid Accuracy: 0.9797, Valid F1: 0.8773
+
+Epoch 34/100, Train Loss: 0.0512, Valid Loss: 0.1793, Time: 88.49 seconds
+Train AUROC: 0.8993, Train AUPRC: 0.8528, Train Accuracy: 0.9004, Train F1: 0.8928
+Valid AUROC: 0.9066, Valid AUPRC: 0.4196, Valid Accuracy: 0.9048, Valid F1: 0.6052
+
+Epoch 35/100, Train Loss: 0.0521, Valid Loss: 0.0709, Time: 91.59 seconds
+Train AUROC: 0.8936, Train AUPRC: 0.8453, Train Accuracy: 0.8949, Train F1: 0.8862
+Valid AUROC: 0.9162, Valid AUPRC: 0.4554, Valid Accuracy: 0.9167, Valid F1: 0.6384
+
+Epoch 36/100, Train Loss: 0.0508, Valid Loss: 0.0255, Time: 90.55 seconds
+Train AUROC: 0.8983, Train AUPRC: 0.8508, Train Accuracy: 0.8995, Train F1: 0.8913
+Valid AUROC: 0.9373, Valid AUPRC: 0.6274, Valid Accuracy: 0.9585, Valid F1: 0.7792
+
+Epoch 37/100, Train Loss: 0.0492, Valid Loss: 0.3038, Time: 88.14 seconds
+Train AUROC: 0.9001, Train AUPRC: 0.8497, Train Accuracy: 0.9019, Train F1: 0.8912
+Valid AUROC: 0.9060, Valid AUPRC: 0.3954, Valid Accuracy: 0.8923, Valid F1: 0.5790
+
+Epoch 38/100, Train Loss: 0.0526, Valid Loss: 0.1060, Time: 94.96 seconds
+Train AUROC: 0.8963, Train AUPRC: 0.8505, Train Accuracy: 0.8972, Train F1: 0.8904
+Valid AUROC: 0.9139, Valid AUPRC: 0.4367, Valid Accuracy: 0.9097, Valid F1: 0.6203
+
+Epoch 39/100, Train Loss: 0.0492, Valid Loss: 0.0235, Time: 94.66 seconds
+Train AUROC: 0.9019, Train AUPRC: 0.8544, Train Accuracy: 0.9031, Train F1: 0.8947
+Valid AUROC: 0.9433, Valid AUPRC: 0.6792, Valid Accuracy: 0.9666, Valid F1: 0.8150
+
+Epoch 40/100, Train Loss: 0.0487, Valid Loss: 0.0187, Time: 71.31 seconds
+Train AUROC: 0.9012, Train AUPRC: 0.8481, Train Accuracy: 0.9023, Train F1: 0.8926
+Valid AUROC: 0.9448, Valid AUPRC: 0.7392, Valid Accuracy: 0.9750, Valid F1: 0.8540
+
+Epoch 41/100, Train Loss: 0.0486, Valid Loss: 0.0235, Time: 51.39 seconds
+Train AUROC: 0.9013, Train AUPRC: 0.8571, Train Accuracy: 0.9024, Train F1: 0.8949
+Valid AUROC: 0.9411, Valid AUPRC: 0.6529, Valid Accuracy: 0.9626, Valid F1: 0.7971
+
+Epoch 42/100, Train Loss: 0.0491, Valid Loss: 0.0211, Time: 94.88 seconds
+Train AUROC: 0.9030, Train AUPRC: 0.8546, Train Accuracy: 0.9039, Train F1: 0.8962
+Valid AUROC: 0.9411, Valid AUPRC: 0.7069, Valid Accuracy: 0.9710, Valid F1: 0.8336
+
+Fold 1 finished. Best Valid Loss: 0.0158 at epoch 33. Time: 3821.37 seconds 
+
+Fold 2
+Epoch 1/100, Train Loss: 0.0453, Valid Loss: 0.1353, Time: 91.70 seconds
+Train AUROC: 0.9085, Train AUPRC: 0.8677, Train Accuracy: 0.9098, Train F1: 0.9023
+Valid AUROC: 0.8877, Valid AUPRC: 0.4069, Valid Accuracy: 0.9069, Valid F1: 0.5988
+
+Epoch 2/100, Train Loss: 0.0442, Valid Loss: 0.0192, Time: 107.06 seconds
+Train AUROC: 0.9088, Train AUPRC: 0.8686, Train Accuracy: 0.9101, Train F1: 0.9030
+Valid AUROC: 0.8739, Valid AUPRC: 0.6375, Valid Accuracy: 0.9666, Valid F1: 0.7861
+
+Epoch 3/100, Train Loss: 0.0439, Valid Loss: 0.1581, Time: 103.77 seconds
+Train AUROC: 0.9123, Train AUPRC: 0.8708, Train Accuracy: 0.9134, Train F1: 0.9063
+Valid AUROC: 0.8725, Valid AUPRC: 0.3821, Valid Accuracy: 0.9015, Valid F1: 0.5774
+
+Epoch 4/100, Train Loss: 0.0431, Valid Loss: 0.2136, Time: 88.71 seconds
+Train AUROC: 0.9121, Train AUPRC: 0.8690, Train Accuracy: 0.9135, Train F1: 0.9053
+Valid AUROC: 0.8425, Valid AUPRC: 0.3381, Valid Accuracy: 0.8918, Valid F1: 0.5377
+
+Epoch 5/100, Train Loss: 0.0433, Valid Loss: 0.0880, Time: 93.25 seconds
+Train AUROC: 0.9152, Train AUPRC: 0.8763, Train Accuracy: 0.9166, Train F1: 0.9091
+Valid AUROC: 0.8733, Valid AUPRC: 0.4038, Valid Accuracy: 0.9116, Valid F1: 0.6005
+
+Epoch 6/100, Train Loss: 0.0418, Valid Loss: 0.0284, Time: 102.56 seconds
+Train AUROC: 0.9151, Train AUPRC: 0.8728, Train Accuracy: 0.9164, Train F1: 0.9085
+Valid AUROC: 0.8940, Valid AUPRC: 0.6291, Valid Accuracy: 0.9639, Valid F1: 0.7830
+
+Epoch 7/100, Train Loss: 0.0432, Valid Loss: 0.0201, Time: 96.15 seconds
+Train AUROC: 0.9133, Train AUPRC: 0.8720, Train Accuracy: 0.9145, Train F1: 0.9073
+Valid AUROC: 0.8784, Valid AUPRC: 0.6376, Valid Accuracy: 0.9664, Valid F1: 0.7869
+
+Epoch 8/100, Train Loss: 0.0414, Valid Loss: 0.0211, Time: 77.91 seconds
+Train AUROC: 0.9143, Train AUPRC: 0.8719, Train Accuracy: 0.9156, Train F1: 0.9079
+Valid AUROC: 0.8669, Valid AUPRC: 0.6212, Valid Accuracy: 0.9650, Valid F1: 0.7749
+
+Epoch 9/100, Train Loss: 0.0433, Valid Loss: 0.0251, Time: 55.82 seconds
+Train AUROC: 0.9110, Train AUPRC: 0.8672, Train Accuracy: 0.9124, Train F1: 0.9041
+Valid AUROC: 0.8914, Valid AUPRC: 0.6330, Valid Accuracy: 0.9647, Valid F1: 0.7855
+
+Epoch 10/100, Train Loss: 0.0418, Valid Loss: 0.0297, Time: 47.01 seconds
+Train AUROC: 0.9161, Train AUPRC: 0.8740, Train Accuracy: 0.9175, Train F1: 0.9093
+Valid AUROC: 0.8885, Valid AUPRC: 0.5496, Valid Accuracy: 0.9509, Valid F1: 0.7270
+
+Epoch 11/100, Train Loss: 0.0400, Valid Loss: 0.0227, Time: 69.47 seconds
+Train AUROC: 0.9193, Train AUPRC: 0.8818, Train Accuracy: 0.9207, Train F1: 0.9135
+Valid AUROC: 0.8670, Valid AUPRC: 0.6233, Valid Accuracy: 0.9653, Valid F1: 0.7762
+
+Fold 2 finished. Best Valid Loss: 0.0192 at epoch 2. Time: 933.41 seconds 
+
+Fold 3
+Epoch 1/100, Train Loss: 0.0448, Valid Loss: 0.2853, Time: 54.80 seconds
+Train AUROC: 0.9092, Train AUPRC: 0.8653, Train Accuracy: 0.9103, Train F1: 0.9027
+Valid AUROC: 0.8614, Valid AUPRC: 0.3387, Valid Accuracy: 0.8812, Valid F1: 0.5310
+
+Epoch 2/100, Train Loss: 0.0420, Valid Loss: 0.0270, Time: 48.47 seconds
+Train AUROC: 0.9139, Train AUPRC: 0.8716, Train Accuracy: 0.9152, Train F1: 0.9072
+Valid AUROC: 0.9303, Valid AUPRC: 0.7234, Valid Accuracy: 0.9740, Valid F1: 0.8442
+
+Epoch 3/100, Train Loss: 0.0439, Valid Loss: 0.0238, Time: 42.01 seconds
+Train AUROC: 0.9097, Train AUPRC: 0.8695, Train Accuracy: 0.9105, Train F1: 0.9048
+Valid AUROC: 0.9029, Valid AUPRC: 0.7163, Valid Accuracy: 0.9745, Valid F1: 0.8374
+
+Epoch 4/100, Train Loss: 0.0418, Valid Loss: 0.0214, Time: 52.20 seconds
+Train AUROC: 0.9146, Train AUPRC: 0.8724, Train Accuracy: 0.9155, Train F1: 0.9089
+Valid AUROC: 0.9049, Valid AUPRC: 0.7006, Valid Accuracy: 0.9726, Valid F1: 0.8285
+
+Epoch 5/100, Train Loss: 0.0401, Valid Loss: 0.0198, Time: 53.07 seconds
+Train AUROC: 0.9172, Train AUPRC: 0.8799, Train Accuracy: 0.9181, Train F1: 0.9125
+Valid AUROC: 0.8938, Valid AUPRC: 0.6913, Valid Accuracy: 0.9721, Valid F1: 0.8215
+
+Epoch 6/100, Train Loss: 0.0398, Valid Loss: 0.0197, Time: 46.14 seconds
+Train AUROC: 0.9197, Train AUPRC: 0.8814, Train Accuracy: 0.9208, Train F1: 0.9143
+Valid AUROC: 0.8942, Valid AUPRC: 0.6733, Valid Accuracy: 0.9699, Valid F1: 0.8109
+
+Epoch 7/100, Train Loss: 0.0394, Valid Loss: 0.0212, Time: 43.46 seconds
+Train AUROC: 0.9195, Train AUPRC: 0.8824, Train Accuracy: 0.9205, Train F1: 0.9144
+Valid AUROC: 0.9075, Valid AUPRC: 0.6718, Valid Accuracy: 0.9688, Valid F1: 0.8112
+
+Epoch 8/100, Train Loss: 0.0408, Valid Loss: 0.0216, Time: 68.15 seconds
+Train AUROC: 0.9148, Train AUPRC: 0.8745, Train Accuracy: 0.9158, Train F1: 0.9094
+Valid AUROC: 0.9117, Valid AUPRC: 0.6682, Valid Accuracy: 0.9680, Valid F1: 0.8091
+
+Epoch 9/100, Train Loss: 0.0396, Valid Loss: 0.0192, Time: 74.42 seconds
+Train AUROC: 0.9198, Train AUPRC: 0.8824, Train Accuracy: 0.9205, Train F1: 0.9153
+Valid AUROC: 0.8911, Valid AUPRC: 0.6719, Valid Accuracy: 0.9699, Valid F1: 0.8096
+
+Epoch 10/100, Train Loss: 0.0400, Valid Loss: 0.0361, Time: 47.62 seconds
+Train AUROC: 0.9185, Train AUPRC: 0.8786, Train Accuracy: 0.9192, Train F1: 0.9136
+Valid AUROC: 0.9203, Valid AUPRC: 0.6659, Valid Accuracy: 0.9669, Valid F1: 0.8076
+
+Epoch 11/100, Train Loss: 0.0386, Valid Loss: 0.0216, Time: 48.85 seconds
+Train AUROC: 0.9222, Train AUPRC: 0.8835, Train Accuracy: 0.9230, Train F1: 0.9171
+Valid AUROC: 0.8922, Valid AUPRC: 0.6242, Valid Accuracy: 0.9634, Valid F1: 0.7798
+
+Epoch 12/100, Train Loss: 0.0398, Valid Loss: 0.0210, Time: 47.36 seconds
+Train AUROC: 0.9169, Train AUPRC: 0.8758, Train Accuracy: 0.9179, Train F1: 0.9110
+Valid AUROC: 0.9129, Valid AUPRC: 0.6849, Valid Accuracy: 0.9702, Valid F1: 0.8197
+
+Epoch 13/100, Train Loss: 0.0379, Valid Loss: 0.0238, Time: 44.43 seconds
+Train AUROC: 0.9220, Train AUPRC: 0.8846, Train Accuracy: 0.9230, Train F1: 0.9167
+Valid AUROC: 0.9004, Valid AUPRC: 0.6764, Valid Accuracy: 0.9699, Valid F1: 0.8134
+
+Epoch 14/100, Train Loss: 0.0378, Valid Loss: 0.0186, Time: 47.94 seconds
+Train AUROC: 0.9241, Train AUPRC: 0.8875, Train Accuracy: 0.9252, Train F1: 0.9189
+Valid AUROC: 0.8748, Valid AUPRC: 0.6511, Valid Accuracy: 0.9683, Valid F1: 0.7944
+
+Epoch 15/100, Train Loss: 0.0380, Valid Loss: 0.0759, Time: 70.23 seconds
+Train AUROC: 0.9244, Train AUPRC: 0.8835, Train Accuracy: 0.9253, Train F1: 0.9186
+Valid AUROC: 0.8750, Valid AUPRC: 0.4515, Valid Accuracy: 0.9289, Valid F1: 0.6469
+
+Epoch 16/100, Train Loss: 0.0363, Valid Loss: 0.0223, Time: 41.68 seconds
+Train AUROC: 0.9266, Train AUPRC: 0.8894, Train Accuracy: 0.9274, Train F1: 0.9216
+Valid AUROC: 0.9167, Valid AUPRC: 0.6770, Valid Accuracy: 0.9688, Valid F1: 0.8148
+
+Epoch 17/100, Train Loss: 0.0381, Valid Loss: 0.1111, Time: 58.69 seconds
+Train AUROC: 0.9227, Train AUPRC: 0.8860, Train Accuracy: 0.9235, Train F1: 0.9179
+Valid AUROC: 0.8953, Valid AUPRC: 0.4322, Valid Accuracy: 0.9151, Valid F1: 0.6224
+
+Epoch 18/100, Train Loss: 0.0357, Valid Loss: 0.0233, Time: 43.46 seconds
+Train AUROC: 0.9296, Train AUPRC: 0.8926, Train Accuracy: 0.9305, Train F1: 0.9242
+Valid AUROC: 0.9071, Valid AUPRC: 0.6883, Valid Accuracy: 0.9710, Valid F1: 0.8214
+
+Epoch 19/100, Train Loss: 0.0348, Valid Loss: 0.0190, Time: 47.85 seconds
+Train AUROC: 0.9293, Train AUPRC: 0.8940, Train Accuracy: 0.9303, Train F1: 0.9242
+Valid AUROC: 0.8947, Valid AUPRC: 0.6802, Valid Accuracy: 0.9707, Valid F1: 0.8151
+
+Epoch 20/100, Train Loss: 0.0366, Valid Loss: 0.0225, Time: 46.63 seconds
+Train AUROC: 0.9265, Train AUPRC: 0.8874, Train Accuracy: 0.9277, Train F1: 0.9204
+Valid AUROC: 0.8988, Valid AUPRC: 0.6756, Valid Accuracy: 0.9699, Valid F1: 0.8128
+
+Epoch 21/100, Train Loss: 0.0359, Valid Loss: 0.0216, Time: 48.95 seconds
+Train AUROC: 0.9281, Train AUPRC: 0.8937, Train Accuracy: 0.9293, Train F1: 0.9230
+Valid AUROC: 0.8977, Valid AUPRC: 0.6816, Valid Accuracy: 0.9707, Valid F1: 0.8163
+
+Epoch 22/100, Train Loss: 0.0351, Valid Loss: 0.0209, Time: 57.56 seconds
+Train AUROC: 0.9305, Train AUPRC: 0.8962, Train Accuracy: 0.9314, Train F1: 0.9259
+Valid AUROC: 0.9108, Valid AUPRC: 0.6562, Valid Accuracy: 0.9664, Valid F1: 0.8013
+
+Epoch 23/100, Train Loss: 0.0359, Valid Loss: 0.0198, Time: 46.58 seconds
+Train AUROC: 0.9312, Train AUPRC: 0.8972, Train Accuracy: 0.9318, Train F1: 0.9273
+Valid AUROC: 0.8882, Valid AUPRC: 0.6728, Valid Accuracy: 0.9702, Valid F1: 0.8097
+
+Fold 3 finished. Best Valid Loss: 0.0186 at epoch 14. Time: 1180.56 seconds 
+
+Fold 4
+Epoch 1/100, Train Loss: 0.0389, Valid Loss: 0.0177, Time: 58.35 seconds
+Train AUROC: 0.9201, Train AUPRC: 0.8789, Train Accuracy: 0.9213, Train F1: 0.9138
+Valid AUROC: 0.9287, Valid AUPRC: 0.7696, Valid Accuracy: 0.9794, Valid F1: 0.8712
+
+Epoch 2/100, Train Loss: 0.0370, Valid Loss: 0.0206, Time: 53.22 seconds
+Train AUROC: 0.9252, Train AUPRC: 0.8875, Train Accuracy: 0.9261, Train F1: 0.9202
+Valid AUROC: 0.9179, Valid AUPRC: 0.7153, Valid Accuracy: 0.9737, Valid F1: 0.8386
+
+Epoch 3/100, Train Loss: 0.0381, Valid Loss: 0.0285, Time: 49.36 seconds
+Train AUROC: 0.9257, Train AUPRC: 0.8850, Train Accuracy: 0.9265, Train F1: 0.9197
+Valid AUROC: 0.9112, Valid AUPRC: 0.6249, Valid Accuracy: 0.9615, Valid F1: 0.7802
+
+Epoch 4/100, Train Loss: 0.0367, Valid Loss: 0.0164, Time: 50.29 seconds
+Train AUROC: 0.9268, Train AUPRC: 0.8893, Train Accuracy: 0.9276, Train F1: 0.9218
+Valid AUROC: 0.9140, Valid AUPRC: 0.7025, Valid Accuracy: 0.9723, Valid F1: 0.8306
+
+Epoch 5/100, Train Loss: 0.0374, Valid Loss: 0.0160, Time: 46.58 seconds
+Train AUROC: 0.9266, Train AUPRC: 0.8888, Train Accuracy: 0.9277, Train F1: 0.9209
+Valid AUROC: 0.9110, Valid AUPRC: 0.7265, Valid Accuracy: 0.9753, Valid F1: 0.8444
+
+Epoch 6/100, Train Loss: 0.0354, Valid Loss: 0.1155, Time: 66.30 seconds
+Train AUROC: 0.9295, Train AUPRC: 0.8937, Train Accuracy: 0.9304, Train F1: 0.9244
+Valid AUROC: 0.8818, Valid AUPRC: 0.4365, Valid Accuracy: 0.9216, Valid F1: 0.6309
+
+Epoch 7/100, Train Loss: 0.0358, Valid Loss: 0.0169, Time: 47.38 seconds
+Train AUROC: 0.9290, Train AUPRC: 0.8937, Train Accuracy: 0.9297, Train F1: 0.9244
+Valid AUROC: 0.9120, Valid AUPRC: 0.7174, Valid Accuracy: 0.9742, Valid F1: 0.8393
+
+Epoch 8/100, Train Loss: 0.0352, Valid Loss: 0.0169, Time: 53.35 seconds
+Train AUROC: 0.9308, Train AUPRC: 0.8973, Train Accuracy: 0.9314, Train F1: 0.9268
+Valid AUROC: 0.9168, Valid AUPRC: 0.7217, Valid Accuracy: 0.9745, Valid F1: 0.8423
+
+Epoch 9/100, Train Loss: 0.0367, Valid Loss: 0.1314, Time: 62.28 seconds
+Train AUROC: 0.9286, Train AUPRC: 0.8916, Train Accuracy: 0.9296, Train F1: 0.9233
+Valid AUROC: 0.8974, Valid AUPRC: 0.4304, Valid Accuracy: 0.9135, Valid F1: 0.6198
+
+Epoch 10/100, Train Loss: 0.0362, Valid Loss: 0.1100, Time: 46.47 seconds
+Train AUROC: 0.9288, Train AUPRC: 0.8917, Train Accuracy: 0.9297, Train F1: 0.9236
+Valid AUROC: 0.8876, Valid AUPRC: 0.4396, Valid Accuracy: 0.9208, Valid F1: 0.6322
+
+Epoch 11/100, Train Loss: 0.0371, Valid Loss: 0.0153, Time: 62.60 seconds
+Train AUROC: 0.9250, Train AUPRC: 0.8867, Train Accuracy: 0.9258, Train F1: 0.9199
+Valid AUROC: 0.9235, Valid AUPRC: 0.7338, Valid Accuracy: 0.9756, Valid F1: 0.8500
+
+Epoch 12/100, Train Loss: 0.0368, Valid Loss: 0.0533, Time: 45.87 seconds
+Train AUROC: 0.9255, Train AUPRC: 0.8885, Train Accuracy: 0.9263, Train F1: 0.9207
+Valid AUROC: 0.8923, Valid AUPRC: 0.5088, Valid Accuracy: 0.9409, Valid F1: 0.6938
+
+Epoch 13/100, Train Loss: 0.0373, Valid Loss: 0.0174, Time: 50.70 seconds
+Train AUROC: 0.9260, Train AUPRC: 0.8866, Train Accuracy: 0.9267, Train F1: 0.9208
+Valid AUROC: 0.9168, Valid AUPRC: 0.6996, Valid Accuracy: 0.9718, Valid F1: 0.8289
+
+Epoch 14/100, Train Loss: 0.0353, Valid Loss: 0.0160, Time: 47.66 seconds
+Train AUROC: 0.9299, Train AUPRC: 0.8969, Train Accuracy: 0.9308, Train F1: 0.9257
+Valid AUROC: 0.9082, Valid AUPRC: 0.7043, Valid Accuracy: 0.9729, Valid F1: 0.8311
+
+Epoch 15/100, Train Loss: 0.0374, Valid Loss: 0.0290, Time: 51.59 seconds
+Train AUROC: 0.9254, Train AUPRC: 0.8877, Train Accuracy: 0.9260, Train F1: 0.9209
+Valid AUROC: 0.9045, Valid AUPRC: 0.5978, Valid Accuracy: 0.9577, Valid F1: 0.7615
+
+Epoch 16/100, Train Loss: 0.0360, Valid Loss: 0.0143, Time: 47.78 seconds
+Train AUROC: 0.9286, Train AUPRC: 0.8923, Train Accuracy: 0.9293, Train F1: 0.9240
+Valid AUROC: 0.9085, Valid AUPRC: 0.7355, Valid Accuracy: 0.9764, Valid F1: 0.8492
+
+Epoch 17/100, Train Loss: 0.0347, Valid Loss: 0.0179, Time: 51.57 seconds
+Train AUROC: 0.9296, Train AUPRC: 0.8895, Train Accuracy: 0.9304, Train F1: 0.9236
+Valid AUROC: 0.9296, Valid AUPRC: 0.7125, Valid Accuracy: 0.9726, Valid F1: 0.8374
+
+Epoch 18/100, Train Loss: 0.0355, Valid Loss: 0.0162, Time: 48.13 seconds
+Train AUROC: 0.9289, Train AUPRC: 0.8952, Train Accuracy: 0.9297, Train F1: 0.9248
+Valid AUROC: 0.9086, Valid AUPRC: 0.7113, Valid Accuracy: 0.9737, Valid F1: 0.8353
+
+Epoch 19/100, Train Loss: 0.0373, Valid Loss: 0.0159, Time: 51.23 seconds
+Train AUROC: 0.9258, Train AUPRC: 0.8870, Train Accuracy: 0.9266, Train F1: 0.9205
+Valid AUROC: 0.8966, Valid AUPRC: 0.6879, Valid Accuracy: 0.9715, Valid F1: 0.8199
+
+Epoch 20/100, Train Loss: 0.0348, Valid Loss: 0.0193, Time: 48.75 seconds
+Train AUROC: 0.9301, Train AUPRC: 0.8964, Train Accuracy: 0.9309, Train F1: 0.9259
+Valid AUROC: 0.9367, Valid AUPRC: 0.7083, Valid Accuracy: 0.9715, Valid F1: 0.8346
+
+Epoch 21/100, Train Loss: 0.0353, Valid Loss: 0.0171, Time: 45.68 seconds
+Train AUROC: 0.9286, Train AUPRC: 0.8914, Train Accuracy: 0.9293, Train F1: 0.9237
+Valid AUROC: 0.9333, Valid AUPRC: 0.7228, Valid Accuracy: 0.9737, Valid F1: 0.8438
+
+Epoch 22/100, Train Loss: 0.0358, Valid Loss: 0.0165, Time: 49.77 seconds
+Train AUROC: 0.9273, Train AUPRC: 0.8902, Train Accuracy: 0.9280, Train F1: 0.9223
+Valid AUROC: 0.9148, Valid AUPRC: 0.7140, Valid Accuracy: 0.9737, Valid F1: 0.8375
+
+Epoch 23/100, Train Loss: 0.0344, Valid Loss: 0.0145, Time: 42.85 seconds
+Train AUROC: 0.9306, Train AUPRC: 0.8962, Train Accuracy: 0.9315, Train F1: 0.9259
+Valid AUROC: 0.8976, Valid AUPRC: 0.7298, Valid Accuracy: 0.9761, Valid F1: 0.8440
+
+Epoch 24/100, Train Loss: 0.0341, Valid Loss: 0.0165, Time: 68.04 seconds
+Train AUROC: 0.9317, Train AUPRC: 0.8974, Train Accuracy: 0.9324, Train F1: 0.9274
+Valid AUROC: 0.9392, Valid AUPRC: 0.7452, Valid Accuracy: 0.9761, Valid F1: 0.8576
+
+Epoch 25/100, Train Loss: 0.0346, Valid Loss: 0.0155, Time: 53.14 seconds
+Train AUROC: 0.9310, Train AUPRC: 0.8975, Train Accuracy: 0.9317, Train F1: 0.9268
+Valid AUROC: 0.9256, Valid AUPRC: 0.7440, Valid Accuracy: 0.9767, Valid F1: 0.8562
+
+Fold 4 finished. Best Valid Loss: 0.0143 at epoch 16. Time: 1298.96 seconds 
+
+Fold 5
+Epoch 1/100, Train Loss: 0.0365, Valid Loss: 0.0138, Time: 56.01 seconds
+Train AUROC: 0.9263, Train AUPRC: 0.8903, Train Accuracy: 0.9270, Train F1: 0.9220
+Valid AUROC: 0.9329, Valid AUPRC: 0.7618, Valid Accuracy: 0.9783, Valid F1: 0.8671
+
+Epoch 2/100, Train Loss: 0.0365, Valid Loss: 0.0159, Time: 45.06 seconds
+Train AUROC: 0.9248, Train AUPRC: 0.8876, Train Accuracy: 0.9258, Train F1: 0.9197
+Valid AUROC: 0.9409, Valid AUPRC: 0.7467, Valid Accuracy: 0.9761, Valid F1: 0.8585
+
+Epoch 3/100, Train Loss: 0.0374, Valid Loss: 0.0147, Time: 46.78 seconds
+Train AUROC: 0.9238, Train AUPRC: 0.8889, Train Accuracy: 0.9246, Train F1: 0.9195
+Valid AUROC: 0.9452, Valid AUPRC: 0.7666, Valid Accuracy: 0.9783, Valid F1: 0.8706
+
+Epoch 4/100, Train Loss: 0.0372, Valid Loss: 0.0166, Time: 49.74 seconds
+Train AUROC: 0.9259, Train AUPRC: 0.8872, Train Accuracy: 0.9267, Train F1: 0.9205
+Valid AUROC: 0.9485, Valid AUPRC: 0.7482, Valid Accuracy: 0.9759, Valid F1: 0.8594
+
+Epoch 5/100, Train Loss: 0.0361, Valid Loss: 0.0178, Time: 47.46 seconds
+Train AUROC: 0.9270, Train AUPRC: 0.8916, Train Accuracy: 0.9277, Train F1: 0.9225
+Valid AUROC: 0.9409, Valid AUPRC: 0.7233, Valid Accuracy: 0.9731, Valid F1: 0.8441
+
+Epoch 6/100, Train Loss: 0.0367, Valid Loss: 0.0148, Time: 47.03 seconds
+Train AUROC: 0.9269, Train AUPRC: 0.8900, Train Accuracy: 0.9280, Train F1: 0.9216
+Valid AUROC: 0.9355, Valid AUPRC: 0.7557, Valid Accuracy: 0.9775, Valid F1: 0.8637
+
+Epoch 7/100, Train Loss: 0.0370, Valid Loss: 0.0155, Time: 44.40 seconds
+Train AUROC: 0.9224, Train AUPRC: 0.8852, Train Accuracy: 0.9232, Train F1: 0.9177
+Valid AUROC: 0.9371, Valid AUPRC: 0.7563, Valid Accuracy: 0.9775, Valid F1: 0.8642
+
+Epoch 8/100, Train Loss: 0.0363, Valid Loss: 0.0192, Time: 48.06 seconds
+Train AUROC: 0.9257, Train AUPRC: 0.8885, Train Accuracy: 0.9265, Train F1: 0.9208
+Valid AUROC: 0.9357, Valid AUPRC: 0.7355, Valid Accuracy: 0.9750, Valid F1: 0.8516
+
+Epoch 9/100, Train Loss: 0.0382, Valid Loss: 0.0165, Time: 62.58 seconds
+Train AUROC: 0.9239, Train AUPRC: 0.8828, Train Accuracy: 0.9246, Train F1: 0.9180
+Valid AUROC: 0.9465, Valid AUPRC: 0.7408, Valid Accuracy: 0.9750, Valid F1: 0.8549
+
+Epoch 10/100, Train Loss: 0.0366, Valid Loss: 0.0154, Time: 47.98 seconds
+Train AUROC: 0.9272, Train AUPRC: 0.8941, Train Accuracy: 0.9280, Train F1: 0.9232
+Valid AUROC: 0.9445, Valid AUPRC: 0.7805, Valid Accuracy: 0.9799, Valid F1: 0.8787
+
+Fold 5 finished. Best Valid Loss: 0.0138 at epoch 1. Time: 495.12 seconds 
+
+Model saved to /users/wmqn2362/PhysioNet2025/ECGFounder_add_BasicAUG_0615/Model/Model/model.pth
+Done.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: ecgfounder
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 0.0005
+Batch Size: 256
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 0.0001
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.2
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.3
+Use Shift Augmentation: False, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: False, Max Probability: 0.3, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 1.0, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.02, Probability: 0.3
+Use Cutout Augmentation: False, Max Ratio: 0.4, Probability: 0.3
+>>>>>>>>>Power Line Noise:<<<<<<<<<<
+Add 50Hz Power Noise: False, Probability: 0.5
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+/users/wmqn2362/.local/lib/python3.12/site-packages/torch/nn/modules/conv.py:306: UserWarning: Plan failed with a cudnnException: CUDNN_BACKEND_EXECUTION_PLAN_DESCRIPTOR: cudnnFinalize Descriptor Failed cudnn_status: CUDNN_STATUS_NOT_SUPPORTED (Triggered internally at ../aten/src/ATen/native/cudnn/Conv_v8.cpp:919.)
+  return F.conv1d(input, weight, bias, self.stride,
+Challenge score: 0.753
+AUROC: 0.964
+AUPRC: 0.774
+Accuracy: 0.973
+F-measure: 0.616
+

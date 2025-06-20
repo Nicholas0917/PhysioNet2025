@@ -1,3 +1,6 @@
+# todo:
+# Add ECG Augmentation
+
 #!/usr/bin/env python
 
 # Edit this script to add your team's code. Some functions are *required*, but you can edit most parts of the required functions,
@@ -42,23 +45,74 @@ class Config:
     def __init__(self):
         self.model_name = 'ecgfounder'
         self.use_pretrained = True
-        self.pretrain_num_epochs = 30
+        self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 5e-4  # Increased learning rate
         self.pretrain_batch_size = 256  # Increased with gradient accumulation
         self.gradient_accumulation_steps = 4  # For effective batch size of 256
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-4  # Increased learning rate
-        self.dropout_rate = 0.25
+        self.dropout_rate = 0.3
         self.net1d_dropout_rate = 0.25
         self.batch_size = 32
         self.early_stop_patience = 8
-        self.num_preprocess_workers = 8  # Keep at 1 to limit memory usage
+        self.num_preprocess_workers = 2  # Keep at 1 to limit memory usage
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
+
+        # Focal Loss parameters
+        self.pretrain_focal_alpha = 0.8
+        self.pretrain_focal_gamma = 2
+        self.finetune_focal_alpha = 0.8
+        self.finetune_focal_gamma = 2
+        
+        # Data augmentation parameters with probabilities
+        self.use_noise_aug = True
+        self.noise_std = 0.03
+        self.noise_aug_prob = 0.8
+        
+        self.use_scaling_aug = True
+        self.scaling_min = 0.5
+        self.scaling_max = 2.0
+        self.scaling_aug_prob = 0.8
+        
+        self.use_flip_aug = False
+        self.flip_aug_prob = 0.2
+        
+        self.use_shift_aug = True
+        self.shift_max_ratio = 0.8  # Max shift ratio of signal length
+        self.shift_aug_prob = 0.5
+        
+        self.use_drop_aug = False
+        self.drop_max_prob = 0.05  # Max drop probability
+        self.drop_aug_prob = 0.3
+        
+        self.add_power_noise = True
+        self.power_noise_amplitude = 0.03
+        self.power_noise_prob = 0.8
+        
+        self.use_sine_wave_aug = False
+        self.sine_min_freq = 0.001
+        self.sine_max_freq = 0.02
+        self.sine_max_amp = 0.08
+        self.sine_aug_prob = 0.3
+        
+        self.use_square_wave_aug = False
+        self.square_min_freq = 0.001
+        self.square_max_freq = 0.1
+        self.square_max_amp = 0.08
+        self.square_aug_prob = 0.3
+        
+        self.use_cutout_aug = False
+        self.cutout_max_ratio = 0.2  # Max cutout ratio of signal length
+        self.cutout_aug_prob = 0.3
+        
+        self.use_lead_mixing_aug = False
+        self.lead_mixing_lambda = 0.2  # Mixing coefficient
+        self.lead_mixing_prob = 0.5    # Probability of applying
 
     def get_meta_feature_dim(self):
         dim = 0
@@ -92,6 +146,18 @@ class Config:
         print(f"Use Sex: {self.use_sex}")
         print(f"Use Signal Stats: {self.use_signal_stats}")
         print(f"Meta Feature Dimension: {self.get_meta_feature_dim()}")
+        
+        print(">>>>>>>>>Data Augmentation:<<<<<<<<<<")
+        print(f"Use Noise Augmentation: {self.use_noise_aug}, Probability: {self.noise_aug_prob}")
+        print(f"Use Scaling Augmentation: {self.use_scaling_aug}, Probability: {self.scaling_aug_prob}")
+        print(f"Use Flip Augmentation: {self.use_flip_aug}, Probability: {self.flip_aug_prob}")
+        print(f"Use Shift Augmentation: {self.use_shift_aug}, Max Ratio: {self.shift_max_ratio}, Probability: {self.shift_aug_prob}")
+        print(f"Use Drop Augmentation: {self.use_drop_aug}, Max Probability: {self.drop_max_prob}, Probability: {self.drop_aug_prob}")
+        print(f"Use 50Hz Power Noise: {self.add_power_noise}, Probability: {self.power_noise_prob}")
+        print(f"Use Sine Wave Augmentation: {self.use_sine_wave_aug}, Freq Range: [{self.sine_min_freq}, {self.sine_max_freq}], Max Amp: {self.sine_max_amp}, Probability: {self.sine_aug_prob}")
+        print(f"Use Square Wave Augmentation: {self.use_square_wave_aug}, Freq Range: [{self.square_min_freq}, {self.square_max_freq}], Max Amp: {self.square_max_amp}, Probability: {self.square_aug_prob}")
+        print(f"Use Cutout Augmentation: {self.use_cutout_aug}, Max Ratio: {self.cutout_max_ratio}, Probability: {self.cutout_aug_prob}")
+        print(f"Use Lead Mixing Augmentation: {self.use_lead_mixing_aug}, Lambda: {self.lead_mixing_lambda}, Probability: {self.lead_mixing_prob}")
 
         print(">>>>>>>>>Device:<<<<<<<<<<")
         print(f"Device: {self.device}")
@@ -134,11 +200,11 @@ def train_model(data_folder, model_folder, verbose):
     if num_records == 0:
         raise FileNotFoundError('No data were provided.')
     
-    # divide the records according to the source
+    # divide the records according to the source using parallel processing
     code15_records = []
     PTBXL_records = []
     SaMiTrop_records = []
-
+    
     for record in records:
         record_path = os.path.join(data_folder, record)
         header = load_header(record_path)
@@ -173,7 +239,7 @@ def train_model(data_folder, model_folder, verbose):
     # print(f"Data preprocessing time: {end_time - start_time:.2f} seconds")
     
     start_time = time.time()
-    dataset = ECGDataset(Code15_records_pretrain)
+    dataset = ECGDataset(Code15_records_pretrain, is_training=True)
     end_time = time.time()
     # print(f"ECGDataset initialization time: {end_time - start_time:.4f} seconds")
     # print_memory_usage("After creating dataset")
@@ -196,16 +262,20 @@ def train_model(data_folder, model_folder, verbose):
     for param in model.parameters():
         param.requires_grad = True
 
-    # Fit the model with FocalLoss - use higher alpha for class imbalance
-    criterion = FocalLoss(alpha=0.8, gamma=2, logits=True)
+    # Initialize FocalLoss with config parameters for pretraining
+    criterion = FocalLoss(
+        alpha=config.pretrain_focal_alpha,
+        gamma=config.pretrain_focal_gamma,
+        logits=True
+    )
     # criterion = SampleWeightedLoss(beta=1.5)
     optimizer = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
         lr=learning_rate,
-        weight_decay=1e-4
+        weight_decay=2e-4
     )
     # Warmup implementation using LambdaLR
-    warmup_epochs = int(num_epochs * 0.2)
+    warmup_epochs = int(num_epochs * 0.1)
     def lr_lambda(epoch):
         if epoch < warmup_epochs:
             return 0.1 + (epoch / warmup_epochs) * 0.9  # Linear warmup
@@ -214,14 +284,14 @@ def train_model(data_folder, model_folder, verbose):
     # Use LambdaLR for warmup phase
     warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
     
-    # Use ReduceLROnPlateau after warmup
-    reduce_lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, 
-        mode='min',
-        patience=3,
-        factor=0.5,
-        threshold=0.001
-    )
+    # Disabled ReduceLROnPlateau per request, using only Warmup + Cosine Annealing
+    # reduce_lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer, 
+    #     mode='min',
+    #     patience=3,
+    #     factor=0.5,
+    #     threshold=0.001
+    # )
     scaler = torch.amp.GradScaler('cuda')
     
     # Enable automatic mixed precision
@@ -232,7 +302,7 @@ def train_model(data_folder, model_folder, verbose):
         targets = [dataset[i][1] for i in range(len(dataset))]
         weights = np.zeros_like(targets, dtype=np.float32)
         weights[np.isclose(targets, 0.0)] = 1.0
-        weights[np.isclose(targets, 1.0)] = 10.0
+        weights[np.isclose(targets, 1.0)] = 50.0
         return weights
 
     X = [dataset[i][0] for i in range(len(dataset))]
@@ -257,6 +327,7 @@ def train_model(data_folder, model_folder, verbose):
                               num_workers=config.num_preprocess_workers)
 
         best_loss = float('inf')
+        best_auprc = 0.0  # Initialize best AUPRC score
         best_epoch = 0
         start_time = time.time()
 
@@ -323,6 +394,14 @@ def train_model(data_folder, model_folder, verbose):
             # Verify data before metrics
             val_outputs_arr = np.array(val_outputs)
             val_targets_arr = np.array(val_targets)
+            
+            # Check for NaN values
+            if np.isnan(val_outputs_arr).any():
+                print(f"WARNING: val_outputs contains {np.isnan(val_outputs_arr).sum()} NaN values")
+                val_outputs_arr = np.nan_to_num(val_outputs_arr, nan=0.0)
+            if np.isnan(val_targets_arr).any():
+                print(f"WARNING: val_targets contains {np.isnan(val_targets_arr).sum()} NaN values")
+                val_targets_arr = np.nan_to_num(val_targets_arr, nan=0.0)
 
             val_auroc = roc_auc_score(val_targets_arr, np.round(val_outputs_arr))
             val_auprc = average_precision_score(val_targets_arr, np.round(val_outputs_arr))
@@ -331,8 +410,9 @@ def train_model(data_folder, model_folder, verbose):
             
             if epoch < warmup_epochs:
                 warmup_scheduler.step()
-            else:
-                reduce_lr_scheduler.step(val_loss)
+            # Disabled ReduceLROnPlateau step per request
+            # else:
+            #     reduce_lr_scheduler.step(val_loss)
 
             epoch_end_time = time.time()
             epoch_duration = epoch_end_time - epoch_start_time
@@ -341,12 +421,17 @@ def train_model(data_folder, model_folder, verbose):
             print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
             print(f'Valid AUROC: {val_auroc:.4f}, Valid AUPRC: {val_auprc:.4f}, Valid Accuracy: {val_accuracy:.4f}, Valid F1: {val_f1:.4f}\n')
 
-            if val_loss < best_loss:
-                best_loss = val_loss
+            # Track best AUPRC score for early stopping
+            if val_auprc > best_auprc:
+                best_auprc = val_auprc
                 best_epoch = epoch
                 best_model = model.state_dict()  # Save state_dict only
+                # Reset counter since we got a better AUPRC
+                epochs_no_improve = 0
             else:
-                if epoch - best_epoch > early_stop_patience:
+                epochs_no_improve += 1
+                if epochs_no_improve >= early_stop_patience:
+                    print(f"Early stopping: Valid AUPRC not improved for {early_stop_patience} epochs")
                     break
 
         end_time = time.time()
@@ -359,18 +444,6 @@ def train_model(data_folder, model_folder, verbose):
     # print_memory_usage()
     
     ############################################################################
-    # fine-tune stage
-    if verbose:
-        print('Training the model on the fine-tune data...')
-
-    finetune_records = PTBXL_records + SaMiTrop_records + Code15_records_finetune
-    print("Fine-tune Datastes Size: ",len(finetune_records))
-    
-    for record in finetune_records:
-        data_preprocess(record)
-    dataset = ECGDataset(finetune_records)
-    # print("\nAfter loading pretrain dataset:")
-    # print_memory_usage()
 
     # Evaluate on pretrain dataset
     print("\nEvaluating on pretrain dataset...")
@@ -378,7 +451,7 @@ def train_model(data_folder, model_folder, verbose):
     pretrain_outputs = []
     pretrain_targets = []
     
-    pretrain_loader = DataLoader(ECGDataset(Code15_records_pretrain),
+    pretrain_loader = DataLoader(ECGDataset(Code15_records_pretrain, is_training=False),
                            batch_size=batch_size,
                            shuffle=False,
                            num_workers=config.num_preprocess_workers)
@@ -400,9 +473,12 @@ def train_model(data_folder, model_folder, verbose):
     accuracy = accuracy_score(pretrain_targets, np.round(pretrain_outputs))
     f1 = f1_score(pretrain_targets, np.round(pretrain_outputs))
     
-    # Calculate loss
+    # Calculate loss - convert to numpy array first for better performance
+    pretrain_outputs_arr = np.array(pretrain_outputs, dtype=np.float32)
+    pretrain_targets_arr = np.array(pretrain_targets, dtype=np.float32)
     criterion = FocalLoss(alpha=0.8, gamma=2, logits=True)
-    all_loss = criterion(torch.tensor(pretrain_outputs), torch.tensor(pretrain_targets)).item()
+    all_loss = criterion(torch.from_numpy(pretrain_outputs_arr), 
+                        torch.from_numpy(pretrain_targets_arr)).item()
     
     print(f"Pretrain Dataset Metrics:")
     print(f"AUROC: {auroc:.4f}, AUPRC: {auprc:.4f}")
@@ -410,12 +486,16 @@ def train_model(data_folder, model_folder, verbose):
     print(f"Loss: {all_loss:.4f}\n")
 
     # Evaluate on finetune dataset
+    finetune_records = PTBXL_records + SaMiTrop_records + Code15_records_finetune
+    for record in finetune_records:
+        data_preprocess(record)
+
     print("\nEvaluating on finetune dataset...")
     model.eval()
     finetune_outputs = []
     finetune_targets = []
     
-    finetune_loader = DataLoader(dataset,
+    finetune_loader = DataLoader(ECGDataset(finetune_records, is_training=False),
                            batch_size=batch_size,
                            shuffle=False,
                            num_workers=config.num_preprocess_workers)
@@ -437,9 +517,12 @@ def train_model(data_folder, model_folder, verbose):
     accuracy = accuracy_score(finetune_targets, np.round(finetune_outputs))
     f1 = f1_score(finetune_targets, np.round(finetune_outputs))
     
-    # Calculate loss
+    # Calculate loss - convert to numpy array first for better performance
+    finetune_outputs_arr = np.array(finetune_outputs, dtype=np.float32)
+    finetune_targets_arr = np.array(finetune_targets, dtype=np.float32)
     criterion = FocalLoss(alpha=0.8, gamma=2, logits=True)
-    all_loss = criterion(torch.tensor(finetune_outputs), torch.tensor(finetune_targets)).item()
+    all_loss = criterion(torch.from_numpy(finetune_outputs_arr),
+                        torch.from_numpy(finetune_targets_arr)).item()
     
     print(f"Finetune Dataset Metrics:")
     print(f"AUROC: {auroc:.4f}, AUPRC: {auprc:.4f}")
@@ -447,6 +530,15 @@ def train_model(data_folder, model_folder, verbose):
     print(f"Loss: {all_loss:.4f}\n")
 
     ############################################################################
+    # fine-tune stage
+    if verbose:
+        print('Training the model on the fine-tune data...')
+    
+    print("Fine-tune Datastes Size: ",len(finetune_records))
+    dataset = ECGDataset(finetune_records, is_training=True)
+    # print("\nAfter loading pretrain dataset:")
+    # print_memory_usage()
+    
     # Train the models.
     # Define the parameters using config.
     num_epochs = config.num_epochs
@@ -463,7 +555,7 @@ def train_model(data_folder, model_folder, verbose):
             else:
                 param.requires_grad = False
 
-    optimizer = torch.optim.Adam(
+    optimizer = torch.optim.AdamW(
             filter(lambda p: p.requires_grad, model.parameters()),
             lr=learning_rate,
             weight_decay=1e-5
@@ -500,6 +592,7 @@ def train_model(data_folder, model_folder, verbose):
                                 )
 
         best_loss = float('inf')
+        best_auprc = 0.0  # Initialize best AUPRC score
         best_epoch = 0
         start_time = time.time()
 
@@ -567,12 +660,17 @@ def train_model(data_folder, model_folder, verbose):
             print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
             print(f'Valid AUROC: {val_auroc:.4f}, Valid AUPRC: {val_auprc:.4f}, Valid Accuracy: {val_accuracy:.4f}, Valid F1: {val_f1:.4f}\n')
 
-            if val_loss < best_loss:
-                best_loss = val_loss
+            # Track best AUPRC score for early stopping
+            if val_auprc > best_auprc:
+                best_auprc = val_auprc
                 best_epoch = epoch
                 best_model = model.state_dict()
+                # Reset counter since we got a better AUPRC
+                epochs_no_improve = 0
             else:
-                if epoch - best_epoch > early_stop_patience:
+                epochs_no_improve += 1
+                if epochs_no_improve >= early_stop_patience:
+                    print(f"Early stopping: Valid AUPRC not improved for {early_stop_patience} epochs")
                     break
     
         end_time = time.time()
@@ -694,12 +792,6 @@ def print_memory_usage(extra_info=""):
     print(f"Memory Used %: {vm.percent}%")
     print("===================================\n")
 
-# helper function to load the source
-def get_source(string):
-    source_string = '# Source:'
-    source, has_source = get_variable(string, source_string)
-    return source
-
 # Extract your features.
 def data_preprocess(record):
     os.makedirs(config.cache_folder, exist_ok=True)
@@ -723,16 +815,24 @@ def data_preprocess(record):
         one_hot_encoding_sex[2] = True
 
     signal, fields = load_signals(record)
-    signal = signal.astype(np.float32)
+    channels = fields['sig_name']
 
+    # Reorder the channels in case they are in a different order in the signal data.
+    reference_channels = ['I', 'II', 'III', 'AVR', 'AVL', 'AVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+    num_channels = len(reference_channels)
+    signal = reorder_signal(signal, channels, reference_channels)
+
+    signal = signal.astype(np.float32)
+    
     # Standardize all data to 500Hz
-    if source == 'PTB-XL':
-        original_fs = 500  # Already at target fs
-    elif source == 'CODE-15%':
-        original_fs = 400  # Example - confirm actual source fs
-    elif source == 'SaMi-Trop':
-        original_fs = 400  # Example - confirm actual source fs
-        
+    # if source == 'PTB-XL':
+    #     original_fs = 500  # Already at target fs
+    # elif source == 'CODE-15%':
+    #     original_fs = 400  # Example - confirm actual source fs
+    # elif source == 'SaMi-Trop':
+    #     original_fs = 400  # Example - confirm actual source fs
+
+    original_fs = get_sampling_frequency(header)
     target_fs = 500
     if original_fs != target_fs:
         target_length = int(signal.shape[0] * target_fs / original_fs)
@@ -828,8 +928,9 @@ def save_model(model_folder, state_dict):
 ################################################################################
 
 class ECGDataset(Dataset):
-    def __init__(self, records):
+    def __init__(self, records, is_training=True):
         self.records = records
+        self.is_training = is_training
         # Don't preload all paths to save memory
         self.cache_folder = config.cache_folder
 
@@ -843,6 +944,10 @@ class ECGDataset(Dataset):
         try:
             with open(signal_path, 'rb') as f:
                 signal = np.load(f)
+                # Check for NaN values in signal
+                if np.isnan(signal).any():
+                    print(f"WARNING: Signal contains NaN values in {signal_path}")
+                    signal = np.nan_to_num(signal, nan=0.0)
         except Exception as e:
             print(f"Error loading {signal_path}: {str(e)}")
             raise
@@ -880,9 +985,218 @@ class ECGDataset(Dataset):
             meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
             ptr += 2
 
+        # Only apply data augmentation during training
+        if self.is_training:
+            if config.use_noise_aug and np.random.rand() < config.noise_aug_prob:
+                signal = self._add_noise(signal)
+                
+            if config.use_scaling_aug and np.random.rand() < config.scaling_aug_prob:
+                signal = self._scaling(signal)
+                
+            if config.use_flip_aug and np.random.rand() < config.flip_aug_prob:
+                signal = np.ascontiguousarray(self._flip(signal))
+                
+            if config.use_shift_aug and np.random.rand() < config.shift_aug_prob:
+                signal = self._shift(signal)
+                
+            if config.use_drop_aug and np.random.rand() < config.drop_aug_prob:
+                signal = self._drop(signal)
+            
+            if config.add_power_noise and np.random.rand() < config.power_noise_prob:
+                signal = self._add_power_noise(signal)
+                
+            if config.use_sine_wave_aug and np.random.rand() < config.sine_aug_prob:
+                signal = self._sine_wave(signal)
+                
+            if config.use_square_wave_aug and np.random.rand() < config.square_aug_prob:
+                signal = self._square_wave(signal)
+                
+            if config.use_cutout_aug and np.random.rand() < config.cutout_aug_prob:
+                signal = self._cutout(signal)
+                
+            if config.use_lead_mixing_aug and np.random.rand() < config.lead_mixing_prob:
+                signal = self._lead_mixing_augmentation(signal, config.lead_mixing_lambda)
+
+            # Ensure signal is contiguous in memory and float32
+            signal = np.ascontiguousarray(signal).astype(np.float32)
+            meta_features = meta_features.astype(np.float32)
+            
         features = [signal, meta_features]
 
         return features, label
+        
+    def _add_noise(self, signal):
+        """Add Gaussian noise with zero mean and fixed standard deviation"""
+        noise = np.random.normal(0, config.noise_std, signal.shape)
+        augmented = signal + noise
+        if np.isnan(augmented).any():
+            print("WARNING: NaN detected after _add_noise")
+            augmented = np.nan_to_num(augmented, nan=0.0)
+        return augmented
+        
+    def _scaling(self, signal):
+        """Apply random scaling to each lead between [0.5, 2.0] with numerical stability checks"""
+        scaling_factors = np.random.uniform(config.scaling_min, config.scaling_max, signal.shape[0])
+        scaled = signal * scaling_factors[:, np.newaxis]
+        # Ensure no extreme values
+        scaled = np.clip(scaled, -1e4, 1e4)
+        if np.isnan(scaled).any():
+            print("WARNING: NaN detected after _scaling")
+        return np.nan_to_num(scaled, nan=0.0, posinf=1e4, neginf=-1e4)
+        
+    def _flip(self, signal):
+        """Flip the signal vertically (up-down) by multiplying -1"""
+        flipped = signal * -1
+        if np.isnan(flipped).any():
+            print("WARNING: NaN detected after _flip")
+            flipped = np.nan_to_num(flipped, nan=0.0)
+        return flipped
+        
+    def _shift(self, signal):
+        """Apply cyclic shift to the signal"""
+        length = signal.shape[1]
+        max_shift = int(length * config.shift_max_ratio)
+        shift_amount = np.random.randint(-max_shift, max_shift + 1)
+        
+        # Apply cyclic shift using np.roll
+        shifted = np.roll(signal, shift_amount, axis=1)
+        if np.isnan(shifted).any():
+            print("WARNING: NaN detected after _shift")
+            shifted = np.nan_to_num(shifted, nan=0.0)
+        return shifted
+        
+    def _drop(self, signal):
+        """Randomly drop signal points with probability [0, 0.3]"""
+        mask = np.random.rand(*signal.shape) > config.drop_max_prob
+        dropped = signal * mask
+        if np.isnan(dropped).any():
+            print("WARNING: NaN detected after _drop")
+            dropped = np.nan_to_num(dropped, nan=0.0)
+        return dropped
+        
+    def _sine_wave(self, signal):
+        """Add sine wave with random frequency and amplitude"""
+        length = signal.shape[1]
+        t = np.arange(length)
+        
+        # Random frequency and amplitude
+        freq = np.random.uniform(config.sine_min_freq, config.sine_max_freq)
+        amp = np.random.uniform(0, config.sine_max_amp)
+        
+        # Generate sine wave
+        sine = amp * np.sin(2 * np.pi * freq * t)
+        
+        # Add to each channel
+        augmented = signal + sine[np.newaxis, :]
+        if np.isnan(augmented).any():
+            print("WARNING: NaN detected after _sine_wave")
+            augmented = np.nan_to_num(augmented, nan=0.0)
+        return augmented
+        
+    def _square_wave(self, signal):
+        """Add square wave with random frequency and amplitude"""
+        length = signal.shape[1]
+        t = np.arange(length)
+        
+        # Random frequency and amplitude
+        freq = np.random.uniform(config.square_min_freq, config.square_max_freq)
+        amp = np.random.uniform(0, config.square_max_amp)
+        
+        # Generate square wave
+        square = amp * np.sign(np.sin(2 * np.pi * freq * t))
+        
+        # Add to each channel
+        augmented = signal + square[np.newaxis, :]
+        if np.isnan(augmented).any():
+            print("WARNING: NaN detected after _square_wave")
+            augmented = np.nan_to_num(augmented, nan=0.0)
+        return augmented
+        
+    def _cutout(self, signal):
+        """Randomly cutout segments from random leads"""
+        length = signal.shape[1]
+        max_cutout = int(length * config.cutout_max_ratio)
+        if max_cutout == 0:
+            return signal
+            
+        # Randomly select leads to apply cutout (at least 1 lead)
+        num_leads = signal.shape[0]
+        num_cutout_leads = np.random.randint(1, num_leads + 1)
+        cutout_leads = np.random.choice(num_leads, num_cutout_leads, replace=False)
+        
+        # Apply cutout to selected leads
+        for lead in cutout_leads:
+            cutout_width = np.random.randint(1, max_cutout + 1)
+            start = np.random.randint(0, length - cutout_width + 1)
+            signal[lead, start:start+cutout_width] = 0
+            
+        if np.isnan(signal).any():
+            print("WARNING: NaN detected after _cutout")
+            signal = np.nan_to_num(signal, nan=0.0)
+        return signal
+        
+    def _add_power_noise(self, signal):
+        """Add 50Hz power line noise as data augmentation with numerical stability checks"""
+        # Calculate noise amplitude relative to signal std
+        signal_std = np.std(signal)
+        if signal_std > 0:
+            amplitude = min(config.power_noise_amplitude * signal_std, 0.1)  # Cap amplitude
+            # Generate 50Hz sine wave with random phase
+            length = signal.shape[1]
+            t = np.arange(length) / 500.0  # Sampling rate is 500Hz
+            phase = np.random.uniform(0, 2 * np.pi)
+            power_noise = amplitude * np.sin(2 * np.pi * 50 * t + phase)
+            # Add to each channel with clipping
+            signal = signal + power_noise
+            signal = np.clip(signal, -1e4, 1e4)
+            
+        if np.isnan(signal).any():
+            print("WARNING: NaN detected after _add_power_noise")
+        return np.nan_to_num(signal, nan=0.0, posinf=1e4, neginf=-1e4)
+
+    def _lead_mixing_augmentation(self, signal, lambda_val=0.2):
+        """Data augmentation by mixing leads with numerical stability checks"""
+        try:
+            # Method 1: Pearson correlation with stability checks
+            signal_std = np.std(signal, axis=1, keepdims=True)
+            signal_mean = np.mean(signal, axis=1, keepdims=True)
+            
+            # Avoid division by zero
+            signal_std[signal_std < 1e-8] = 1e-8
+            normalized = (signal - signal_mean) / signal_std
+            
+            # Compute correlation matrix safely
+            corr_matrix = np.corrcoef(normalized)
+            corr_matrix = np.nan_to_num(corr_matrix, nan=0.0)
+            
+            # Construct adjacency matrix
+            A = np.abs(corr_matrix)
+            np.fill_diagonal(A, 0)
+            
+            # Normalize rows safely
+            row_sums = A.sum(axis=1, keepdims=True)
+            row_sums[row_sums < 1e-8] = 1.0  # Avoid division by zero
+            A = A / row_sums
+            
+            # Generate new signal safely
+            new_signal = np.zeros_like(signal)
+            for i in range(signal.shape[0]):
+                if np.any(A[i] > 0):
+                    weights = A[i].reshape(-1, 1)
+                    new_signal[i] = np.sum(signal * weights, axis=0)
+            
+            # Mix signals with clipping
+            augmented = (1 - lambda_val) * signal + lambda_val * new_signal
+            augmented = np.clip(augmented, -1e4, 1e4)
+            
+            if np.isnan(augmented).any():
+                print("WARNING: NaN detected after _lead_mixing_augmentation")
+                augmented = np.nan_to_num(augmented, nan=0.0)
+            return augmented
+            
+        except Exception as e:
+            print(f"Lead mixing failed: {str(e)}")
+            return signal  # Fallback to original signal
 
 ################################################################################
 #
