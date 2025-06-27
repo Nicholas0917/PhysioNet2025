@@ -131,7 +131,7 @@ class BasicBlock(nn.Module):
         self.middle_channels = int(self.out_channels * self.ratio)
 
         # the first conv, conv1
-        self.bn1 = nn.BatchNorm1d(in_channels)
+        self.bn1 = nn.BatchNorm1d(in_channels, eps=1e-3)
         self.activation1 = Swish()
         self.do1 = nn.Dropout(p=dropout_rate)
         self.conv1 = MyConv1dPadSame(
@@ -142,7 +142,7 @@ class BasicBlock(nn.Module):
             groups=1)
 
         # the second conv, convk
-        self.bn2 = nn.BatchNorm1d(self.middle_channels)
+        self.bn2 = nn.BatchNorm1d(self.middle_channels, eps=1e-3)
         self.activation2 = Swish()
         self.do2 = nn.Dropout(p=dropout_rate)
         self.conv2 = MyConv1dPadSame(
@@ -153,7 +153,7 @@ class BasicBlock(nn.Module):
             groups=self.groups)
 
         # the third conv, conv1
-        self.bn3 = nn.BatchNorm1d(self.middle_channels)
+        self.bn3 = nn.BatchNorm1d(self.middle_channels, eps=1e-3)
         self.activation3 = Swish()
         self.do3 = nn.Dropout(p=dropout_rate)
         self.conv3 = MyConv1dPadSame(
@@ -343,7 +343,7 @@ class Net1D(nn.Module):
             out_channels=self.base_filters, 
             kernel_size=self.kernel_size, 
             stride=2)
-        self.first_bn = nn.BatchNorm1d(base_filters)
+        self.first_bn = nn.BatchNorm1d(base_filters, eps=1e-3)
         self.first_activation = Swish()
 
         # stages

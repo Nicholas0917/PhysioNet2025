@@ -1,6 +1,3 @@
-# todo:
-# Add ECG Augmentation
-
 #!/usr/bin/env python
 
 # Edit this script to add your team's code. Some functions are *required*, but you can edit most parts of the required functions,
@@ -32,9 +29,13 @@ from scipy.interpolate import interp1d
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import psutil
-from net1d import Net1D, Swish
 
+# Import from our modules
 from helper_code import *
+from dataset import ECGDataset
+from models import HybridModel
+from loss import FocalLoss, SampleWeightedLoss
+from utils import print_memory_usage, data_preprocess, delete_record_files, save_model
 
 ################################################################################
 #
@@ -254,14 +255,14 @@ def train_model(data_folder, model_folder, verbose):
     # Parallel data preprocessing
     # with ThreadPoolExecutor(max_workers=4) as executor:
     with ThreadPoolExecutor(max_workers=config.num_preprocess_workers) as executor:
-        list(executor.map(data_preprocess, Code15_records_pretrain))
+        list(executor.map(lambda r: data_preprocess(r, config), Code15_records_pretrain))
     
     end_time = time.time()    # Record end time
     # print_memory_usage("After data preprocessing")
     # print(f"Data preprocessing time: {end_time - start_time:.2f} seconds")
     
     start_time = time.time()
-    dataset = ECGDataset(Code15_records_pretrain, is_training=True)
+    dataset = ECGDataset(Code15_records_pretrain, is_training=True, config=config)
     end_time = time.time()
     # print(f"ECGDataset initialization time: {end_time - start_time:.4f} seconds")
     # print_memory_usage("After creating dataset")
@@ -277,7 +278,8 @@ def train_model(data_folder, model_folder, verbose):
     # Initialize model with pretrained weights
     model = HybridModel(
         device=device,
-        pth_path='/users/wmqn2362/PhysioNet2025/Founder_PhysioNet/12_lead_ECGFounder.pth'
+        pth_path='/users/wmqn2362/PhysioNet2025/Founder_PhysioNet/12_lead_ECGFounder.pth',
+        config=config
     )
     
     # First stage: update all parameters
@@ -495,7 +497,7 @@ def train_model(data_folder, model_folder, verbose):
     pretrain_outputs = []
     pretrain_targets = []
     
-    pretrain_loader = DataLoader(ECGDataset(Code15_records_pretrain, is_training=False),
+    pretrain_loader = DataLoader(ECGDataset(Code15_records_pretrain, is_training=False, config=config),
                            batch_size=batch_size,
                            shuffle=False,
                            num_workers=config.num_preprocess_workers)
@@ -536,14 +538,14 @@ def train_model(data_folder, model_folder, verbose):
     # Evaluate on finetune dataset
     finetune_records = PTBXL_records + SaMiTrop_records + Code15_records_finetune
     for record in finetune_records:
-        data_preprocess(record)
+        data_preprocess(record, config)
 
     print("\nEvaluating on finetune dataset...")
     model.eval()
     finetune_outputs = []
     finetune_targets = []
     
-    finetune_loader = DataLoader(ECGDataset(finetune_records, is_training=False),
+    finetune_loader = DataLoader(ECGDataset(finetune_records, is_training=False, config=config),
                            batch_size=batch_size,
                            shuffle=False,
                            num_workers=config.num_preprocess_workers)
@@ -587,7 +589,7 @@ def train_model(data_folder, model_folder, verbose):
         print('Training the model on the fine-tune data...')
     
     print("Fine-tune Datastes Size: ",len(finetune_records))
-    dataset = ECGDataset(finetune_records, is_training=True)
+    dataset = ECGDataset(finetune_records, is_training=True, config=config)
     # print("\nAfter loading pretrain dataset:")
     # print_memory_usage()
     
@@ -764,7 +766,8 @@ def load_model(model_folder, verbose):
         # Create and initialize model
         model = HybridModel(
             device=config.device,
-            pth_path=model_filename
+            pth_path=model_filename,
+            config=config
         )
         
         # Load fine-tuned weights
@@ -781,7 +784,7 @@ def load_model(model_folder, verbose):
 # arguments of this function.
 def run_model(record, model, verbose):
     
-    data_preprocess(record)
+    data_preprocess(record, config)
 
     base_name = os.path.splitext(os.path.basename(record))[0]
     signal_path = os.path.join(config.cache_folder, f"{base_name}_signal.npy")
@@ -836,627 +839,3 @@ def run_model(record, model, verbose):
     # delete_record_files(record)
 
     return binary_output, probability_output
-
-################################################################################
-#
-# Optional functions. You can change or remove these functions and/or add new functions.
-#
-################################################################################
-def print_memory_usage(extra_info=""):
-    process = psutil.Process(os.getpid())
-    mem_info = process.memory_info()
-    vm = psutil.virtual_memory()
-    print(f"\n====== Memory Usage {extra_info} ======")
-    print(f"Process RSS: {mem_info.rss / 1024 ** 3:.2f} GB")
-    print(f"Process VMS: {mem_info.vms / 1024 ** 3:.2f} GB")
-    print(f"System Available: {vm.available / 1024 ** 3:.2f} GB / {vm.total / 1024 ** 3:.2f} GB")
-    print(f"Memory Used %: {vm.percent}%")
-    print("===================================\n")
-
-# Extract your features.
-def data_preprocess(record):
-    os.makedirs(config.cache_folder, exist_ok=True)
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    
-    signal_path = os.path.join(config.cache_folder, f'{base_name}_signal.npy')
-    if os.path.exists(signal_path):
-        return
-
-    header = load_header(record)
-    source = get_source(header)
-    age = get_age(header) if config.use_age else 0
-    sex = get_sex(header) if config.use_sex else 'Unknown'
-    
-    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-    if sex == 'Female':
-        one_hot_encoding_sex[0] = True
-    elif sex == 'Male':
-        one_hot_encoding_sex[1] = True
-    else:
-        one_hot_encoding_sex[2] = True
-
-    signal, fields = load_signals(record)
-    channels = fields['sig_name']
-
-    # Reorder the channels in case they are in a different order in the signal data.
-    reference_channels = ['I', 'II', 'III', 'AVR', 'AVL', 'AVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
-    num_channels = len(reference_channels)
-    signal = reorder_signal(signal, channels, reference_channels)
-
-    signal = signal.astype(np.float32)
-    
-    # Check for NaN/Inf in raw signal
-    if np.isnan(signal).any() or np.isinf(signal).any():
-        print("WARNING: Raw signal contains NaN/Inf values")
-
-    # Standardize all data to 500Hz
-    original_fs = get_sampling_frequency(header)
-    target_fs = 500
-    if original_fs != target_fs:
-        target_length = int(signal.shape[0] * target_fs / original_fs)
-        try:
-            resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
-            signal = resampled_signal
-        except Exception as e:
-            print(f"Error in resampling: {str(e)}")
-            signal = np.zeros((target_length, signal.shape[1]), dtype=np.float32)
-
-    current_length = signal.shape[0]
-    if current_length != 5000:
-        standardized_signal = np.empty((5000, signal.shape[1]), dtype=np.float32)
-        if current_length < 5000:
-            standardized_signal[:current_length] = signal
-            standardized_signal[current_length:] = 0
-        else:
-            standardized_signal[:] = signal[:5000]
-        signal = standardized_signal
-        
-    # Apply 1Hz highpass filter to suppress baseline drift
-    nyquist = 0.5 * 500
-    highpass_cutoff = 1 / nyquist
-    b, a = butter(2, highpass_cutoff, btype='high')  # 2nd order
-    signal = filtfilt(b, a, signal, axis=0)
-    
-    # Apply 30Hz lowpass filter to reduce high-frequency noise
-    lowpass_cutoff = 30 / nyquist
-    b, a = butter(2, lowpass_cutoff, btype='low')  # 2nd order
-    signal = filtfilt(b, a, signal, axis=0)
-    
-    # Apply 50 notch filter to eliminate electrical interference
-    notch_freq = 50
-    bandwidth = 5
-    freq = notch_freq / nyquist
-    bw = bandwidth / nyquist
-    b, a = butter(2, [freq - bw/2, freq + bw/2], btype='bandstop')
-    signal = filtfilt(b, a, signal, axis=0)
-    
-    # Apply 60Hz notch filter
-    notch_freq = 60
-    bandwidth = 5
-    freq = notch_freq / nyquist
-    bw = bandwidth / nyquist
-    b, a = butter(2, [freq - bw/2, freq + bw/2], btype='bandstop')
-    signal = filtfilt(b, a, signal, axis=0)
-        
-    if np.isnan(signal).any():
-        print("WARNING: Signal contains NaN values")
-
-    signal = np.ascontiguousarray(signal.T)
-
-    # z-score normalization with stability checks
-    signal_mean = np.mean(signal, axis=0)
-    signal_std = np.std(signal, axis=0)
-    
-    # Handle cases where std is zero or very small
-    signal_std[signal_std < 1e-8] = 1.0
-    
-    signal = (signal - signal_mean) / signal_std
-    
-    # Clip extreme values
-    # signal = np.clip(signal, -10, 10)
-    
-    # Final NaN/Inf check
-    if np.isnan(signal).any() or np.isinf(signal).any():
-        print("WARNING: Signal contains NaN/Inf after normalization")
-        signal = np.nan_to_num(signal, nan=0.0, posinf=1e4, neginf=-1e4)
-
-    # get meta features
-    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-    ptr = 0
-    
-    if config.use_age:
-        meta_features[ptr] = age
-        ptr += 1
-    if config.use_sex:
-        meta_features[ptr:ptr+3] = one_hot_encoding_sex
-        ptr += 3
-    if config.use_signal_stats:
-        valid_samples = np.isfinite(signal).sum()
-        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-        ptr += 2
-
-    # save only the signal
-    np.save(signal_path, signal.astype(np.float32))
-
-def delete_record_files(record):
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join(config.cache_folder, f'{base_name}_signal.npy')
-
-    if os.path.exists(signal_path):
-        os.remove(signal_path)
-
-# Save your trained model.
-def save_model(model_folder, state_dict):
-    model_dir = os.path.join(model_folder, 'Model')
-    os.makedirs(model_dir, exist_ok=True)
-    
-    # Save config with additional metadata
-    config_dict = config.__dict__.copy()
-    config_dict['meta_input_dim'] = config.get_meta_feature_dim()
-    checkpoint = {
-        'state_dict': state_dict,
-        'config': config_dict
-    }
-    filename = os.path.join(model_dir, 'model.pth')
-    torch.save(checkpoint, filename)
-    print(f"Model saved to {filename}")
-
-################################################################################
-#
-# ECGDataset
-#
-################################################################################
-
-class ECGDataset(Dataset):
-    def __init__(self, records, is_training=True):
-        self.records = records
-        self.is_training = is_training
-        # Don't preload all paths to save memory
-        self.cache_folder = config.cache_folder
-
-    def __len__(self):
-        return len(self.records)
-
-    def __getitem__(self, idx):
-        base_name = os.path.splitext(os.path.basename(self.records[idx]))[0]
-        signal_path = os.path.join(self.cache_folder, f"{base_name}_signal.npy")
-        
-        try:
-            with open(signal_path, 'rb') as f:
-                signal = np.load(f)
-                # Check for NaN values in signal
-                if np.isnan(signal).any():
-                    print(f"WARNING: Signal contains NaN values in {signal_path}")
-                    signal = np.nan_to_num(signal, nan=0.0)
-        except Exception as e:
-            print(f"Error loading {signal_path}: {str(e)}")
-            raise
-        
-        record = self.records[idx]
-        label = float(load_label(record))
-        
-        # Load meta data from original record
-        header = load_header(record)
-        source = get_source(header)
-        age = get_age(header) if config.use_age else 0
-        sex = get_sex(header) if config.use_sex else 'Unknown'
-        
-        one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-        if sex == 'Female':
-            one_hot_encoding_sex[0] = True
-        elif sex == 'Male':
-            one_hot_encoding_sex[1] = True
-        else:
-            one_hot_encoding_sex[2] = True
-
-        # get meta features
-        meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-        ptr = 0
-        
-        if config.use_age:
-            meta_features[ptr] = age
-            ptr += 1
-        if config.use_sex:
-            meta_features[ptr:ptr+3] = one_hot_encoding_sex
-            ptr += 3
-        if config.use_signal_stats:
-            valid_samples = np.isfinite(signal).sum()
-            meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-            meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-            ptr += 2
-
-        # Only apply data augmentation during training
-        if self.is_training:
-            if config.use_noise_aug and np.random.rand() < config.noise_aug_prob:
-                signal = self._add_noise(signal)
-                
-            if config.use_scaling_aug and np.random.rand() < config.scaling_aug_prob:
-                signal = self._scaling(signal)
-                
-            if config.use_flip_aug and np.random.rand() < config.flip_aug_prob:
-                signal = np.ascontiguousarray(self._flip(signal))
-                
-            if config.use_shift_aug and np.random.rand() < config.shift_aug_prob:
-                signal = self._shift(signal)
-                
-            if config.use_drop_aug and np.random.rand() < config.drop_aug_prob:
-                signal = self._drop(signal)
-            
-            if config.add_power_noise and np.random.rand() < config.power_noise_prob:
-                signal = self._add_power_noise(signal)
-                
-            if config.use_sine_wave_aug and np.random.rand() < config.sine_aug_prob:
-                signal = self._sine_wave(signal)
-                
-            if config.use_square_wave_aug and np.random.rand() < config.square_aug_prob:
-                signal = self._square_wave(signal)
-                
-            if config.use_cutout_aug and np.random.rand() < config.cutout_aug_prob:
-                signal = self._cutout(signal)
-                
-            if config.use_time_warp_aug and np.random.rand() < config.time_wrap_prob:
-                signal = self._time_wrapping(signal)
-                
-            if config.use_lead_mixing_aug and np.random.rand() < config.lead_mixing_prob:
-                signal = self._lead_mixing_augmentation(signal, config.lead_mixing_lambda)
-                
-            if config.use_baseline_wander and np.random.rand() < config.baseline_wander_prob:
-                signal = self._baseline_wander(signal)
-
-            # Ensure signal is contiguous in memory and float32
-            signal = np.ascontiguousarray(signal).astype(np.float32)
-            meta_features = meta_features.astype(np.float32)
-            
-        features = [signal, meta_features]
-
-        return features, label
-        
-    def _add_noise(self, signal):
-        """Add Gaussian noise with zero mean and fixed standard deviation"""
-        noise = np.random.normal(0, config.noise_std, signal.shape)
-        augmented = signal + noise
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _add_noise")
-        return augmented
-        
-    def _scaling(self, signal):
-        """Apply random scaling to each lead between [0.5, 2.0] with numerical stability checks"""
-        scaling_factors = np.random.uniform(config.scaling_min, config.scaling_max, signal.shape[0])
-        scaled = signal * scaling_factors[:, np.newaxis]
-        # Ensure no extreme values
-        scaled = np.clip(scaled, -1e4, 1e4)
-        if np.isnan(scaled).any():
-            print("WARNING: NaN detected after _scaling")
-        return scaled
-        
-    def _flip(self, signal):
-        """Flip the signal vertically (up-down) by multiplying -1"""
-        flipped = signal * -1
-        if np.isnan(flipped).any():
-            print("WARNING: NaN detected after _flip")
-        return flipped
-        
-    def _shift(self, signal):
-        """Apply cyclic shift to the signal"""
-        length = signal.shape[1]
-        max_shift = int(length * config.shift_max_ratio)
-        shift_amount = np.random.randint(-max_shift, max_shift + 1)
-        
-        # Apply cyclic shift using np.roll
-        shifted = np.roll(signal, shift_amount, axis=1)
-        if np.isnan(shifted).any():
-            print("WARNING: NaN detected after _shift")
-        return shifted
-        
-    def _drop(self, signal):
-        """Randomly drop signal points with probability [0, 0.3]"""
-        mask = np.random.rand(*signal.shape) > config.drop_max_prob
-        dropped = signal * mask
-        if np.isnan(dropped).any():
-            print("WARNING: NaN detected after _drop")
-        return dropped
-        
-    def _sine_wave(self, signal):
-        """Add sine wave with random frequency and amplitude"""
-        length = signal.shape[1]
-        t = np.arange(length)
-        
-        # Random frequency and amplitude
-        freq = np.random.uniform(config.sine_min_freq, config.sine_max_freq)
-        amp = np.random.uniform(0, config.sine_max_amp)
-        
-        # Generate sine wave
-        sine = amp * np.sin(2 * np.pi * freq * t)
-        
-        # Add to each channel
-        augmented = signal + sine[np.newaxis, :]
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _sine_wave")
-        return augmented
-        
-    def _square_wave(self, signal):
-        """Add square wave with random frequency and amplitude"""
-        length = signal.shape[1]
-        t = np.arange(length)
-        
-        # Random frequency and amplitude
-        freq = np.random.uniform(config.square_min_freq, config.square_max_freq)
-        amp = np.random.uniform(0, config.square_max_amp)
-        
-        # Generate square wave
-        square = amp * np.sign(np.sin(2 * np.pi * freq * t))
-        
-        # Add to each channel
-        augmented = signal + square[np.newaxis, :]
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _square_wave")
-        return augmented
-        
-    def _cutout(self, signal):
-        """Randomly cutout segments from random leads"""
-        length = signal.shape[1]
-        max_cutout = int(length * config.cutout_max_ratio)
-        if max_cutout == 0:
-            return signal
-            
-        # Randomly select leads to apply cutout (at least 1 lead)
-        num_leads = signal.shape[0]
-        num_cutout_leads = np.random.randint(1, num_leads + 1)
-        cutout_leads = np.random.choice(num_leads, num_cutout_leads, replace=False)
-        
-        # Apply cutout to selected leads
-        for lead in cutout_leads:
-            cutout_width = np.random.randint(1, max_cutout + 1)
-            start = np.random.randint(0, length - cutout_width + 1)
-            signal[lead, start:start+cutout_width] = 0
-            
-        if np.isnan(signal).any():
-            print("WARNING: NaN detected after _cutout")
-        return signal
-        
-    def _add_power_noise(self, signal):
-        """Add 50Hz power line noise as data augmentation with numerical stability checks"""
-        # Calculate noise amplitude relative to signal std
-        signal_std = np.std(signal)
-        if signal_std > 0:
-            amplitude = min(config.power_noise_amplitude * signal_std, 0.1)  # Cap amplitude
-            # Generate 50Hz sine wave with random phase
-            length = signal.shape[1]
-            t = np.arange(length) / 500.0  # Sampling rate is 500Hz
-            phase = np.random.uniform(0, 2 * np.pi)
-            power_noise = amplitude * np.sin(2 * np.pi * 50 * t + phase)
-            # Add to each channel with clipping
-            signal = signal + power_noise
-            signal = np.clip(signal, -1e4, 1e4)
-            
-        if np.isnan(signal).any():
-            print("WARNING: NaN detected after _add_power_noise")
-        return signal
-
-    def _lead_mixing_augmentation(self, signal, lambda_val=0.2):
-        """Data augmentation by mixing leads with numerical stability checks"""
-        try:
-            # Method 1: Pearson correlation with stability checks
-            signal_std = np.std(signal, axis=1, keepdims=True)
-            signal_mean = np.mean(signal, axis=1, keepdims=True)
-            
-            # Avoid division by zero
-            signal_std[signal_std < 1e-8] = 1e-8
-            normalized = (signal - signal_mean) / signal_std
-            
-            # Compute correlation matrix safely
-            corr_matrix = np.corrcoef(normalized)
-            corr_matrix = np.nan_to_num(corr_matrix, nan=0.0)
-            
-            # Construct adjacency matrix
-            A = np.abs(corr_matrix)
-            np.fill_diagonal(A, 0)
-            
-            # Normalize rows safely
-            row_sums = A.sum(axis=1, keepdims=True)
-            row_sums[row_sums < 1e-8] = 1.0  # Avoid division by zero
-            A = A / row_sums
-            
-            # Generate new signal safely
-            new_signal = np.zeros_like(signal)
-            for i in range(signal.shape[0]):
-                if np.any(A[i] > 0):
-                    weights = A[i].reshape(-1, 1)
-                    new_signal[i] = np.sum(signal * weights, axis=0)
-            
-            # Mix signals with clipping
-            augmented = (1 - lambda_val) * signal + lambda_val * new_signal
-            augmented = np.clip(augmented, -1e4, 1e4)
-            
-            if np.isnan(augmented).any():
-                print("WARNING: NaN detected after _lead_mixing_augmentation")
-            return augmented
-            
-        except Exception as e:
-            print(f"Lead mixing failed: {str(e)}")
-            return signal  # Fallback to original signal
-            
-    def _baseline_wander(self, signal):
-        """Add baseline wander to ECG signal"""
-        t = np.arange(signal.shape[1])
-        freq = np.random.uniform(config.baseline_wander_min_freq, config.baseline_wander_max_freq)
-        amp = config.baseline_wander_amp_ratio * np.std(signal)
-        drift = amp * np.sin(2 * np.pi * freq * t)
-        augmented = signal + drift
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _baseline_wander")
-        return augmented
-
-    def _time_wrapping(self, signal):
-        """Apply time warping using numpy vectorization"""
-        original_length = signal.shape[1]
-        original_freq = 500  # Hz
-        
-        # Randomly select new frequency between min and max Hz
-        new_freq = np.random.randint(config.time_wrap_min_hz, config.time_wrap_max_hz + 1)
-        
-        # Calculate new length after resampling
-        new_length = int(original_length * new_freq / original_freq)
-        
-        if new_length == original_length:
-            return signal.copy()
-        
-        # Create interpolation indices for all channels at once
-        old_indices = np.linspace(0, original_length - 1, new_length)
-        
-        # Vectorized interpolation using numpy broadcasting
-        x_old = np.arange(original_length)
-        result = np.zeros((signal.shape[0], original_length))
-        
-        # Use numpy interp for all channels simultaneously
-        for i in range(signal.shape[0]):
-            resampled = np.interp(old_indices, x_old, signal[i])
-            if new_length > original_length:
-                result[i] = resampled[:original_length]
-            else:
-                result[i, :new_length] = resampled
-        
-        return result
-
-################################################################################
-#
-# Loss Function
-#
-################################################################################
-
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=0.8, gamma=2, logits=True, reduce=True):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha  # Reduced from 1.0 to 0.8 for better numerical stability
-        self.gamma = gamma
-        self.logits = logits
-        self.reduce = reduce
-
-    def forward(self, inputs, targets):
-        # Ensure targets has same shape as inputs
-        targets = targets.view(-1, 1).float()
-        
-        if self.logits:
-            BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
-        else:
-            BCE_loss = F.binary_cross_entropy(inputs, targets, reduction='none')
-        
-        pt = torch.exp(-BCE_loss)
-        F_loss = self.alpha * (1-pt)**self.gamma * BCE_loss
-
-        if self.reduce:
-            return torch.mean(F_loss)
-        else:
-            return F_loss
-
-class SampleWeightedLoss(nn.Module):
-    def __init__(self, beta=0.9):
-        super().__init__()
-        self.beta = beta
-    
-    def forward(self, logits, targets):
-        # Ensure targets have same shape as logits
-        if len(targets.shape) < len(logits.shape):
-            targets = targets.view(-1, 1)
-        
-        pos_weight = (1-self.beta)/(self.beta) * (targets==0).sum()/(targets==1).sum()
-        return F.binary_cross_entropy_with_logits(
-            logits, targets,
-            pos_weight=pos_weight
-        )
-
-################################################################################
-#
-# Hybrid Model Definition
-#
-################################################################################
-
-class HybridModel(nn.Module):
-    def __init__(self, device, pth_path):
-        super().__init__()
-        # Initialize base model (without final dense layer)
-        self.base_model = Net1D(
-            in_channels=12,
-            base_filters=64,
-            ratio=1,
-            filter_list=[64,160,160,400,400,1024,1024],
-            m_blocks_list=[2,2,2,3,3,4,4],
-            kernel_size=16,
-            stride=2,
-            groups_width=16,
-            verbose=False,
-            use_bn=True,
-            use_do=True,
-            n_classes=1,  # Will be removed
-            return_features=True,
-            dropout_rate=config.net1d_dropout_rate
-        )
-        
-        # Load pretrained weights (excluding dense layer)
-        checkpoint = torch.load(pth_path, map_location=device)
-        state_dict = {k: v for k, v in checkpoint['state_dict'].items() 
-                     if not k.startswith('dense.')}
-        self.base_model.load_state_dict(state_dict, strict=False)
-        
-        # Meta feature processing network with expanded dimension (256)
-        meta_dim = config.get_meta_feature_dim()
-        self.meta_net = nn.Sequential(
-            nn.Linear(meta_dim, 128),
-            nn.BatchNorm1d(128, eps=1e-4),
-            Swish(),
-            nn.Dropout(config.dropout_rate),
-            nn.Linear(128, 256),
-            nn.BatchNorm1d(256, eps=1e-4),
-            Swish()
-        )
-        
-        # New classification head with kaiming init and swish activation
-        self.classifier = nn.Sequential(
-            nn.Linear(1024 + 256, 512),  # 1024 is the last stage output channels
-            nn.BatchNorm1d(512, eps=1e-4),
-            Swish(),
-            nn.Dropout(config.dropout_rate),
-            nn.Linear(512, 1)
-        )
-        
-        # Initialize only meta_net and classifier layers with kaiming normal
-        # for m in self.modules():
-        for m in list(self.meta_net.modules()) + list(self.classifier.modules()):
-            if isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='linear')
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
-        
-        self.to(device)
-
-    def forward(self, x, meta_features=None):
-        # Get deep features directly from base model
-        _, signal_features = self.base_model(x)  # Net1D now returns deep_features
-        
-        # Check basemodel output
-        if torch.isnan(signal_features).any() or torch.isinf(signal_features).any():
-            print("WARNING: BaseModel output contains NaN/Inf values")
-        
-        # Process meta features if provided
-        if meta_features is not None:
-            if meta_features.dim() == 1:  # Handle single sample case
-                meta_features = meta_features.unsqueeze(0)
-            meta_features = self.meta_net(meta_features)
-            
-            # Check meta_net output
-            if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
-                print("WARNING: MetaNet output contains NaN/Inf values")
-            
-            features = torch.cat([signal_features, meta_features], dim=1)
-        else:
-            features = signal_features
-            
-        # Get model output with NaN check
-        output = self.classifier(features)
-        
-        # Check classifier output before final check
-        if torch.isnan(output).any() or torch.isinf(output).any():
-            print("WARNING: Classifier output contains NaN/Inf values")
-            
-        return output
