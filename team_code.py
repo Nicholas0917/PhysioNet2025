@@ -744,7 +744,7 @@ def train_model(data_folder, model_folder, verbose):
     ############################################################################
     # Save the best model for this fold
     os.makedirs(model_folder, exist_ok=True)
-    save_model(model_folder, best_model)
+    save_model(model_folder, best_model, config)
 
     if verbose:
         print('Done.')
