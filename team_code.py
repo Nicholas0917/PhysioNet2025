@@ -28,6 +28,7 @@ import time
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import roc_auc_score, average_precision_score, accuracy_score, f1_score
 from scipy.signal import butter, filtfilt, resample
+from scipy.interpolate import interp1d
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import psutil
@@ -46,14 +47,14 @@ class Config:
         self.model_name = 'ecgfounder'
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
-        self.pretrain_learning_rate = 5e-4  # Increased learning rate
+        self.pretrain_learning_rate = 1e-4  # Increased learning rate
         self.pretrain_batch_size = 256  # Increased with gradient accumulation
         self.gradient_accumulation_steps = 4  # For effective batch size of 256
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
-        self.learning_rate = 1e-4  # Increased learning rate
+        self.learning_rate = 1e-5  # Increased learning rate
         self.dropout_rate = 0.3
-        self.net1d_dropout_rate = 0.25
+        self.net1d_dropout_rate = 0.3
         self.batch_size = 32
         self.early_stop_patience = 8
         self.num_preprocess_workers = 2  # Keep at 1 to limit memory usage
@@ -65,34 +66,34 @@ class Config:
 
         # Focal Loss parameters
         self.pretrain_focal_alpha = 0.8
-        self.pretrain_focal_gamma = 2
+        self.pretrain_focal_gamma = 3
         self.finetune_focal_alpha = 0.8
         self.finetune_focal_gamma = 2
         
         # Data augmentation parameters with probabilities
         self.use_noise_aug = True
         self.noise_std = 0.03
-        self.noise_aug_prob = 0.8
+        self.noise_aug_prob = 0.5
         
         self.use_scaling_aug = True
         self.scaling_min = 0.5
         self.scaling_max = 2.0
-        self.scaling_aug_prob = 0.8
+        self.scaling_aug_prob = 0.5
         
         self.use_flip_aug = False
         self.flip_aug_prob = 0.2
         
         self.use_shift_aug = True
-        self.shift_max_ratio = 0.8  # Max shift ratio of signal length
-        self.shift_aug_prob = 0.5
+        self.shift_max_ratio = 0.8
+        self.shift_aug_prob = 0.3
         
         self.use_drop_aug = False
-        self.drop_max_prob = 0.05  # Max drop probability
+        self.drop_max_prob = 0.02
         self.drop_aug_prob = 0.3
         
-        self.add_power_noise = True
+        self.add_power_noise = False
         self.power_noise_amplitude = 0.03
-        self.power_noise_prob = 0.8
+        self.power_noise_prob = 0.5
         
         self.use_sine_wave_aug = False
         self.sine_min_freq = 0.001
@@ -106,13 +107,25 @@ class Config:
         self.square_max_amp = 0.08
         self.square_aug_prob = 0.3
         
-        self.use_cutout_aug = False
-        self.cutout_max_ratio = 0.2  # Max cutout ratio of signal length
+        self.use_cutout_aug = True
+        self.cutout_max_ratio = 0.2    # Max cutout ratio of signal length
         self.cutout_aug_prob = 0.3
         
-        self.use_lead_mixing_aug = False
+        self.use_lead_mixing_aug = True
         self.lead_mixing_lambda = 0.2  # Mixing coefficient
-        self.lead_mixing_prob = 0.5    # Probability of applying
+        self.lead_mixing_prob = 0.3    # Probability of applying
+        
+        self.use_time_warp_aug = False
+        self.time_wrap_min_hz = 450
+        self.time_wrap_max_hz = 550
+        self.time_wrap_prob = 0.3       # Probability of applying
+
+        # Baseline wander augmentation parameters
+        self.use_baseline_wander = True
+        self.baseline_wander_min_freq = 0.05  # Hz
+        self.baseline_wander_max_freq = 0.2   # Hz
+        self.baseline_wander_amp_ratio = 0.2  # Amplitude ratio to signal std
+        self.baseline_wander_prob = 0.3       # Probability of applying
 
     def get_meta_feature_dim(self):
         dim = 0
@@ -158,6 +171,7 @@ class Config:
         print(f"Use Square Wave Augmentation: {self.use_square_wave_aug}, Freq Range: [{self.square_min_freq}, {self.square_max_freq}], Max Amp: {self.square_max_amp}, Probability: {self.square_aug_prob}")
         print(f"Use Cutout Augmentation: {self.use_cutout_aug}, Max Ratio: {self.cutout_max_ratio}, Probability: {self.cutout_aug_prob}")
         print(f"Use Lead Mixing Augmentation: {self.use_lead_mixing_aug}, Lambda: {self.lead_mixing_lambda}, Probability: {self.lead_mixing_prob}")
+        print(f"Use Time Warping Augmentation: {self.use_time_warp_aug}, Freq Range: [{self.time_wrap_min_hz}, {self.time_wrap_max_hz}], Probability: {self.time_wrap_prob}")
 
         print(">>>>>>>>>Device:<<<<<<<<<<")
         print(f"Device: {self.device}")
@@ -187,6 +201,8 @@ else:
 
 # Train your model.
 def train_model(data_folder, model_folder, verbose):
+    # Enable anomaly detection for debugging NaN/Inf values
+    torch.autograd.set_detect_anomaly(True)
 
     ############################################################################
     # Load the data.
@@ -205,15 +221,21 @@ def train_model(data_folder, model_folder, verbose):
     PTBXL_records = []
     SaMiTrop_records = []
     
-    for record in records:
+    def process_record(record):
         record_path = os.path.join(data_folder, record)
         header = load_header(record_path)
-
-        if get_source(header) == 'PTB-XL':
+        source = get_source(header)
+        return (record_path, source)
+    
+    with ThreadPoolExecutor(max_workers=config.num_preprocess_workers) as executor:
+        results = list(executor.map(process_record, records))
+    
+    for record_path, source in results:
+        if source == 'PTB-XL':
             PTBXL_records.append(record_path)
-        elif get_source(header) == 'CODE-15%':
+        elif source == 'CODE-15%':
             code15_records.append(record_path)
-        elif get_source(header) == 'SaMi-Trop':
+        elif source == 'SaMi-Trop':
             SaMiTrop_records.append(record_path)
         else:
             raise ValueError('Invalid source.')
@@ -302,7 +324,7 @@ def train_model(data_folder, model_folder, verbose):
         targets = [dataset[i][1] for i in range(len(dataset))]
         weights = np.zeros_like(targets, dtype=np.float32)
         weights[np.isclose(targets, 0.0)] = 1.0
-        weights[np.isclose(targets, 1.0)] = 50.0
+        weights[np.isclose(targets, 1.0)] = 30.0
         return weights
 
     X = [dataset[i][0] for i in range(len(dataset))]
@@ -339,6 +361,15 @@ def train_model(data_folder, model_folder, verbose):
             train_outputs = []
             for i, (features, label) in enumerate(train_loader):
                 signal, meta_features = features
+                
+                # Check for NaN in input data
+                if torch.isnan(signal).any():
+                    print("WARNING: Training signal contains NaN values")
+                if torch.isnan(meta_features).any():
+                    print("WARNING: Training meta_features contains NaN values")
+                if torch.isnan(label).any():
+                    print("WARNING: Training label contains NaN values")
+                
                 signal = signal.to(device)
                 meta_features = meta_features.to(device)
                 label = label.to(device)
@@ -352,6 +383,9 @@ def train_model(data_folder, model_folder, verbose):
                 scaler.scale(loss).backward()
                 
                 if (i + 1) % config.gradient_accumulation_steps == 0:
+                    # Gradient clipping
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     scaler.step(optimizer)
                     scaler.update()
                     optimizer.zero_grad()
@@ -398,15 +432,25 @@ def train_model(data_folder, model_folder, verbose):
             # Check for NaN values
             if np.isnan(val_outputs_arr).any():
                 print(f"WARNING: val_outputs contains {np.isnan(val_outputs_arr).sum()} NaN values")
-                val_outputs_arr = np.nan_to_num(val_outputs_arr, nan=0.0)
             if np.isnan(val_targets_arr).any():
                 print(f"WARNING: val_targets contains {np.isnan(val_targets_arr).sum()} NaN values")
-                val_targets_arr = np.nan_to_num(val_targets_arr, nan=0.0)
 
-            val_auroc = roc_auc_score(val_targets_arr, np.round(val_outputs_arr))
-            val_auprc = average_precision_score(val_targets_arr, np.round(val_outputs_arr))
-            val_accuracy = accuracy_score(val_targets_arr, np.round(val_outputs_arr))
-            val_f1 = f1_score(val_targets_arr, np.round(val_outputs_arr))
+            try:
+                if len(np.unique(val_targets_arr)) < 2:
+                    print("WARNING: Only one class present in validation targets")
+                    val_auroc = 0.5
+                else:
+                    val_auroc = roc_auc_score(val_targets_arr, val_outputs_arr)
+                
+                val_auprc = average_precision_score(val_targets_arr, val_outputs_arr)
+                val_accuracy = accuracy_score(val_targets_arr, np.round(val_outputs_arr))
+                val_f1 = f1_score(val_targets_arr, np.round(val_outputs_arr))
+            except ValueError as e:
+                print(f"Error calculating metrics: {str(e)}")
+                val_auroc = 0.5
+                val_auprc = 0.5
+                val_accuracy = 0.5
+                val_f1 = 0.0
             
             if epoch < warmup_epochs:
                 warmup_scheduler.step()
@@ -435,7 +479,7 @@ def train_model(data_folder, model_folder, verbose):
                     break
 
         end_time = time.time()
-        print(f'Fold {fold + 1} finished. Best Valid Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
+        print(f'Fold {fold + 1} finished. Best Valid AUPRC: {best_auprc:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
     # for record in Code15_records_pretrain:
     #     delete_record_files(record)
@@ -476,7 +520,11 @@ def train_model(data_folder, model_folder, verbose):
     # Calculate loss - convert to numpy array first for better performance
     pretrain_outputs_arr = np.array(pretrain_outputs, dtype=np.float32)
     pretrain_targets_arr = np.array(pretrain_targets, dtype=np.float32)
-    criterion = FocalLoss(alpha=0.8, gamma=2, logits=True)
+    criterion = FocalLoss(
+        alpha=config.finetune_focal_alpha,
+        gamma=config.finetune_focal_gamma, 
+        logits=True
+    )
     all_loss = criterion(torch.from_numpy(pretrain_outputs_arr), 
                         torch.from_numpy(pretrain_targets_arr)).item()
     
@@ -520,7 +568,11 @@ def train_model(data_folder, model_folder, verbose):
     # Calculate loss - convert to numpy array first for better performance
     finetune_outputs_arr = np.array(finetune_outputs, dtype=np.float32)
     finetune_targets_arr = np.array(finetune_targets, dtype=np.float32)
-    criterion = FocalLoss(alpha=0.8, gamma=2, logits=True)
+    criterion = FocalLoss(
+        alpha=config.finetune_focal_alpha,
+        gamma=config.finetune_focal_gamma,
+        logits=True
+    )
     all_loss = criterion(torch.from_numpy(finetune_outputs_arr),
                         torch.from_numpy(finetune_targets_arr)).item()
     
@@ -561,7 +613,11 @@ def train_model(data_folder, model_folder, verbose):
             weight_decay=1e-5
         )
     
-    criterion = FocalLoss(alpha=0.8, gamma=2, logits=True)
+    criterion = FocalLoss(
+        alpha=config.finetune_focal_alpha,
+        gamma=config.finetune_focal_gamma,
+        logits=True
+    )
     # criterion = SampleWeightedLoss(beta=1.5)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
     scaler = torch.amp.GradScaler('cuda')
@@ -582,13 +638,15 @@ def train_model(data_folder, model_folder, verbose):
         # train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=config.num_preprocess_workers)
         train_loader = DataLoader(train_subset, 
                                   batch_size=batch_size, 
-                                  sampler=train_sampler, 
-                                  num_workers=config.num_preprocess_workers
+                                  sampler=train_sampler,
+                                  num_workers=config.num_preprocess_workers,
+                                  drop_last=True  # Ensure complete batches
                                   )
         val_loader = DataLoader(val_subset, 
                                 batch_size=batch_size, 
-                                shuffle=False, 
-                                num_workers=config.num_preprocess_workers
+                                shuffle=False,
+                                num_workers=config.num_preprocess_workers,
+                                drop_last=True  # Ensure complete batches
                                 )
 
         best_loss = float('inf')
@@ -612,7 +670,10 @@ def train_model(data_folder, model_folder, verbose):
                 with autocast:
                     output = model(signal, meta_features)
                     loss = criterion(output, label)
+                # Gradient clipping
                 scaler.scale(loss).backward()
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
                 scaler.update()
                 train_loss += loss.item()
@@ -674,7 +735,7 @@ def train_model(data_folder, model_folder, verbose):
                     break
     
         end_time = time.time()
-        print(f'Fold {fold + 1} finished. Best Valid Loss: {best_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
+        print(f'Fold {fold + 1} finished. Best Valid AUPRC: {best_auprc:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
     # for record in finetune_records:
     #     delete_record_files(record)
@@ -824,20 +885,21 @@ def data_preprocess(record):
 
     signal = signal.astype(np.float32)
     
-    # Standardize all data to 500Hz
-    # if source == 'PTB-XL':
-    #     original_fs = 500  # Already at target fs
-    # elif source == 'CODE-15%':
-    #     original_fs = 400  # Example - confirm actual source fs
-    # elif source == 'SaMi-Trop':
-    #     original_fs = 400  # Example - confirm actual source fs
+    # Check for NaN/Inf in raw signal
+    if np.isnan(signal).any() or np.isinf(signal).any():
+        print("WARNING: Raw signal contains NaN/Inf values")
 
+    # Standardize all data to 500Hz
     original_fs = get_sampling_frequency(header)
     target_fs = 500
     if original_fs != target_fs:
         target_length = int(signal.shape[0] * target_fs / original_fs)
-        resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
-        signal = resampled_signal
+        try:
+            resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
+            signal = resampled_signal
+        except Exception as e:
+            print(f"Error in resampling: {str(e)}")
+            signal = np.zeros((target_length, signal.shape[1]), dtype=np.float32)
 
     current_length = signal.shape[0]
     if current_length != 5000:
@@ -860,8 +922,16 @@ def data_preprocess(record):
     b, a = butter(2, lowpass_cutoff, btype='low')  # 2nd order
     signal = filtfilt(b, a, signal, axis=0)
     
-    # Apply 50/60Hz notch filter to eliminate electrical interference
-    notch_freq = 50  # or 60 depending on region
+    # Apply 50 notch filter to eliminate electrical interference
+    notch_freq = 50
+    bandwidth = 5
+    freq = notch_freq / nyquist
+    bw = bandwidth / nyquist
+    b, a = butter(2, [freq - bw/2, freq + bw/2], btype='bandstop')
+    signal = filtfilt(b, a, signal, axis=0)
+    
+    # Apply 60Hz notch filter
+    notch_freq = 60
     bandwidth = 5
     freq = notch_freq / nyquist
     bw = bandwidth / nyquist
@@ -869,15 +939,26 @@ def data_preprocess(record):
     signal = filtfilt(b, a, signal, axis=0)
         
     if np.isnan(signal).any():
-        np.nan_to_num(signal, copy=False)
+        print("WARNING: Signal contains NaN values")
 
     signal = np.ascontiguousarray(signal.T)
 
-    # normalize the signal
-    # min-max normalization
-    # signal = (signal - np.min(signal, axis=0)) / (np.max(signal, axis=0) - np.min(signal, axis=0) + 1e-8)
-    # z-score normalization
-    signal = (signal - np.mean(signal, axis=0)) / (np.std(signal, axis=0) + 1e-8)
+    # z-score normalization with stability checks
+    signal_mean = np.mean(signal, axis=0)
+    signal_std = np.std(signal, axis=0)
+    
+    # Handle cases where std is zero or very small
+    signal_std[signal_std < 1e-8] = 1.0
+    
+    signal = (signal - signal_mean) / signal_std
+    
+    # Clip extreme values
+    # signal = np.clip(signal, -10, 10)
+    
+    # Final NaN/Inf check
+    if np.isnan(signal).any() or np.isinf(signal).any():
+        print("WARNING: Signal contains NaN/Inf after normalization")
+        signal = np.nan_to_num(signal, nan=0.0, posinf=1e4, neginf=-1e4)
 
     # get meta features
     meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
@@ -1014,8 +1095,14 @@ class ECGDataset(Dataset):
             if config.use_cutout_aug and np.random.rand() < config.cutout_aug_prob:
                 signal = self._cutout(signal)
                 
+            if config.use_time_warp_aug and np.random.rand() < config.time_wrap_prob:
+                signal = self._time_wrapping(signal)
+                
             if config.use_lead_mixing_aug and np.random.rand() < config.lead_mixing_prob:
                 signal = self._lead_mixing_augmentation(signal, config.lead_mixing_lambda)
+                
+            if config.use_baseline_wander and np.random.rand() < config.baseline_wander_prob:
+                signal = self._baseline_wander(signal)
 
             # Ensure signal is contiguous in memory and float32
             signal = np.ascontiguousarray(signal).astype(np.float32)
@@ -1031,7 +1118,6 @@ class ECGDataset(Dataset):
         augmented = signal + noise
         if np.isnan(augmented).any():
             print("WARNING: NaN detected after _add_noise")
-            augmented = np.nan_to_num(augmented, nan=0.0)
         return augmented
         
     def _scaling(self, signal):
@@ -1042,14 +1128,13 @@ class ECGDataset(Dataset):
         scaled = np.clip(scaled, -1e4, 1e4)
         if np.isnan(scaled).any():
             print("WARNING: NaN detected after _scaling")
-        return np.nan_to_num(scaled, nan=0.0, posinf=1e4, neginf=-1e4)
+        return scaled
         
     def _flip(self, signal):
         """Flip the signal vertically (up-down) by multiplying -1"""
         flipped = signal * -1
         if np.isnan(flipped).any():
             print("WARNING: NaN detected after _flip")
-            flipped = np.nan_to_num(flipped, nan=0.0)
         return flipped
         
     def _shift(self, signal):
@@ -1062,7 +1147,6 @@ class ECGDataset(Dataset):
         shifted = np.roll(signal, shift_amount, axis=1)
         if np.isnan(shifted).any():
             print("WARNING: NaN detected after _shift")
-            shifted = np.nan_to_num(shifted, nan=0.0)
         return shifted
         
     def _drop(self, signal):
@@ -1071,7 +1155,6 @@ class ECGDataset(Dataset):
         dropped = signal * mask
         if np.isnan(dropped).any():
             print("WARNING: NaN detected after _drop")
-            dropped = np.nan_to_num(dropped, nan=0.0)
         return dropped
         
     def _sine_wave(self, signal):
@@ -1090,7 +1173,6 @@ class ECGDataset(Dataset):
         augmented = signal + sine[np.newaxis, :]
         if np.isnan(augmented).any():
             print("WARNING: NaN detected after _sine_wave")
-            augmented = np.nan_to_num(augmented, nan=0.0)
         return augmented
         
     def _square_wave(self, signal):
@@ -1109,7 +1191,6 @@ class ECGDataset(Dataset):
         augmented = signal + square[np.newaxis, :]
         if np.isnan(augmented).any():
             print("WARNING: NaN detected after _square_wave")
-            augmented = np.nan_to_num(augmented, nan=0.0)
         return augmented
         
     def _cutout(self, signal):
@@ -1132,7 +1213,6 @@ class ECGDataset(Dataset):
             
         if np.isnan(signal).any():
             print("WARNING: NaN detected after _cutout")
-            signal = np.nan_to_num(signal, nan=0.0)
         return signal
         
     def _add_power_noise(self, signal):
@@ -1152,7 +1232,7 @@ class ECGDataset(Dataset):
             
         if np.isnan(signal).any():
             print("WARNING: NaN detected after _add_power_noise")
-        return np.nan_to_num(signal, nan=0.0, posinf=1e4, neginf=-1e4)
+        return signal
 
     def _lead_mixing_augmentation(self, signal, lambda_val=0.2):
         """Data augmentation by mixing leads with numerical stability checks"""
@@ -1191,12 +1271,53 @@ class ECGDataset(Dataset):
             
             if np.isnan(augmented).any():
                 print("WARNING: NaN detected after _lead_mixing_augmentation")
-                augmented = np.nan_to_num(augmented, nan=0.0)
             return augmented
             
         except Exception as e:
             print(f"Lead mixing failed: {str(e)}")
             return signal  # Fallback to original signal
+            
+    def _baseline_wander(self, signal):
+        """Add baseline wander to ECG signal"""
+        t = np.arange(signal.shape[1])
+        freq = np.random.uniform(config.baseline_wander_min_freq, config.baseline_wander_max_freq)
+        amp = config.baseline_wander_amp_ratio * np.std(signal)
+        drift = amp * np.sin(2 * np.pi * freq * t)
+        augmented = signal + drift
+        if np.isnan(augmented).any():
+            print("WARNING: NaN detected after _baseline_wander")
+        return augmented
+
+    def _time_wrapping(self, signal):
+        """Apply time warping using numpy vectorization"""
+        original_length = signal.shape[1]
+        original_freq = 500  # Hz
+        
+        # Randomly select new frequency between min and max Hz
+        new_freq = np.random.randint(config.time_wrap_min_hz, config.time_wrap_max_hz + 1)
+        
+        # Calculate new length after resampling
+        new_length = int(original_length * new_freq / original_freq)
+        
+        if new_length == original_length:
+            return signal.copy()
+        
+        # Create interpolation indices for all channels at once
+        old_indices = np.linspace(0, original_length - 1, new_length)
+        
+        # Vectorized interpolation using numpy broadcasting
+        x_old = np.arange(original_length)
+        result = np.zeros((signal.shape[0], original_length))
+        
+        # Use numpy interp for all channels simultaneously
+        for i in range(signal.shape[0]):
+            resampled = np.interp(old_indices, x_old, signal[i])
+            if new_length > original_length:
+                result[i] = resampled[:original_length]
+            else:
+                result[i, :new_length] = resampled
+        
+        return result
 
 ################################################################################
 #
@@ -1282,25 +1403,26 @@ class HybridModel(nn.Module):
         meta_dim = config.get_meta_feature_dim()
         self.meta_net = nn.Sequential(
             nn.Linear(meta_dim, 128),
-            nn.BatchNorm1d(128),
+            nn.BatchNorm1d(128, eps=1e-4),
             Swish(),
             nn.Dropout(config.dropout_rate),
             nn.Linear(128, 256),
-            nn.BatchNorm1d(256),
+            nn.BatchNorm1d(256, eps=1e-4),
             Swish()
         )
         
         # New classification head with kaiming init and swish activation
         self.classifier = nn.Sequential(
             nn.Linear(1024 + 256, 512),  # 1024 is the last stage output channels
-            nn.BatchNorm1d(512),
+            nn.BatchNorm1d(512, eps=1e-4),
             Swish(),
             nn.Dropout(config.dropout_rate),
             nn.Linear(512, 1)
         )
         
-        # Initialize all layers with kaiming normal
-        for m in self.modules():
+        # Initialize only meta_net and classifier layers with kaiming normal
+        # for m in self.modules():
+        for m in list(self.meta_net.modules()) + list(self.classifier.modules()):
             if isinstance(m, nn.Linear):
                 nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='linear')
                 if m.bias is not None:
@@ -1312,11 +1434,29 @@ class HybridModel(nn.Module):
         # Get deep features directly from base model
         _, signal_features = self.base_model(x)  # Net1D now returns deep_features
         
+        # Check basemodel output
+        if torch.isnan(signal_features).any() or torch.isinf(signal_features).any():
+            print("WARNING: BaseModel output contains NaN/Inf values")
+        
         # Process meta features if provided
         if meta_features is not None:
+            if meta_features.dim() == 1:  # Handle single sample case
+                meta_features = meta_features.unsqueeze(0)
             meta_features = self.meta_net(meta_features)
+            
+            # Check meta_net output
+            if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
+                print("WARNING: MetaNet output contains NaN/Inf values")
+            
             features = torch.cat([signal_features, meta_features], dim=1)
         else:
             features = signal_features
             
-        return self.classifier(features)
+        # Get model output with NaN check
+        output = self.classifier(features)
+        
+        # Check classifier output before final check
+        if torch.isnan(output).any() or torch.isinf(output).any():
+            print("WARNING: Classifier output contains NaN/Inf values")
+            
+        return output
