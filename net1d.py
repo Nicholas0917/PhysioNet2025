@@ -203,11 +203,35 @@ class BasicBlock(nn.Module):
         out = self.conv3(out) # (n_sample, n_channel, n_length)
 
         # Squeeze-and-Excitation
+        if torch.isnan(self.se_fc1.weight).any():
+            print("se_fc1 weight contains NaN")
+        if torch.isnan(self.se_fc2.weight).any():
+            print("se_fc2 weight contains NaN")
+        if self.se_fc1.bias is not None and torch.isnan(self.se_fc1.bias).any():
+            print("se_fc1 bias contains NaN")
+        if self.se_fc2.bias is not None and torch.isnan(self.se_fc2.bias).any():
+            print("se_fc2 bias contains NaN")
+            
         se = out.mean(-1) # (n_sample, n_channel)
+        
+        if torch.isnan(se).any():
+            print("SE input contains NaN")
+        if torch.isinf(se).any():
+            print("SE input contains Inf")
+        
         se = self.se_fc1(se)
+        if torch.isnan(se).any():
+            print("After se_fc1: NaN detected")
+        
         se = self.se_activation(se)
         se = self.se_fc2(se)
-        se = torch.sigmoid(se) # (n_sample, n_channel)
+        if torch.isnan(se).any():
+            print("After se_fc2: NaN detected")
+        
+        se = torch.clamp(torch.sigmoid(se), min=1e-7, max=1-1e-7)
+        if torch.isnan(se).any():
+            print("After sigmoid: NaN detected")
+            
         out = torch.einsum('abc,ab->abc', out, se)
         
         # if downsample, also downsample identity

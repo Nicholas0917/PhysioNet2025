@@ -16,6 +16,15 @@ def print_memory_usage(extra_info=""):
     print(f"Memory Used %: {vm.percent}%")
     print("===================================\n")
 
+def print_model_parameters(model, verbose=True):
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    
+    if verbose:
+        print(f"Total parameters: {total_params:,}")
+        print(f"Trainable parameters: {trainable_params:,}")
+        print(f"Non-trainable parameters: {total_params - trainable_params:,}")
+
 def data_preprocess(record, config=None):
     if config is None:
         config = globals().get('config')
@@ -131,11 +140,10 @@ def delete_record_files(record, config=None):
     if os.path.exists(signal_path):
         os.remove(signal_path)
 
-def save_model(model_folder, state_dict, config=None):
+def save_model(model_folder, state_dict, config=None, fold=None):
     if config is None:
         config = globals().get('config')
-    model_dir = os.path.join(model_folder, 'Model')
-    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(model_folder, exist_ok=True)
     
     config_dict = config.__dict__.copy()
     config_dict['meta_input_dim'] = config.get_meta_feature_dim()
@@ -143,6 +151,11 @@ def save_model(model_folder, state_dict, config=None):
         'state_dict': state_dict,
         'config': config_dict
     }
-    filename = os.path.join(model_dir, 'model.pth')
+    
+    if fold is not None:
+        filename = os.path.join(model_folder, f'model_fold{fold}.pth')
+    else:
+        filename = os.path.join(model_folder, 'model.pth')
+        
     torch.save(checkpoint, filename)
     print(f"Model saved to {filename}")

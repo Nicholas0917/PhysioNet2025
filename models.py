@@ -32,11 +32,11 @@ class HybridModel(nn.Module):
         meta_dim = self.config.get_meta_feature_dim()
         self.meta_net = nn.Sequential(
             nn.Linear(meta_dim, 128),
-            nn.BatchNorm1d(128, eps=1e-4),
+            nn.BatchNorm1d(128, eps=1e-3),
             Swish(),
             nn.Dropout(self.config.dropout_rate),
             nn.Linear(128, 256),
-            nn.BatchNorm1d(256, eps=1e-4),
+            nn.BatchNorm1d(256, eps=1e-3),
             Swish()
         )
         

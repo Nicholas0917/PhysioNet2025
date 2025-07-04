@@ -21,15 +21,17 @@ class ECGDataset(Dataset):
         try:
             with open(signal_path, 'rb') as f:
                 signal = np.load(f)
-                if np.isnan(signal).any():
-                    print(f"WARNING: Signal contains NaN values in {signal_path}")
-                    signal = np.nan_to_num(signal, nan=0.0)
+                if np.isnan(signal).any() or np.isinf(signal).any():
+                    print(f"WARNING: Signal contains NaN/Inf values in {signal_path}")
+                    print(f"Signal stats - min: {np.nanmin(signal):.4f}, max: {np.nanmax(signal):.4f}, mean: {np.nanmean(signal):.4f}")
         except Exception as e:
             print(f"Error loading {signal_path}: {str(e)}")
             raise
         
         record = self.records[idx]
         label = float(load_label(record))
+        if np.isnan(label) or np.isinf(label):
+            print(f"WARNING: Label contains NaN/Inf in record {record}")
         
         header = load_header(record)
         age = get_age(header) if self.config.use_age else 0
@@ -203,7 +205,6 @@ class ECGDataset(Dataset):
             normalized = (signal - signal_mean) / signal_std
             
             corr_matrix = np.corrcoef(normalized)
-            corr_matrix = np.nan_to_num(corr_matrix, nan=0.0)
             
             A = np.abs(corr_matrix)
             np.fill_diagonal(A, 0)
@@ -259,4 +260,6 @@ class ECGDataset(Dataset):
             else:
                 result[i, :new_length] = resampled
         
+        if np.isnan(result).any() or np.isinf(result).any():
+            print("WARNING: NaN/Inf detected after _time_wrapping")
         return result
