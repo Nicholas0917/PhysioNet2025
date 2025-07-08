@@ -30,6 +30,7 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.metrics import accuracy_score, average_precision_score, f1_score, roc_auc_score
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
+from torch.optim.lr_scheduler import OneCycleLR
 
 # Import from our modules
 from dataset import *
@@ -64,21 +65,21 @@ class Config:
         self.use_sex = True
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
+        self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
 
         # Loss parameters
         # self.pretrain_focal_alpha = 0.6
         self.pretrain_focal_gamma = 2
-        self.pretrain_margin = 0.2
+        self.pretrain_margin = 0.1
         self.pretrain_s = 30
-        self.pretrain_lmf_alpha = 0.02
-        self.pretrain_lmf_beta = 0.98
+        self.pretrain_lmf_alpha = 0.98
+        self.pretrain_lmf_beta = 0.02
         # self.finetune_focal_alpha = 0.8
         self.finetune_focal_gamma = 2
         self.finetune_margin = 0.35
         self.finetune_s = 30
-        self.finetune_lmf_alpha = 0.02
-        self.finetune_lmf_beta = 0.98
+        self.finetune_lmf_alpha = 0.98
+        self.finetune_lmf_beta = 0.02
         
         # WeightedRandomSampler parameters
         self.pos_sample_weight_multiplier = 1.0
@@ -206,6 +207,7 @@ class Config:
 
 config = Config()
 config.print_config()
+print(config.cache_folder)
 
 # Configure CUDA/cuDNN for stability
 if torch.cuda.is_available():
@@ -217,11 +219,11 @@ if torch.cuda.is_available():
 
 # os.environ['CUDNN_V8_API_ENABLED'] = '0'
 
-# if '/mnt/scratch/wmqn2362/PhysioNet25/tmp' exist
-if os.path.exists('/mnt/scratch/wmqn2362/PhysioNet25/tmp'):
-    config.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
-else:
-    config.cache_folder = './tmp'
+# # if '/mnt/scratch/wmqn2362/PhysioNet25/tmp' exist
+# if os.path.exists('/mnt/scratch/wmqn2362/PhysioNet25/tmp'):
+#     config.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
+# else:
+#     config.cache_folder = './tmp'
 
 
 ################################################################################
@@ -242,16 +244,30 @@ def train_model(data_folder, model_folder, verbose):
     # Stage 0: Data Loading and Preprocessing
     ############################################################################
     records = find_records(data_folder)
-    with ThreadPoolExecutor(max_workers=config.num_preprocess_workers) as executor:
-        list(executor.map(lambda r: data_preprocess(r, config), records))
     
+    # # Check if cache folder is not empty, if so, skip preprocessing
+    # if os.path.exists(config.cache_folder) and os.listdir(config.cache_folder):
+    #     print(f"Cache folder '{config.cache_folder}' is not empty. Skipping data preprocessing.")
+    # else:
+    #     print(f"Cache folder '{config.cache_folder}' is empty or does not exist. Starting data preprocessing...")
+    #     num_cpus = os.cpu_count()
+        
+    #     with ThreadPoolExecutor(max_workers=num_cpus) as executor:
+    #         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
+    
+    num_cpus = os.cpu_count()
+    with ThreadPoolExecutor(max_workers=num_cpus) as executor:
+        list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
+    
+
     # Split into CODE-15% and other records (parallel processing)
     def classify_record(record):
         header = load_header(os.path.join(data_folder, record))
         source = get_source(header)
         return (record, source)
     
-    with ThreadPoolExecutor(max_workers=config.num_preprocess_workers) as executor:
+    num_cpus = os.cpu_count()
+    with ThreadPoolExecutor(max_workers=num_cpus) as executor:
         results = list(executor.map(classify_record, records))
     
     code15_records = [os.path.join(data_folder, r) for r, src in results if src == 'CODE-15%']
@@ -265,9 +281,29 @@ def train_model(data_folder, model_folder, verbose):
     # Stage 1: Pretrain Model
     ############################################################################
     # Initialize model and training components
+
+    pretrained_weight_path = './12_lead_ECGFounder.pth'
+    if not os.path.exists(pretrained_weight_path):
+        print(f"Pretrained model not found at {pretrained_weight_path}. Downloading from Hugging Face...")
+        download_url = "https://huggingface.co/PKUDigitalHealth/ECGFounder/resolve/main/12_lead_ECGFounder.pth?download=true"
+        try:
+            import requests
+            response = requests.get(download_url, stream=True)
+            response.raise_for_status() # Raise an exception for HTTP errors
+            with open(pretrained_weight_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print(f"Successfully downloaded {pretrained_weight_path}")
+        except ImportError:
+            print("Error: 'requests' module not found. Please install it using 'pip install requests' to enable model download.")
+            sys.exit(1)
+        except Exception as e:
+            print(f"Error downloading pretrained model: {e}")
+            sys.exit(1)
+
     model = HybridModel(
         device=config.device,
-        pth_path='./12_lead_ECGFounder.pth',
+        pth_path=pretrained_weight_path,
         config=config
     )
 
@@ -316,7 +352,6 @@ def train_model(data_folder, model_folder, verbose):
         weight_decay=2e-4
     )
     
-    # Warmup scheduler
     warmup_epochs = int(config.pretrain_num_epochs * 0.1)
     def lr_lambda(epoch):
         if epoch < warmup_epochs:
@@ -331,6 +366,18 @@ def train_model(data_folder, model_folder, verbose):
         T_max=config.pretrain_num_epochs - warmup_epochs,
         eta_min=config.pretrain_learning_rate * 0.01
     )
+
+    # # Calculate steps_per_epoch for OneCycleLR
+    # steps_per_epoch = math.ceil(len(pretrain_dataset) * 0.8 / config.pretrain_batch_size) # 0.8 for train_size split
+
+    # # Create OneCycleLR scheduler
+    # scheduler = OneCycleLR(
+    #     optimizer,
+    #     max_lr=config.pretrain_learning_rate,
+    #     epochs=num_epochs, # Use num_epochs from function parameter (pretrain_num_epochs)
+    #     steps_per_epoch=steps_per_epoch,
+    #     pct_start=0.3
+    # )
     
     model = pretrain_model(
         pretrain_dataset=pretrain_dataset,
@@ -339,7 +386,7 @@ def train_model(data_folder, model_folder, verbose):
         optimizer=optimizer,
         warmup_epochs=warmup_epochs,
         warmup_scheduler=warmup_scheduler,
-        scheduler=scheduler,
+        scheduler=scheduler,  # Pass the initialized scheduler
         num_epochs=config.pretrain_num_epochs,
         batch_size=config.pretrain_batch_size,
         early_stop_patience=config.pretrain_early_stop_patience,
@@ -477,7 +524,6 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
     train_loader = DataLoader(train_dataset,
                             batch_size=batch_size,
                             sampler=train_sampler,
-                            # shuffle=True,
                             num_workers=config.num_preprocess_workers)
     val_loader = DataLoader(val_dataset,
                           batch_size=batch_size,
@@ -534,7 +580,7 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
             loss = loss / config.gradient_accumulation_steps
             # scaler.scale(loss).backward()
             loss.backward()
-            check_gradients(model)
+            # check_gradients(model)
             
             if (i + 1) % config.gradient_accumulation_steps == 0:
                 # Gradient clipping
@@ -586,7 +632,7 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         
         # Calculate training metrics
         train_auroc = roc_auc_score(train_targets, np.round(train_outputs))
-        train_auprc = average_precision_score(train_targets, np.round(train_outputs))
+        train_auprc = average_precision_score(train_targets, train_outputs)
         train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
         train_f1 = f1_score(train_targets, np.round(train_outputs))
 
@@ -845,8 +891,8 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             schedulers[fold].step()
 
             # Calculate training metrics
-            train_auroc = roc_auc_score(train_targets, np.round(train_outputs))
-            train_auprc = average_precision_score(train_targets, np.round(train_outputs))
+            train_auroc = roc_auc_score(train_targets, train_outputs)
+            train_auprc = average_precision_score(train_targets, train_outputs)
             train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
             train_f1 = f1_score(train_targets, np.round(train_outputs))
 
@@ -904,7 +950,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
 
             val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
-            val_auprc = average_precision_score(val_targets, np.round(val_outputs))
+            val_auprc = average_precision_score(val_targets, val_outputs)
             val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
             val_f1 = f1_score(val_targets, np.round(val_outputs))
 
@@ -951,6 +997,7 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
         # Evaluation
         outputs = []
         targets = []
+        all_logits = []
         with torch.no_grad():
             for features, label in loader:
                 signal, meta_features = features
@@ -961,6 +1008,7 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
                 output = model(signal, meta_features)
                 outputs.extend(torch.sigmoid(output).cpu().numpy())
                 targets.extend(label.cpu().numpy())
+                all_logits.extend(output.cpu().numpy())
         
         # Calculate metrics
         auroc = roc_auc_score(targets, outputs)
@@ -969,11 +1017,20 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
         f1 = f1_score(targets, np.round(outputs))
         
         if verbose:
+            # Calculate positive and negative logits
+            positive_logits = [logit for i, logit in enumerate(all_logits) if targets[i] == 1]
+            negative_logits = [logit for i, logit in enumerate(all_logits) if targets[i] == 0]
+
+            avg_positive_logit = np.mean(positive_logits) if positive_logits else 0.0
+            avg_negative_logit = np.mean(negative_logits) if negative_logits else 0.0
+
             print(f"\n{dataset_name} Dataset Metrics:")
             print(f"AUROC: {auroc:.4f}")
             print(f"AUPRC: {auprc:.4f}")
             print(f"Accuracy: {accuracy:.4f}")
             print(f"F1 Score: {f1:.4f}")
+            print(f"Positive Logit: {avg_positive_logit:.4f}")
+            print(f"Negative Logit: {avg_negative_logit:.4f}")
     
     # Evaluate on pretrain dataset
     evaluate_dataset(pretrain_dataset, "Pretrain")

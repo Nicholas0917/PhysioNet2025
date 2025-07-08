@@ -1,0 +1,2581 @@
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: ecgfounder
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 2e-05
+Batch Size: 256
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 1e-06
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.3
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.2
+Use Shift Augmentation: True, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: True, Max Probability: 0.02, Probability: 0.3
+Use 50Hz Power Noise: False, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 0.08, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.08, Probability: 0.3
+Use Cutout Augmentation: True, Max Ratio: 0.2, Probability: 0.3
+Use Lead Mixing Augmentation: True, Lambda: 0.2, Probability: 0.3
+Use Time Warping Augmentation: True, Freq Range: [450, 550], Probability: 0.3
+>>>>>>>>>Loss Parameters:<<<<<<<<<<
+Pretrain Focal Gamma: 2
+Pretrain Margin: 0.1
+Pretrain S: 30
+Pretrain LMF Alpha: 0.98
+Pretrain LMF Beta: 0.02
+Finetune Focal Gamma: 2
+Finetune Margin: 0.35
+Finetune S: 30
+Finetune LMF Alpha: 0.98
+Finetune LMF Beta: 0.02
+Positive Sample Weight Multiplier: 1.0
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+/mnt/flash/tmp/job.1231449
+Total parameters: 31,358,130
+Trainable parameters: 31,358,130
+Non-trainable parameters: 0
+Starting pretraining on 342755 records...
+Epoch 1 Averages:
+  Positive Logit: 0.1007
+  Negative Logit: 0.1095
+  Positive Probability: 0.5235
+Validation Averages:
+  Positive Logit: -0.0333
+  Negative Logit: -0.0053
+  Positive Probability: 0.4917
+Epoch 1/50, Train Loss: 0.0971, Valid Loss: 0.3196, Time: 870.71 seconds
+Train AUROC: 0.4953, Train AUPRC: 0.0187, Train Accuracy: 0.4126, Train F1: 0.0368
+Valid AUROC: 0.4831, Valid AUPRC: 0.0177, Valid Accuracy: 0.5034, Valid F1: 0.0342
+
+Epoch 2 Averages:
+  Positive Logit: -0.0442
+  Negative Logit: -0.0364
+  Positive Probability: 0.4901
+Validation Averages:
+  Positive Logit: -0.3030
+  Negative Logit: -0.3149
+  Positive Probability: 0.4278
+Epoch 2/50, Train Loss: 0.0712, Valid Loss: 0.1626, Time: 808.95 seconds
+Train AUROC: 0.5055, Train AUPRC: 0.0187, Train Accuracy: 0.5315, Train F1: 0.0367
+Valid AUROC: 0.5037, Valid AUPRC: 0.0192, Valid Accuracy: 0.7723, Valid F1: 0.0351
+
+Epoch 3 Averages:
+  Positive Logit: -0.3003
+  Negative Logit: -0.3055
+  Positive Probability: 0.4294
+Validation Averages:
+  Positive Logit: -0.6954
+  Negative Logit: -0.7649
+  Positive Probability: 0.3400
+Epoch 3/50, Train Loss: 0.0406, Valid Loss: 0.0756, Time: 627.47 seconds
+Train AUROC: 0.4978, Train AUPRC: 0.0187, Train Accuracy: 0.7579, Train F1: 0.0338
+Valid AUROC: 0.5420, Valid AUPRC: 0.0224, Valid Accuracy: 0.9484, Valid F1: 0.0423
+
+Epoch 4 Averages:
+  Positive Logit: -0.5243
+  Negative Logit: -0.5831
+  Positive Probability: 0.3773
+Validation Averages:
+  Positive Logit: -0.8842
+  Negative Logit: -0.9932
+  Positive Probability: 0.3017
+Epoch 4/50, Train Loss: 0.0238, Valid Loss: 0.0593, Time: 515.29 seconds
+Train AUROC: 0.5103, Train AUPRC: 0.0217, Train Accuracy: 0.9140, Train F1: 0.0386
+Valid AUROC: 0.5646, Valid AUPRC: 0.0242, Valid Accuracy: 0.9716, Valid F1: 0.0269
+
+Epoch 5 Averages:
+  Positive Logit: -0.7134
+  Negative Logit: -0.8027
+  Positive Probability: 0.3352
+Validation Averages:
+  Positive Logit: -1.0849
+  Negative Logit: -1.2658
+  Positive Probability: 0.2626
+Epoch 5/50, Train Loss: 0.0174, Valid Loss: 0.0488, Time: 507.55 seconds
+Train AUROC: 0.5031, Train AUPRC: 0.0245, Train Accuracy: 0.9586, Train F1: 0.0268
+Valid AUROC: 0.6050, Valid AUPRC: 0.0287, Valid Accuracy: 0.9782, Valid F1: 0.0286
+
+Epoch 6 Averages:
+  Positive Logit: -0.8685
+  Negative Logit: -0.9846
+  Positive Probability: 0.3035
+Validation Averages:
+  Positive Logit: -1.3026
+  Negative Logit: -1.5095
+  Positive Probability: 0.2265
+Epoch 6/50, Train Loss: 0.0142, Valid Loss: 0.0467, Time: 507.57 seconds
+Train AUROC: 0.5051, Train AUPRC: 0.0263, Train Accuracy: 0.9725, Train F1: 0.0259
+Valid AUROC: 0.6087, Valid AUPRC: 0.0293, Valid Accuracy: 0.9795, Valid F1: 0.0099
+
+Epoch 7 Averages:
+  Positive Logit: -0.9455
+  Negative Logit: -1.1265
+  Positive Probability: 0.2877
+Validation Averages:
+  Positive Logit: -1.3937
+  Negative Logit: -1.6645
+  Positive Probability: 0.2124
+Epoch 7/50, Train Loss: 0.0127, Valid Loss: 0.0475, Time: 507.35 seconds
+Train AUROC: 0.4995, Train AUPRC: 0.0302, Train Accuracy: 0.9758, Train F1: 0.0060
+Valid AUROC: 0.6402, Valid AUPRC: 0.0318, Valid Accuracy: 0.9781, Valid F1: 0.0119
+
+Epoch 8 Averages:
+  Positive Logit: -1.0148
+  Negative Logit: -1.2287
+  Positive Probability: 0.2749
+Validation Averages:
+  Positive Logit: -1.5689
+  Negative Logit: -1.9177
+  Positive Probability: 0.1889
+Epoch 8/50, Train Loss: 0.0118, Valid Loss: 0.0488, Time: 512.14 seconds
+Train AUROC: 0.5008, Train AUPRC: 0.0328, Train Accuracy: 0.9780, Train F1: 0.0079
+Valid AUROC: 0.6522, Valid AUPRC: 0.0337, Valid Accuracy: 0.9791, Valid F1: 0.0124
+
+Epoch 9 Averages:
+  Positive Logit: -1.0490
+  Negative Logit: -1.3039
+  Positive Probability: 0.2698
+Validation Averages:
+  Positive Logit: -1.6598
+  Negative Logit: -2.0228
+  Positive Probability: 0.1789
+Epoch 9/50, Train Loss: 0.0116, Valid Loss: 0.0603, Time: 510.00 seconds
+Train AUROC: 0.5027, Train AUPRC: 0.0377, Train Accuracy: 0.9778, Train F1: 0.0143
+Valid AUROC: 0.6533, Valid AUPRC: 0.0310, Valid Accuracy: 0.9718, Valid F1: 0.0253
+
+Epoch 10 Averages:
+  Positive Logit: -1.0384
+  Negative Logit: -1.3668
+  Positive Probability: 0.2711
+Validation Averages:
+  Positive Logit: -1.2230
+  Negative Logit: -1.6636
+  Positive Probability: 0.2381
+Epoch 10/50, Train Loss: 0.0111, Valid Loss: 0.0612, Time: 1172.97 seconds
+Train AUROC: 0.5047, Train AUPRC: 0.0452, Train Accuracy: 0.9788, Train F1: 0.0203
+Valid AUROC: 0.7291, Valid AUPRC: 0.0451, Valid Accuracy: 0.9700, Valid F1: 0.0265
+
+Epoch 11 Averages:
+  Positive Logit: -1.0867
+  Negative Logit: -1.4096
+  Positive Probability: 0.2628
+Validation Averages:
+  Positive Logit: -1.5576
+  Negative Logit: -1.9820
+  Positive Probability: 0.1873
+Epoch 11/50, Train Loss: 0.0110, Valid Loss: 0.0529, Time: 826.40 seconds
+Train AUROC: 0.5025, Train AUPRC: 0.0419, Train Accuracy: 0.9792, Train F1: 0.0125
+Valid AUROC: 0.7097, Valid AUPRC: 0.0385, Valid Accuracy: 0.9754, Valid F1: 0.0175
+
+Epoch 12 Averages:
+  Positive Logit: -1.0621
+  Negative Logit: -1.4418
+  Positive Probability: 0.2681
+Validation Averages:
+  Positive Logit: -1.4633
+  Negative Logit: -1.9599
+  Positive Probability: 0.2019
+Epoch 12/50, Train Loss: 0.0108, Valid Loss: 0.0496, Time: 660.33 seconds
+Train AUROC: 0.5036, Train AUPRC: 0.0509, Train Accuracy: 0.9788, Train F1: 0.0163
+Valid AUROC: 0.7321, Valid AUPRC: 0.0420, Valid Accuracy: 0.9757, Valid F1: 0.0200
+
+Epoch 13 Averages:
+  Positive Logit: -1.0657
+  Negative Logit: -1.4877
+  Positive Probability: 0.2671
+Validation Averages:
+  Positive Logit: -1.5207
+  Negative Logit: -2.0554
+  Positive Probability: 0.1947
+Epoch 13/50, Train Loss: 0.0104, Valid Loss: 0.0506, Time: 568.98 seconds
+Train AUROC: 0.5051, Train AUPRC: 0.0503, Train Accuracy: 0.9798, Train F1: 0.0213
+Valid AUROC: 0.7343, Valid AUPRC: 0.0420, Valid Accuracy: 0.9748, Valid F1: 0.0215
+
+Epoch 14 Averages:
+  Positive Logit: -1.0915
+  Negative Logit: -1.5225
+  Positive Probability: 0.2620
+Validation Averages:
+  Positive Logit: -1.4823
+  Negative Logit: -2.0477
+  Positive Probability: 0.1998
+Epoch 14/50, Train Loss: 0.0103, Valid Loss: 0.0469, Time: 560.34 seconds
+Train AUROC: 0.5043, Train AUPRC: 0.0496, Train Accuracy: 0.9800, Train F1: 0.0186
+Valid AUROC: 0.7476, Valid AUPRC: 0.0501, Valid Accuracy: 0.9779, Valid F1: 0.0117
+
+Epoch 15 Averages:
+  Positive Logit: -1.0713
+  Negative Logit: -1.5465
+  Positive Probability: 0.2660
+Validation Averages:
+  Positive Logit: -1.0987
+  Negative Logit: -1.6772
+  Positive Probability: 0.2598
+Epoch 15/50, Train Loss: 0.0102, Valid Loss: 0.0380, Time: 554.95 seconds
+Train AUROC: 0.5040, Train AUPRC: 0.0508, Train Accuracy: 0.9800, Train F1: 0.0172
+Valid AUROC: 0.7949, Valid AUPRC: 0.0769, Valid Accuracy: 0.9794, Valid F1: 0.0098
+
+Epoch 16 Averages:
+  Positive Logit: -1.0607
+  Negative Logit: -1.5612
+  Positive Probability: 0.2694
+Validation Averages:
+  Positive Logit: -1.2557
+  Negative Logit: -1.9002
+  Positive Probability: 0.2378
+Epoch 16/50, Train Loss: 0.0103, Valid Loss: 0.0406, Time: 511.04 seconds
+Train AUROC: 0.5071, Train AUPRC: 0.0613, Train Accuracy: 0.9793, Train F1: 0.0288
+Valid AUROC: 0.7692, Valid AUPRC: 0.0649, Valid Accuracy: 0.9794, Valid F1: 0.0249
+
+Epoch 17 Averages:
+  Positive Logit: -1.0648
+  Negative Logit: -1.5819
+  Positive Probability: 0.2685
+Validation Averages:
+  Positive Logit: -1.4451
+  Negative Logit: -2.1423
+  Positive Probability: 0.2099
+Epoch 17/50, Train Loss: 0.0102, Valid Loss: 0.0440, Time: 553.08 seconds
+Train AUROC: 0.5076, Train AUPRC: 0.0648, Train Accuracy: 0.9795, Train F1: 0.0304
+Valid AUROC: 0.7540, Valid AUPRC: 0.0559, Valid Accuracy: 0.9798, Valid F1: 0.0198
+
+Epoch 18 Averages:
+  Positive Logit: -1.0577
+  Negative Logit: -1.5954
+  Positive Probability: 0.2709
+Validation Averages:
+  Positive Logit: -1.5858
+  Negative Logit: -2.2893
+  Positive Probability: 0.1910
+Epoch 18/50, Train Loss: 0.0102, Valid Loss: 0.0472, Time: 554.80 seconds
+Train AUROC: 0.5082, Train AUPRC: 0.0678, Train Accuracy: 0.9794, Train F1: 0.0329
+Valid AUROC: 0.7473, Valid AUPRC: 0.0522, Valid Accuracy: 0.9798, Valid F1: 0.0294
+
+Epoch 19 Averages:
+  Positive Logit: -1.0631
+  Negative Logit: -1.5993
+  Positive Probability: 0.2690
+Validation Averages:
+  Positive Logit: -1.4862
+  Negative Logit: -2.1837
+  Positive Probability: 0.2058
+Epoch 19/50, Train Loss: 0.0099, Valid Loss: 0.0445, Time: 511.49 seconds
+Train AUROC: 0.5103, Train AUPRC: 0.0675, Train Accuracy: 0.9804, Train F1: 0.0401
+Valid AUROC: 0.7446, Valid AUPRC: 0.0582, Valid Accuracy: 0.9806, Valid F1: 0.0192
+
+Epoch 20 Averages:
+  Positive Logit: -1.0525
+  Negative Logit: -1.6040
+  Positive Probability: 0.2725
+Validation Averages:
+  Positive Logit: -1.5510
+  Negative Logit: -2.2604
+  Positive Probability: 0.1950
+Epoch 20/50, Train Loss: 0.0102, Valid Loss: 0.0455, Time: 560.96 seconds
+Train AUROC: 0.5084, Train AUPRC: 0.0732, Train Accuracy: 0.9797, Train F1: 0.0335
+Valid AUROC: 0.7444, Valid AUPRC: 0.0544, Valid Accuracy: 0.9813, Valid F1: 0.0138
+
+Early stopping: Valid AUPRC not improved for 5 epochs
+Pretraining completed and model saved
+
+Pretrain Dataset Metrics:
+AUROC: 0.7887
+AUPRC: 0.0715
+Accuracy: 0.9802
+F1 Score: 0.0091
+Positive Logit: -1.5081
+Negative Logit: -2.3819
+
+Finetune Dataset Metrics:
+AUROC: 0.8763
+AUPRC: 0.5427
+Accuracy: 0.9199
+F1 Score: 0.0067
+Positive Logit: -1.9346
+Negative Logit: -3.1765
+Total parameters: 31,358,130
+Trainable parameters: 657,409
+Non-trainable parameters: 30,700,721
+Training the model on the fine-tune data...
+Fine-tune Datastes Size:  18430
+Fold 1
+Epoch 1 Averages:
+  Positive Logit: -1.0419
+  Negative Logit: -1.6238
+  Positive Probability: 0.2774
+Validation Averages:
+  Positive Logit: -1.6361
+  Negative Logit: -2.9067
+  Positive Probability: 0.1927
+Epoch 1/100, Train Loss: 0.1409, Valid Loss: 0.1931, Time: 16.67 seconds
+Train AUROC: 0.7389, Train AUPRC: 0.2389, Train Accuracy: 0.9177, Train F1: 0.0634
+Valid AUROC: 0.5083, Valid AUPRC: 0.3248, Valid Accuracy: 0.9220, Valid F1: 0.0337
+
+Epoch 2 Averages:
+  Positive Logit: -0.9797
+  Negative Logit: -1.6073
+  Positive Probability: 0.2914
+Validation Averages:
+  Positive Logit: -1.7458
+  Negative Logit: -3.0067
+  Positive Probability: 0.1825
+Epoch 2/100, Train Loss: 0.1339, Valid Loss: 0.2070, Time: 16.57 seconds
+Train AUROC: 0.7405, Train AUPRC: 0.2408, Train Accuracy: 0.9190, Train F1: 0.0983
+Valid AUROC: 0.5151, Valid AUPRC: 0.3204, Valid Accuracy: 0.9228, Valid F1: 0.0596
+
+Epoch 3 Averages:
+  Positive Logit: -0.9584
+  Negative Logit: -1.5831
+  Positive Probability: 0.2986
+Validation Averages:
+  Positive Logit: -1.7335
+  Negative Logit: -3.1413
+  Positive Probability: 0.1875
+Epoch 3/100, Train Loss: 0.1338, Valid Loss: 0.2059, Time: 16.76 seconds
+Train AUROC: 0.7292, Train AUPRC: 0.2518, Train Accuracy: 0.9194, Train F1: 0.1254
+Valid AUROC: 0.5168, Valid AUPRC: 0.3578, Valid Accuracy: 0.9231, Valid F1: 0.0660
+
+Epoch 4 Averages:
+  Positive Logit: -0.8906
+  Negative Logit: -1.5724
+  Positive Probability: 0.3141
+Validation Averages:
+  Positive Logit: -1.5689
+  Negative Logit: -3.0302
+  Positive Probability: 0.2142
+Epoch 4/100, Train Loss: 0.1275, Valid Loss: 0.1905, Time: 16.59 seconds
+Train AUROC: 0.7440, Train AUPRC: 0.2777, Train Accuracy: 0.9214, Train F1: 0.1646
+Valid AUROC: 0.5296, Valid AUPRC: 0.3449, Valid Accuracy: 0.9234, Valid F1: 0.1132
+
+Epoch 5 Averages:
+  Positive Logit: -0.8379
+  Negative Logit: -1.5600
+  Positive Probability: 0.3235
+Validation Averages:
+  Positive Logit: -1.6151
+  Negative Logit: -3.1606
+  Positive Probability: 0.2107
+Epoch 5/100, Train Loss: 0.1252, Valid Loss: 0.1949, Time: 16.34 seconds
+Train AUROC: 0.7487, Train AUPRC: 0.2795, Train Accuracy: 0.9193, Train F1: 0.1863
+Valid AUROC: 0.5202, Valid AUPRC: 0.3792, Valid Accuracy: 0.9236, Valid F1: 0.0787
+
+Epoch 6 Averages:
+  Positive Logit: -0.7853
+  Negative Logit: -1.5406
+  Positive Probability: 0.3340
+Validation Averages:
+  Positive Logit: -1.7773
+  Negative Logit: -3.2902
+  Positive Probability: 0.1965
+Epoch 6/100, Train Loss: 0.1213, Valid Loss: 0.2166, Time: 16.21 seconds
+Train AUROC: 0.7580, Train AUPRC: 0.2873, Train Accuracy: 0.9197, Train F1: 0.2099
+Valid AUROC: 0.5287, Valid AUPRC: 0.3365, Valid Accuracy: 0.9247, Valid F1: 0.1093
+
+Epoch 7 Averages:
+  Positive Logit: -0.7635
+  Negative Logit: -1.5206
+  Positive Probability: 0.3380
+Validation Averages:
+  Positive Logit: -1.5244
+  Negative Logit: -3.2555
+  Positive Probability: 0.2253
+Epoch 7/100, Train Loss: 0.1158, Valid Loss: 0.1872, Time: 16.52 seconds
+Train AUROC: 0.7561, Train AUPRC: 0.2809, Train Accuracy: 0.9229, Train F1: 0.2408
+Valid AUROC: 0.5253, Valid AUPRC: 0.3804, Valid Accuracy: 0.9242, Valid F1: 0.0971
+
+Epoch 8 Averages:
+  Positive Logit: -0.7260
+  Negative Logit: -1.5122
+  Positive Probability: 0.3446
+Validation Averages:
+  Positive Logit: -1.6927
+  Negative Logit: -3.3574
+  Positive Probability: 0.2089
+Epoch 8/100, Train Loss: 0.1194, Valid Loss: 0.2091, Time: 16.37 seconds
+Train AUROC: 0.7713, Train AUPRC: 0.2934, Train Accuracy: 0.9170, Train F1: 0.2266
+Valid AUROC: 0.5294, Valid AUPRC: 0.3295, Valid Accuracy: 0.9231, Valid F1: 0.1129
+
+Epoch 9 Averages:
+  Positive Logit: -0.6804
+  Negative Logit: -1.4968
+  Positive Probability: 0.3576
+Validation Averages:
+  Positive Logit: -1.3876
+  Negative Logit: -3.0331
+  Positive Probability: 0.2476
+Epoch 9/100, Train Loss: 0.1169, Valid Loss: 0.1751, Time: 16.25 seconds
+Train AUROC: 0.7695, Train AUPRC: 0.3309, Train Accuracy: 0.9196, Train F1: 0.2791
+Valid AUROC: 0.5481, Valid AUPRC: 0.3949, Valid Accuracy: 0.9255, Valid F1: 0.1747
+
+Epoch 10 Averages:
+  Positive Logit: -0.6905
+  Negative Logit: -1.4765
+  Positive Probability: 0.3552
+Validation Averages:
+  Positive Logit: -1.3492
+  Negative Logit: -3.0865
+  Positive Probability: 0.2503
+Epoch 10/100, Train Loss: 0.1158, Valid Loss: 0.1701, Time: 16.34 seconds
+Train AUROC: 0.7653, Train AUPRC: 0.3120, Train Accuracy: 0.9205, Train F1: 0.2742
+Valid AUROC: 0.5490, Valid AUPRC: 0.4187, Valid Accuracy: 0.9272, Valid F1: 0.1779
+
+Epoch 11 Averages:
+  Positive Logit: -0.6311
+  Negative Logit: -1.4707
+  Positive Probability: 0.3647
+Validation Averages:
+  Positive Logit: -1.2503
+  Negative Logit: -2.9885
+  Positive Probability: 0.2602
+Epoch 11/100, Train Loss: 0.1058, Valid Loss: 0.1584, Time: 16.27 seconds
+Train AUROC: 0.7910, Train AUPRC: 0.3078, Train Accuracy: 0.9229, Train F1: 0.2821
+Valid AUROC: 0.5407, Valid AUPRC: 0.3918, Valid Accuracy: 0.9236, Valid F1: 0.1511
+
+Epoch 12 Averages:
+  Positive Logit: -0.6514
+  Negative Logit: -1.4618
+  Positive Probability: 0.3625
+Validation Averages:
+  Positive Logit: -1.2434
+  Negative Logit: -2.8553
+  Positive Probability: 0.2634
+Epoch 12/100, Train Loss: 0.1143, Valid Loss: 0.1594, Time: 16.45 seconds
+Train AUROC: 0.7712, Train AUPRC: 0.3333, Train Accuracy: 0.9217, Train F1: 0.3001
+Valid AUROC: 0.5428, Valid AUPRC: 0.4030, Valid Accuracy: 0.9245, Valid F1: 0.1576
+
+Epoch 13 Averages:
+  Positive Logit: -0.6595
+  Negative Logit: -1.4406
+  Positive Probability: 0.3596
+Validation Averages:
+  Positive Logit: -1.2595
+  Negative Logit: -2.9799
+  Positive Probability: 0.2650
+Epoch 13/100, Train Loss: 0.1145, Valid Loss: 0.1599, Time: 16.21 seconds
+Train AUROC: 0.7674, Train AUPRC: 0.2950, Train Accuracy: 0.9169, Train F1: 0.2707
+Valid AUROC: 0.5686, Valid AUPRC: 0.4390, Valid Accuracy: 0.9285, Valid F1: 0.2377
+
+Epoch 14 Averages:
+  Positive Logit: -0.6030
+  Negative Logit: -1.4352
+  Positive Probability: 0.3704
+Validation Averages:
+  Positive Logit: -1.3064
+  Negative Logit: -3.0294
+  Positive Probability: 0.2590
+Epoch 14/100, Train Loss: 0.1097, Valid Loss: 0.1672, Time: 16.41 seconds
+Train AUROC: 0.7861, Train AUPRC: 0.3239, Train Accuracy: 0.9185, Train F1: 0.2925
+Valid AUROC: 0.5584, Valid AUPRC: 0.4102, Valid Accuracy: 0.9272, Valid F1: 0.2071
+
+Epoch 15 Averages:
+  Positive Logit: -0.5619
+  Negative Logit: -1.4264
+  Positive Probability: 0.3808
+Validation Averages:
+  Positive Logit: -1.1904
+  Negative Logit: -2.9271
+  Positive Probability: 0.2768
+Epoch 15/100, Train Loss: 0.1076, Valid Loss: 0.1534, Time: 16.26 seconds
+Train AUROC: 0.7957, Train AUPRC: 0.3510, Train Accuracy: 0.9202, Train F1: 0.3166
+Valid AUROC: 0.5672, Valid AUPRC: 0.4422, Valid Accuracy: 0.9288, Valid F1: 0.2339
+
+Epoch 16 Averages:
+  Positive Logit: -0.6084
+  Negative Logit: -1.4117
+  Positive Probability: 0.3712
+Validation Averages:
+  Positive Logit: -1.0770
+  Negative Logit: -2.6839
+  Positive Probability: 0.2899
+Epoch 16/100, Train Loss: 0.1106, Valid Loss: 0.1453, Time: 16.41 seconds
+Train AUROC: 0.7793, Train AUPRC: 0.3097, Train Accuracy: 0.9183, Train F1: 0.2896
+Valid AUROC: 0.5696, Valid AUPRC: 0.4149, Valid Accuracy: 0.9274, Valid F1: 0.2393
+
+Epoch 17 Averages:
+  Positive Logit: -0.5635
+  Negative Logit: -1.4039
+  Positive Probability: 0.3796
+Validation Averages:
+  Positive Logit: -1.2532
+  Negative Logit: -2.8053
+  Positive Probability: 0.2627
+Epoch 17/100, Train Loss: 0.1063, Valid Loss: 0.1616, Time: 16.09 seconds
+Train AUROC: 0.7907, Train AUPRC: 0.3293, Train Accuracy: 0.9201, Train F1: 0.3050
+Valid AUROC: 0.5509, Valid AUPRC: 0.3877, Valid Accuracy: 0.9250, Valid F1: 0.1834
+
+Epoch 18 Averages:
+  Positive Logit: -0.5537
+  Negative Logit: -1.3928
+  Positive Probability: 0.3808
+Validation Averages:
+  Positive Logit: -1.0356
+  Negative Logit: -2.6532
+  Positive Probability: 0.2993
+Epoch 18/100, Train Loss: 0.1038, Valid Loss: 0.1407, Time: 16.10 seconds
+Train AUROC: 0.7950, Train AUPRC: 0.3322, Train Accuracy: 0.9198, Train F1: 0.3018
+Valid AUROC: 0.5745, Valid AUPRC: 0.4566, Valid Accuracy: 0.9277, Valid F1: 0.2528
+
+Epoch 19 Averages:
+  Positive Logit: -0.5530
+  Negative Logit: -1.3822
+  Positive Probability: 0.3816
+Validation Averages:
+  Positive Logit: -1.1301
+  Negative Logit: -2.8467
+  Positive Probability: 0.2860
+Epoch 19/100, Train Loss: 0.1110, Valid Loss: 0.1489, Time: 16.25 seconds
+Train AUROC: 0.7920, Train AUPRC: 0.3461, Train Accuracy: 0.9156, Train F1: 0.3168
+Valid AUROC: 0.5709, Valid AUPRC: 0.4506, Valid Accuracy: 0.9299, Valid F1: 0.2456
+
+Epoch 20 Averages:
+  Positive Logit: -0.5434
+  Negative Logit: -1.3775
+  Positive Probability: 0.3836
+Validation Averages:
+  Positive Logit: -1.1770
+  Negative Logit: -2.7509
+  Positive Probability: 0.2780
+Epoch 20/100, Train Loss: 0.1046, Valid Loss: 0.1544, Time: 16.17 seconds
+Train AUROC: 0.7847, Train AUPRC: 0.3242, Train Accuracy: 0.9196, Train F1: 0.3132
+Valid AUROC: 0.5675, Valid AUPRC: 0.4360, Valid Accuracy: 0.9293, Valid F1: 0.2353
+
+Epoch 21 Averages:
+  Positive Logit: -0.5505
+  Negative Logit: -1.3675
+  Positive Probability: 0.3817
+Validation Averages:
+  Positive Logit: -1.0313
+  Negative Logit: -2.6665
+  Positive Probability: 0.2968
+Epoch 21/100, Train Loss: 0.1083, Valid Loss: 0.1436, Time: 16.25 seconds
+Train AUROC: 0.7888, Train AUPRC: 0.3189, Train Accuracy: 0.9164, Train F1: 0.2995
+Valid AUROC: 0.5624, Valid AUPRC: 0.4061, Valid Accuracy: 0.9258, Valid F1: 0.2178
+
+Epoch 22 Averages:
+  Positive Logit: -0.5053
+  Negative Logit: -1.3677
+  Positive Probability: 0.3899
+Validation Averages:
+  Positive Logit: -0.9148
+  Negative Logit: -2.7180
+  Positive Probability: 0.3171
+Epoch 22/100, Train Loss: 0.1047, Valid Loss: 0.1313, Time: 16.20 seconds
+Train AUROC: 0.8002, Train AUPRC: 0.3520, Train Accuracy: 0.9180, Train F1: 0.3246
+Valid AUROC: 0.5790, Valid AUPRC: 0.4914, Valid Accuracy: 0.9302, Valid F1: 0.2678
+
+Epoch 23 Averages:
+  Positive Logit: -0.5149
+  Negative Logit: -1.3488
+  Positive Probability: 0.3901
+Validation Averages:
+  Positive Logit: -0.9395
+  Negative Logit: -2.4665
+  Positive Probability: 0.3128
+Epoch 23/100, Train Loss: 0.1052, Valid Loss: 0.1299, Time: 16.47 seconds
+Train AUROC: 0.7881, Train AUPRC: 0.3616, Train Accuracy: 0.9219, Train F1: 0.3510
+Valid AUROC: 0.5808, Valid AUPRC: 0.4855, Valid Accuracy: 0.9307, Valid F1: 0.2735
+
+Epoch 24 Averages:
+  Positive Logit: -0.4820
+  Negative Logit: -1.3375
+  Positive Probability: 0.3951
+Validation Averages:
+  Positive Logit: -0.9110
+  Negative Logit: -2.4571
+  Positive Probability: 0.3177
+Epoch 24/100, Train Loss: 0.0988, Valid Loss: 0.1271, Time: 16.37 seconds
+Train AUROC: 0.8002, Train AUPRC: 0.3326, Train Accuracy: 0.9213, Train F1: 0.3411
+Valid AUROC: 0.5803, Valid AUPRC: 0.4696, Valid Accuracy: 0.9296, Valid F1: 0.2704
+
+Epoch 25 Averages:
+  Positive Logit: -0.4464
+  Negative Logit: -1.3440
+  Positive Probability: 0.4036
+Validation Averages:
+  Positive Logit: -0.8624
+  Negative Logit: -2.5545
+  Positive Probability: 0.3288
+Epoch 25/100, Train Loss: 0.1006, Valid Loss: 0.1264, Time: 16.32 seconds
+Train AUROC: 0.8142, Train AUPRC: 0.3797, Train Accuracy: 0.9194, Train F1: 0.3519
+Valid AUROC: 0.5880, Valid AUPRC: 0.4766, Valid Accuracy: 0.9293, Valid F1: 0.2896
+
+Epoch 26 Averages:
+  Positive Logit: -0.5057
+  Negative Logit: -1.3319
+  Positive Probability: 0.3907
+Validation Averages:
+  Positive Logit: -0.9032
+  Negative Logit: -2.3977
+  Positive Probability: 0.3133
+Epoch 26/100, Train Loss: 0.1012, Valid Loss: 0.1229, Time: 16.31 seconds
+Train AUROC: 0.7952, Train AUPRC: 0.3343, Train Accuracy: 0.9203, Train F1: 0.3262
+Valid AUROC: 0.5644, Valid AUPRC: 0.4663, Valid Accuracy: 0.9266, Valid F1: 0.2241
+
+Epoch 27 Averages:
+  Positive Logit: -0.4671
+  Negative Logit: -1.3240
+  Positive Probability: 0.3995
+Validation Averages:
+  Positive Logit: -0.7281
+  Negative Logit: -2.2999
+  Positive Probability: 0.3498
+Epoch 27/100, Train Loss: 0.0987, Valid Loss: 0.1136, Time: 16.47 seconds
+Train AUROC: 0.8007, Train AUPRC: 0.3678, Train Accuracy: 0.9231, Train F1: 0.3590
+Valid AUROC: 0.5883, Valid AUPRC: 0.4933, Valid Accuracy: 0.9299, Valid F1: 0.2912
+
+Epoch 28 Averages:
+  Positive Logit: -0.4709
+  Negative Logit: -1.3259
+  Positive Probability: 0.3988
+Validation Averages:
+  Positive Logit: -0.8496
+  Negative Logit: -2.3356
+  Positive Probability: 0.3268
+Epoch 28/100, Train Loss: 0.1036, Valid Loss: 0.1246, Time: 16.12 seconds
+Train AUROC: 0.8049, Train AUPRC: 0.3709, Train Accuracy: 0.9171, Train F1: 0.3404
+Valid AUROC: 0.5897, Valid AUPRC: 0.4531, Valid Accuracy: 0.9296, Valid F1: 0.2943
+
+Epoch 29 Averages:
+  Positive Logit: -0.4437
+  Negative Logit: -1.3181
+  Positive Probability: 0.4024
+Validation Averages:
+  Positive Logit: -0.8672
+  Negative Logit: -2.4531
+  Positive Probability: 0.3248
+Epoch 29/100, Train Loss: 0.0986, Valid Loss: 0.1277, Time: 16.26 seconds
+Train AUROC: 0.8120, Train AUPRC: 0.3637, Train Accuracy: 0.9194, Train F1: 0.3503
+Valid AUROC: 0.5781, Valid AUPRC: 0.4662, Valid Accuracy: 0.9285, Valid F1: 0.2633
+
+Epoch 30 Averages:
+  Positive Logit: -0.4802
+  Negative Logit: -1.3145
+  Positive Probability: 0.3953
+Validation Averages:
+  Positive Logit: -0.9291
+  Negative Logit: -2.5335
+  Positive Probability: 0.3134
+Epoch 30/100, Train Loss: 0.1028, Valid Loss: 0.1320, Time: 16.26 seconds
+Train AUROC: 0.7952, Train AUPRC: 0.3602, Train Accuracy: 0.9213, Train F1: 0.3456
+Valid AUROC: 0.5726, Valid AUPRC: 0.4401, Valid Accuracy: 0.9272, Valid F1: 0.2472
+
+Epoch 31 Averages:
+  Positive Logit: -0.4664
+  Negative Logit: -1.3127
+  Positive Probability: 0.3988
+Validation Averages:
+  Positive Logit: -0.8545
+  Negative Logit: -2.4330
+  Positive Probability: 0.3250
+Epoch 31/100, Train Loss: 0.1040, Valid Loss: 0.1249, Time: 16.22 seconds
+Train AUROC: 0.7998, Train AUPRC: 0.3651, Train Accuracy: 0.9181, Train F1: 0.3599
+Valid AUROC: 0.5836, Valid AUPRC: 0.4866, Valid Accuracy: 0.9299, Valid F1: 0.2793
+
+Epoch 32 Averages:
+  Positive Logit: -0.4524
+  Negative Logit: -1.2981
+  Positive Probability: 0.4011
+Validation Averages:
+  Positive Logit: -0.8418
+  Negative Logit: -2.3560
+  Positive Probability: 0.3286
+Epoch 32/100, Train Loss: 0.0973, Valid Loss: 0.1254, Time: 16.33 seconds
+Train AUROC: 0.8050, Train AUPRC: 0.3499, Train Accuracy: 0.9231, Train F1: 0.3590
+Valid AUROC: 0.5946, Valid AUPRC: 0.4377, Valid Accuracy: 0.9299, Valid F1: 0.3065
+
+Epoch 33 Averages:
+  Positive Logit: -0.4505
+  Negative Logit: -1.2996
+  Positive Probability: 0.4030
+Validation Averages:
+  Positive Logit: -0.8451
+  Negative Logit: -2.4047
+  Positive Probability: 0.3271
+Epoch 33/100, Train Loss: 0.1017, Valid Loss: 0.1191, Time: 16.14 seconds
+Train AUROC: 0.7963, Train AUPRC: 0.3759, Train Accuracy: 0.9219, Train F1: 0.3784
+Valid AUROC: 0.5920, Valid AUPRC: 0.4939, Valid Accuracy: 0.9310, Valid F1: 0.3022
+
+Epoch 34 Averages:
+  Positive Logit: -0.4410
+  Negative Logit: -1.2889
+  Positive Probability: 0.4044
+Validation Averages:
+  Positive Logit: -0.8862
+  Negative Logit: -2.3781
+  Positive Probability: 0.3190
+Epoch 34/100, Train Loss: 0.0989, Valid Loss: 0.1252, Time: 16.28 seconds
+Train AUROC: 0.8025, Train AUPRC: 0.3761, Train Accuracy: 0.9218, Train F1: 0.3755
+Valid AUROC: 0.5861, Valid AUPRC: 0.4447, Valid Accuracy: 0.9288, Valid F1: 0.2842
+
+Epoch 35 Averages:
+  Positive Logit: -0.4392
+  Negative Logit: -1.2898
+  Positive Probability: 0.4050
+Validation Averages:
+  Positive Logit: -0.7482
+  Negative Logit: -2.2834
+  Positive Probability: 0.3457
+Epoch 35/100, Train Loss: 0.1005, Valid Loss: 0.1162, Time: 16.16 seconds
+Train AUROC: 0.8033, Train AUPRC: 0.3895, Train Accuracy: 0.9217, Train F1: 0.3717
+Valid AUROC: 0.5920, Valid AUPRC: 0.4642, Valid Accuracy: 0.9280, Valid F1: 0.2971
+
+Epoch 36 Averages:
+  Positive Logit: -0.4500
+  Negative Logit: -1.2816
+  Positive Probability: 0.4037
+Validation Averages:
+  Positive Logit: -0.6985
+  Negative Logit: -2.2319
+  Positive Probability: 0.3487
+Epoch 36/100, Train Loss: 0.1033, Valid Loss: 0.1076, Time: 16.36 seconds
+Train AUROC: 0.7956, Train AUPRC: 0.3579, Train Accuracy: 0.9199, Train F1: 0.3678
+Valid AUROC: 0.5847, Valid AUPRC: 0.5161, Valid Accuracy: 0.9291, Valid F1: 0.2810
+
+Epoch 37 Averages:
+  Positive Logit: -0.4483
+  Negative Logit: -1.2744
+  Positive Probability: 0.4027
+Validation Averages:
+  Positive Logit: -0.6875
+  Negative Logit: -2.2107
+  Positive Probability: 0.3549
+Epoch 37/100, Train Loss: 0.1019, Valid Loss: 0.1086, Time: 16.06 seconds
+Train AUROC: 0.8038, Train AUPRC: 0.3654, Train Accuracy: 0.9189, Train F1: 0.3560
+Valid AUROC: 0.5969, Valid AUPRC: 0.4893, Valid Accuracy: 0.9313, Valid F1: 0.3144
+
+Epoch 38 Averages:
+  Positive Logit: -0.4183
+  Negative Logit: -1.2810
+  Positive Probability: 0.4090
+Validation Averages:
+  Positive Logit: -0.7913
+  Negative Logit: -2.3923
+  Positive Probability: 0.3364
+Epoch 38/100, Train Loss: 0.0995, Valid Loss: 0.1154, Time: 16.39 seconds
+Train AUROC: 0.8073, Train AUPRC: 0.3891, Train Accuracy: 0.9203, Train F1: 0.3830
+Valid AUROC: 0.5863, Valid AUPRC: 0.4931, Valid Accuracy: 0.9291, Valid F1: 0.2849
+
+Epoch 39 Averages:
+  Positive Logit: -0.4351
+  Negative Logit: -1.2691
+  Positive Probability: 0.4072
+Validation Averages:
+  Positive Logit: -0.7804
+  Negative Logit: -2.3538
+  Positive Probability: 0.3373
+Epoch 39/100, Train Loss: 0.1017, Valid Loss: 0.1159, Time: 16.35 seconds
+Train AUROC: 0.7921, Train AUPRC: 0.3791, Train Accuracy: 0.9210, Train F1: 0.3811
+Valid AUROC: 0.5756, Valid AUPRC: 0.4869, Valid Accuracy: 0.9269, Valid F1: 0.2548
+
+Epoch 40 Averages:
+  Positive Logit: -0.4593
+  Negative Logit: -1.2736
+  Positive Probability: 0.3991
+Validation Averages:
+  Positive Logit: -0.8104
+  Negative Logit: -2.2786
+  Positive Probability: 0.3295
+Epoch 40/100, Train Loss: 0.1031, Valid Loss: 0.1170, Time: 16.15 seconds
+Train AUROC: 0.7959, Train AUPRC: 0.3461, Train Accuracy: 0.9176, Train F1: 0.3447
+Valid AUROC: 0.5791, Valid AUPRC: 0.4920, Valid Accuracy: 0.9304, Valid F1: 0.2686
+
+Epoch 41 Averages:
+  Positive Logit: -0.4236
+  Negative Logit: -1.2681
+  Positive Probability: 0.4061
+Validation Averages:
+  Positive Logit: -0.7053
+  Negative Logit: -2.2908
+  Positive Probability: 0.3532
+Epoch 41/100, Train Loss: 0.1010, Valid Loss: 0.1076, Time: 16.33 seconds
+Train AUROC: 0.8073, Train AUPRC: 0.3562, Train Accuracy: 0.9142, Train F1: 0.3453
+Valid AUROC: 0.5899, Valid AUPRC: 0.5237, Valid Accuracy: 0.9299, Valid F1: 0.2951
+
+Epoch 42 Averages:
+  Positive Logit: -0.4027
+  Negative Logit: -1.2607
+  Positive Probability: 0.4118
+Validation Averages:
+  Positive Logit: -0.7215
+  Negative Logit: -2.2538
+  Positive Probability: 0.3465
+Epoch 42/100, Train Loss: 0.0961, Valid Loss: 0.1128, Time: 16.34 seconds
+Train AUROC: 0.8130, Train AUPRC: 0.3864, Train Accuracy: 0.9223, Train F1: 0.3714
+Valid AUROC: 0.5806, Valid AUPRC: 0.4971, Valid Accuracy: 0.9274, Valid F1: 0.2685
+
+Epoch 43 Averages:
+  Positive Logit: -0.4196
+  Negative Logit: -1.2618
+  Positive Probability: 0.4082
+Validation Averages:
+  Positive Logit: -0.8381
+  Negative Logit: -2.3486
+  Positive Probability: 0.3302
+Epoch 43/100, Train Loss: 0.1009, Valid Loss: 0.1244, Time: 16.58 seconds
+Train AUROC: 0.8039, Train AUPRC: 0.3724, Train Accuracy: 0.9178, Train F1: 0.3652
+Valid AUROC: 0.5929, Valid AUPRC: 0.4528, Valid Accuracy: 0.9296, Valid F1: 0.3019
+
+Epoch 44 Averages:
+  Positive Logit: -0.3842
+  Negative Logit: -1.2507
+  Positive Probability: 0.4162
+Validation Averages:
+  Positive Logit: -0.7097
+  Negative Logit: -2.1708
+  Positive Probability: 0.3500
+Epoch 44/100, Train Loss: 0.0951, Valid Loss: 0.1134, Time: 16.11 seconds
+Train AUROC: 0.8121, Train AUPRC: 0.3888, Train Accuracy: 0.9217, Train F1: 0.3744
+Valid AUROC: 0.5871, Valid AUPRC: 0.4641, Valid Accuracy: 0.9277, Valid F1: 0.2849
+
+Epoch 45 Averages:
+  Positive Logit: -0.4433
+  Negative Logit: -1.2515
+  Positive Probability: 0.4028
+Validation Averages:
+  Positive Logit: -0.7625
+  Negative Logit: -2.2833
+  Positive Probability: 0.3431
+Epoch 45/100, Train Loss: 0.1023, Valid Loss: 0.1160, Time: 16.24 seconds
+Train AUROC: 0.7935, Train AUPRC: 0.3520, Train Accuracy: 0.9179, Train F1: 0.3649
+Valid AUROC: 0.5923, Valid AUPRC: 0.4852, Valid Accuracy: 0.9315, Valid F1: 0.3039
+
+Epoch 46 Averages:
+  Positive Logit: -0.3749
+  Negative Logit: -1.2569
+  Positive Probability: 0.4192
+Validation Averages:
+  Positive Logit: -0.5916
+  Negative Logit: -2.0795
+  Positive Probability: 0.3718
+Epoch 46/100, Train Loss: 0.1006, Valid Loss: 0.0998, Time: 16.19 seconds
+Train AUROC: 0.8140, Train AUPRC: 0.4183, Train Accuracy: 0.9172, Train F1: 0.3950
+Valid AUROC: 0.6029, Valid AUPRC: 0.5235, Valid Accuracy: 0.9307, Valid F1: 0.3272
+
+Epoch 47 Averages:
+  Positive Logit: -0.3830
+  Negative Logit: -1.2554
+  Positive Probability: 0.4163
+Validation Averages:
+  Positive Logit: -0.6153
+  Negative Logit: -2.1694
+  Positive Probability: 0.3669
+Epoch 47/100, Train Loss: 0.0975, Valid Loss: 0.1078, Time: 16.07 seconds
+Train AUROC: 0.8118, Train AUPRC: 0.3766, Train Accuracy: 0.9198, Train F1: 0.3801
+Valid AUROC: 0.6140, Valid AUPRC: 0.5151, Valid Accuracy: 0.9337, Valid F1: 0.3579
+
+Epoch 48 Averages:
+  Positive Logit: -0.3631
+  Negative Logit: -1.2491
+  Positive Probability: 0.4202
+Validation Averages:
+  Positive Logit: -0.6238
+  Negative Logit: -2.0970
+  Positive Probability: 0.3630
+Epoch 48/100, Train Loss: 0.0950, Valid Loss: 0.1016, Time: 16.09 seconds
+Train AUROC: 0.8208, Train AUPRC: 0.4087, Train Accuracy: 0.9207, Train F1: 0.3931
+Valid AUROC: 0.5904, Valid AUPRC: 0.5463, Valid Accuracy: 0.9310, Valid F1: 0.2983
+
+Epoch 49 Averages:
+  Positive Logit: -0.3758
+  Negative Logit: -1.2468
+  Positive Probability: 0.4173
+Validation Averages:
+  Positive Logit: -0.8424
+  Negative Logit: -2.2976
+  Positive Probability: 0.3218
+Epoch 49/100, Train Loss: 0.0923, Valid Loss: 0.1176, Time: 16.49 seconds
+Train AUROC: 0.8149, Train AUPRC: 0.3807, Train Accuracy: 0.9240, Train F1: 0.3803
+Valid AUROC: 0.5662, Valid AUPRC: 0.4826, Valid Accuracy: 0.9269, Valid F1: 0.2292
+
+Epoch 50 Averages:
+  Positive Logit: -0.3870
+  Negative Logit: -1.2514
+  Positive Probability: 0.4147
+Validation Averages:
+  Positive Logit: -0.6683
+  Negative Logit: -2.1457
+  Positive Probability: 0.3604
+Epoch 50/100, Train Loss: 0.1008, Valid Loss: 0.1073, Time: 16.14 seconds
+Train AUROC: 0.8119, Train AUPRC: 0.3997, Train Accuracy: 0.9162, Train F1: 0.3730
+Valid AUROC: 0.6115, Valid AUPRC: 0.4929, Valid Accuracy: 0.9321, Valid F1: 0.3490
+
+Epoch 51 Averages:
+  Positive Logit: -0.3772
+  Negative Logit: -1.2398
+  Positive Probability: 0.4179
+Validation Averages:
+  Positive Logit: -0.6338
+  Negative Logit: -2.1195
+  Positive Probability: 0.3642
+Epoch 51/100, Train Loss: 0.0961, Valid Loss: 0.1013, Time: 16.27 seconds
+Train AUROC: 0.8136, Train AUPRC: 0.3896, Train Accuracy: 0.9211, Train F1: 0.3860
+Valid AUROC: 0.6060, Valid AUPRC: 0.5270, Valid Accuracy: 0.9334, Valid F1: 0.3396
+
+Epoch 52 Averages:
+  Positive Logit: -0.3947
+  Negative Logit: -1.2373
+  Positive Probability: 0.4146
+Validation Averages:
+  Positive Logit: -0.7059
+  Negative Logit: -2.0936
+  Positive Probability: 0.3485
+Epoch 52/100, Train Loss: 0.1007, Valid Loss: 0.1138, Time: 16.26 seconds
+Train AUROC: 0.8052, Train AUPRC: 0.3892, Train Accuracy: 0.9193, Train F1: 0.3845
+Valid AUROC: 0.5735, Valid AUPRC: 0.4601, Valid Accuracy: 0.9258, Valid F1: 0.2479
+
+Epoch 53 Averages:
+  Positive Logit: -0.3650
+  Negative Logit: -1.2397
+  Positive Probability: 0.4200
+Validation Averages:
+  Positive Logit: -0.6100
+  Negative Logit: -2.0905
+  Positive Probability: 0.3682
+Epoch 53/100, Train Loss: 0.0923, Valid Loss: 0.1021, Time: 16.28 seconds
+Train AUROC: 0.8168, Train AUPRC: 0.3770, Train Accuracy: 0.9230, Train F1: 0.3923
+Valid AUROC: 0.6045, Valid AUPRC: 0.5265, Valid Accuracy: 0.9307, Valid F1: 0.3307
+
+Epoch 54 Averages:
+  Positive Logit: -0.4108
+  Negative Logit: -1.2382
+  Positive Probability: 0.4107
+Validation Averages:
+  Positive Logit: -0.6622
+  Negative Logit: -2.1085
+  Positive Probability: 0.3579
+Epoch 54/100, Train Loss: 0.1011, Valid Loss: 0.1055, Time: 16.17 seconds
+Train AUROC: 0.7993, Train AUPRC: 0.3864, Train Accuracy: 0.9199, Train F1: 0.3988
+Valid AUROC: 0.5988, Valid AUPRC: 0.5139, Valid Accuracy: 0.9318, Valid F1: 0.3198
+
+Epoch 55 Averages:
+  Positive Logit: -0.3734
+  Negative Logit: -1.2427
+  Positive Probability: 0.4183
+Validation Averages:
+  Positive Logit: -0.6280
+  Negative Logit: -2.1733
+  Positive Probability: 0.3647
+Epoch 55/100, Train Loss: 0.0968, Valid Loss: 0.1048, Time: 16.21 seconds
+Train AUROC: 0.8137, Train AUPRC: 0.3995, Train Accuracy: 0.9215, Train F1: 0.3950
+Valid AUROC: 0.5911, Valid AUPRC: 0.5178, Valid Accuracy: 0.9293, Valid F1: 0.2973
+
+Epoch 56 Averages:
+  Positive Logit: -0.4280
+  Negative Logit: -1.2287
+  Positive Probability: 0.4060
+Validation Averages:
+  Positive Logit: -0.6034
+  Negative Logit: -2.0863
+  Positive Probability: 0.3691
+Epoch 56/100, Train Loss: 0.0989, Valid Loss: 0.1013, Time: 16.28 seconds
+Train AUROC: 0.7976, Train AUPRC: 0.3576, Train Accuracy: 0.9184, Train F1: 0.3553
+Valid AUROC: 0.6090, Valid AUPRC: 0.5468, Valid Accuracy: 0.9332, Valid F1: 0.3457
+
+Epoch 57 Averages:
+  Positive Logit: -0.3748
+  Negative Logit: -1.2309
+  Positive Probability: 0.4181
+Validation Averages:
+  Positive Logit: -0.5799
+  Negative Logit: -2.2339
+  Positive Probability: 0.3710
+Epoch 57/100, Train Loss: 0.0937, Valid Loss: 0.1008, Time: 16.31 seconds
+Train AUROC: 0.8093, Train AUPRC: 0.3760, Train Accuracy: 0.9223, Train F1: 0.3856
+Valid AUROC: 0.6054, Valid AUPRC: 0.5466, Valid Accuracy: 0.9323, Valid F1: 0.3360
+
+Epoch 58 Averages:
+  Positive Logit: -0.3647
+  Negative Logit: -1.2351
+  Positive Probability: 0.4202
+Validation Averages:
+  Positive Logit: -0.7866
+  Negative Logit: -2.2305
+  Positive Probability: 0.3332
+Epoch 58/100, Train Loss: 0.0974, Valid Loss: 0.1140, Time: 16.15 seconds
+Train AUROC: 0.8136, Train AUPRC: 0.4060, Train Accuracy: 0.9190, Train F1: 0.3835
+Valid AUROC: 0.5812, Valid AUPRC: 0.4707, Valid Accuracy: 0.9285, Valid F1: 0.2715
+
+Epoch 59 Averages:
+  Positive Logit: -0.4028
+  Negative Logit: -1.2290
+  Positive Probability: 0.4117
+Validation Averages:
+  Positive Logit: -0.6052
+  Negative Logit: -2.1156
+  Positive Probability: 0.3702
+Epoch 59/100, Train Loss: 0.1011, Valid Loss: 0.1000, Time: 16.34 seconds
+Train AUROC: 0.8055, Train AUPRC: 0.3921, Train Accuracy: 0.9172, Train F1: 0.3608
+Valid AUROC: 0.6098, Valid AUPRC: 0.5315, Valid Accuracy: 0.9318, Valid F1: 0.3446
+
+Epoch 60 Averages:
+  Positive Logit: -0.3409
+  Negative Logit: -1.2314
+  Positive Probability: 0.4251
+Validation Averages:
+  Positive Logit: -0.6719
+  Negative Logit: -2.1841
+  Positive Probability: 0.3575
+Epoch 60/100, Train Loss: 0.0913, Valid Loss: 0.1066, Time: 16.49 seconds
+Train AUROC: 0.8222, Train AUPRC: 0.3987, Train Accuracy: 0.9219, Train F1: 0.3819
+Valid AUROC: 0.6005, Valid AUPRC: 0.5016, Valid Accuracy: 0.9321, Valid F1: 0.3243
+
+Epoch 61 Averages:
+  Positive Logit: -0.3940
+  Negative Logit: -1.2261
+  Positive Probability: 0.4130
+Validation Averages:
+  Positive Logit: -0.6854
+  Negative Logit: -2.0867
+  Positive Probability: 0.3548
+Epoch 61/100, Train Loss: 0.0955, Valid Loss: 0.1102, Time: 16.28 seconds
+Train AUROC: 0.8105, Train AUPRC: 0.3832, Train Accuracy: 0.9218, Train F1: 0.3795
+Valid AUROC: 0.5972, Valid AUPRC: 0.4625, Valid Accuracy: 0.9288, Valid F1: 0.3105
+
+Epoch 62 Averages:
+  Positive Logit: -0.3968
+  Negative Logit: -1.2293
+  Positive Probability: 0.4131
+Validation Averages:
+  Positive Logit: -0.7369
+  Negative Logit: -2.2010
+  Positive Probability: 0.3440
+Epoch 62/100, Train Loss: 0.0985, Valid Loss: 0.1105, Time: 16.24 seconds
+Train AUROC: 0.8106, Train AUPRC: 0.3669, Train Accuracy: 0.9199, Train F1: 0.3772
+Valid AUROC: 0.5864, Valid AUPRC: 0.4879, Valid Accuracy: 0.9293, Valid F1: 0.2857
+
+Epoch 63 Averages:
+  Positive Logit: -0.3774
+  Negative Logit: -1.2286
+  Positive Probability: 0.4189
+Validation Averages:
+  Positive Logit: -0.7072
+  Negative Logit: -2.2252
+  Positive Probability: 0.3480
+Epoch 63/100, Train Loss: 0.0932, Valid Loss: 0.1147, Time: 16.28 seconds
+Train AUROC: 0.8124, Train AUPRC: 0.3868, Train Accuracy: 0.9251, Train F1: 0.3976
+Valid AUROC: 0.5861, Valid AUPRC: 0.5005, Valid Accuracy: 0.9288, Valid F1: 0.2842
+
+Epoch 64 Averages:
+  Positive Logit: -0.3739
+  Negative Logit: -1.2280
+  Positive Probability: 0.4187
+Validation Averages:
+  Positive Logit: -0.6122
+  Negative Logit: -2.0594
+  Positive Probability: 0.3683
+Epoch 64/100, Train Loss: 0.0983, Valid Loss: 0.1028, Time: 16.54 seconds
+Train AUROC: 0.8112, Train AUPRC: 0.3952, Train Accuracy: 0.9171, Train F1: 0.3832
+Valid AUROC: 0.6038, Valid AUPRC: 0.5223, Valid Accuracy: 0.9323, Valid F1: 0.3324
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 1 finished. Best Valid AUPRC: 0.5468 at epoch 56. Time: 1043.44 seconds 
+
+Model saved to /users/wmqn2362/PhysioNet2025/ECGFounder_add_Augmentation_0707_4/Model/model_fold1.pth
+Finetuning completed for fold 1
+Fold 2
+Epoch 1 Averages:
+  Positive Logit: -1.0374
+  Negative Logit: -1.6265
+  Positive Probability: 0.2790
+Validation Averages:
+  Positive Logit: -1.9690
+  Negative Logit: -2.9781
+  Positive Probability: 0.1577
+Epoch 1/100, Train Loss: 0.1378, Valid Loss: 0.2335, Time: 16.30 seconds
+Train AUROC: 0.7461, Train AUPRC: 0.2458, Train Accuracy: 0.9195, Train F1: 0.0573
+Valid AUROC: 0.5049, Valid AUPRC: 0.2256, Valid Accuracy: 0.9215, Valid F1: 0.0203
+
+Epoch 2 Averages:
+  Positive Logit: -0.9180
+  Negative Logit: -1.6066
+  Positive Probability: 0.3030
+Validation Averages:
+  Positive Logit: -2.2574
+  Negative Logit: -3.2962
+  Positive Probability: 0.1343
+Epoch 2/100, Train Loss: 0.1303, Valid Loss: 0.2693, Time: 16.20 seconds
+Train AUROC: 0.7576, Train AUPRC: 0.2593, Train Accuracy: 0.9176, Train F1: 0.0968
+Valid AUROC: 0.5082, Valid AUPRC: 0.2072, Valid Accuracy: 0.9217, Valid F1: 0.0336
+
+Epoch 3 Averages:
+  Positive Logit: -0.9017
+  Negative Logit: -1.5936
+  Positive Probability: 0.3092
+Validation Averages:
+  Positive Logit: -2.0142
+  Negative Logit: -3.2116
+  Positive Probability: 0.1629
+Epoch 3/100, Train Loss: 0.1271, Valid Loss: 0.2416, Time: 16.32 seconds
+Train AUROC: 0.7488, Train AUPRC: 0.2536, Train Accuracy: 0.9213, Train F1: 0.1446
+Valid AUROC: 0.5184, Valid AUPRC: 0.2536, Valid Accuracy: 0.9231, Valid F1: 0.0721
+
+Epoch 4 Averages:
+  Positive Logit: -0.8303
+  Negative Logit: -1.5745
+  Positive Probability: 0.3211
+Validation Averages:
+  Positive Logit: -2.2732
+  Negative Logit: -3.4636
+  Positive Probability: 0.1416
+Epoch 4/100, Train Loss: 0.1217, Valid Loss: 0.2728, Time: 16.06 seconds
+Train AUROC: 0.7570, Train AUPRC: 0.2595, Train Accuracy: 0.9207, Train F1: 0.1682
+Valid AUROC: 0.5109, Valid AUPRC: 0.2125, Valid Accuracy: 0.9209, Valid F1: 0.0459
+
+Epoch 5 Averages:
+  Positive Logit: -0.7162
+  Negative Logit: -1.5693
+  Positive Probability: 0.3460
+Validation Averages:
+  Positive Logit: -2.3046
+  Negative Logit: -3.6344
+  Positive Probability: 0.1490
+Epoch 5/100, Train Loss: 0.1150, Valid Loss: 0.2815, Time: 16.20 seconds
+Train AUROC: 0.7830, Train AUPRC: 0.3018, Train Accuracy: 0.9196, Train F1: 0.2181
+Valid AUROC: 0.5137, Valid AUPRC: 0.2214, Valid Accuracy: 0.9204, Valid F1: 0.0579
+
+Epoch 6 Averages:
+  Positive Logit: -0.7052
+  Negative Logit: -1.5524
+  Positive Probability: 0.3523
+Validation Averages:
+  Positive Logit: -2.1373
+  Negative Logit: -3.4744
+  Positive Probability: 0.1640
+Epoch 6/100, Train Loss: 0.1198, Valid Loss: 0.2599, Time: 16.13 seconds
+Train AUROC: 0.7760, Train AUPRC: 0.3231, Train Accuracy: 0.9184, Train F1: 0.2536
+Valid AUROC: 0.5175, Valid AUPRC: 0.2346, Valid Accuracy: 0.9215, Valid F1: 0.0707
+
+Epoch 7 Averages:
+  Positive Logit: -0.6993
+  Negative Logit: -1.5381
+  Positive Probability: 0.3517
+Validation Averages:
+  Positive Logit: -2.0165
+  Negative Logit: -3.3141
+  Positive Probability: 0.1717
+Epoch 7/100, Train Loss: 0.1148, Valid Loss: 0.2495, Time: 16.11 seconds
+Train AUROC: 0.7795, Train AUPRC: 0.3106, Train Accuracy: 0.9200, Train F1: 0.2312
+Valid AUROC: 0.5241, Valid AUPRC: 0.2395, Valid Accuracy: 0.9220, Valid F1: 0.0946
+
+Epoch 8 Averages:
+  Positive Logit: -0.6324
+  Negative Logit: -1.5188
+  Positive Probability: 0.3655
+Validation Averages:
+  Positive Logit: -1.9830
+  Negative Logit: -3.3586
+  Positive Probability: 0.1790
+Epoch 8/100, Train Loss: 0.1096, Valid Loss: 0.2434, Time: 16.34 seconds
+Train AUROC: 0.7958, Train AUPRC: 0.3051, Train Accuracy: 0.9172, Train F1: 0.2535
+Valid AUROC: 0.5310, Valid AUPRC: 0.2714, Valid Accuracy: 0.9231, Valid F1: 0.1184
+
+Epoch 9 Averages:
+  Positive Logit: -0.6098
+  Negative Logit: -1.5156
+  Positive Probability: 0.3695
+Validation Averages:
+  Positive Logit: -2.0456
+  Negative Logit: -3.3348
+  Positive Probability: 0.1676
+Epoch 9/100, Train Loss: 0.1095, Valid Loss: 0.2518, Time: 16.05 seconds
+Train AUROC: 0.8001, Train AUPRC: 0.3373, Train Accuracy: 0.9187, Train F1: 0.2725
+Valid AUROC: 0.5168, Valid AUPRC: 0.2347, Valid Accuracy: 0.9201, Valid F1: 0.0696
+
+Epoch 10 Averages:
+  Positive Logit: -0.6248
+  Negative Logit: -1.4963
+  Positive Probability: 0.3666
+Validation Averages:
+  Positive Logit: -1.9857
+  Negative Logit: -3.2713
+  Positive Probability: 0.1780
+Epoch 10/100, Train Loss: 0.1111, Valid Loss: 0.2444, Time: 16.40 seconds
+Train AUROC: 0.7898, Train AUPRC: 0.3299, Train Accuracy: 0.9185, Train F1: 0.2710
+Valid AUROC: 0.5290, Valid AUPRC: 0.2571, Valid Accuracy: 0.9223, Valid F1: 0.1118
+
+Epoch 11 Averages:
+  Positive Logit: -0.6201
+  Negative Logit: -1.4861
+  Positive Probability: 0.3696
+Validation Averages:
+  Positive Logit: -1.6989
+  Negative Logit: -3.1098
+  Positive Probability: 0.2130
+Epoch 11/100, Train Loss: 0.1109, Valid Loss: 0.2151, Time: 16.20 seconds
+Train AUROC: 0.7870, Train AUPRC: 0.3137, Train Accuracy: 0.9179, Train F1: 0.2749
+Valid AUROC: 0.5450, Valid AUPRC: 0.2796, Valid Accuracy: 0.9228, Valid F1: 0.1647
+
+Epoch 12 Averages:
+  Positive Logit: -0.5998
+  Negative Logit: -1.4758
+  Positive Probability: 0.3727
+Validation Averages:
+  Positive Logit: -1.8144
+  Negative Logit: -3.0845
+  Positive Probability: 0.1965
+Epoch 12/100, Train Loss: 0.1099, Valid Loss: 0.2251, Time: 16.21 seconds
+Train AUROC: 0.7879, Train AUPRC: 0.3242, Train Accuracy: 0.9193, Train F1: 0.3020
+Valid AUROC: 0.5323, Valid AUPRC: 0.2728, Valid Accuracy: 0.9226, Valid F1: 0.1231
+
+Epoch 13 Averages:
+  Positive Logit: -0.5890
+  Negative Logit: -1.4656
+  Positive Probability: 0.3745
+Validation Averages:
+  Positive Logit: -1.7865
+  Negative Logit: -3.0391
+  Positive Probability: 0.1952
+Epoch 13/100, Train Loss: 0.1116, Valid Loss: 0.2211, Time: 16.26 seconds
+Train AUROC: 0.7946, Train AUPRC: 0.3406, Train Accuracy: 0.9164, Train F1: 0.2962
+Valid AUROC: 0.5287, Valid AUPRC: 0.2466, Valid Accuracy: 0.9217, Valid F1: 0.1111
+
+Epoch 14 Averages:
+  Positive Logit: -0.5656
+  Negative Logit: -1.4538
+  Positive Probability: 0.3785
+Validation Averages:
+  Positive Logit: -1.6970
+  Negative Logit: -3.0221
+  Positive Probability: 0.2097
+Epoch 14/100, Train Loss: 0.1053, Valid Loss: 0.2158, Time: 15.98 seconds
+Train AUROC: 0.7983, Train AUPRC: 0.3361, Train Accuracy: 0.9207, Train F1: 0.3091
+Valid AUROC: 0.5402, Valid AUPRC: 0.2783, Valid Accuracy: 0.9226, Valid F1: 0.1493
+
+Epoch 15 Averages:
+  Positive Logit: -0.4994
+  Negative Logit: -1.4471
+  Positive Probability: 0.3925
+Validation Averages:
+  Positive Logit: -1.7176
+  Negative Logit: -2.9995
+  Positive Probability: 0.2020
+Epoch 15/100, Train Loss: 0.1037, Valid Loss: 0.2148, Time: 16.15 seconds
+Train AUROC: 0.8109, Train AUPRC: 0.3861, Train Accuracy: 0.9217, Train F1: 0.3579
+Valid AUROC: 0.5216, Valid AUPRC: 0.2741, Valid Accuracy: 0.9204, Valid F1: 0.0872
+
+Epoch 16 Averages:
+  Positive Logit: -0.5462
+  Negative Logit: -1.4364
+  Positive Probability: 0.3835
+Validation Averages:
+  Positive Logit: -1.6553
+  Negative Logit: -2.9831
+  Positive Probability: 0.2102
+Epoch 16/100, Train Loss: 0.1094, Valid Loss: 0.2054, Time: 16.16 seconds
+Train AUROC: 0.7955, Train AUPRC: 0.3429, Train Accuracy: 0.9171, Train F1: 0.3228
+Valid AUROC: 0.5262, Valid AUPRC: 0.2842, Valid Accuracy: 0.9201, Valid F1: 0.1037
+
+Epoch 17 Averages:
+  Positive Logit: -0.4899
+  Negative Logit: -1.4235
+  Positive Probability: 0.3946
+Validation Averages:
+  Positive Logit: -1.5999
+  Negative Logit: -2.9246
+  Positive Probability: 0.2175
+Epoch 17/100, Train Loss: 0.1018, Valid Loss: 0.2052, Time: 16.24 seconds
+Train AUROC: 0.8105, Train AUPRC: 0.3657, Train Accuracy: 0.9211, Train F1: 0.3337
+Valid AUROC: 0.5397, Valid AUPRC: 0.2750, Valid Accuracy: 0.9217, Valid F1: 0.1479
+
+Epoch 18 Averages:
+  Positive Logit: -0.5015
+  Negative Logit: -1.4148
+  Positive Probability: 0.3921
+Validation Averages:
+  Positive Logit: -1.5503
+  Negative Logit: -2.9607
+  Positive Probability: 0.2273
+Epoch 18/100, Train Loss: 0.1026, Valid Loss: 0.2012, Time: 16.35 seconds
+Train AUROC: 0.8017, Train AUPRC: 0.3505, Train Accuracy: 0.9208, Train F1: 0.3322
+Valid AUROC: 0.5386, Valid AUPRC: 0.3219, Valid Accuracy: 0.9226, Valid F1: 0.1441
+
+Epoch 19 Averages:
+  Positive Logit: -0.4843
+  Negative Logit: -1.4156
+  Positive Probability: 0.3958
+Validation Averages:
+  Positive Logit: -1.6777
+  Negative Logit: -2.8925
+  Positive Probability: 0.2050
+Epoch 19/100, Train Loss: 0.1025, Valid Loss: 0.2161, Time: 16.29 seconds
+Train AUROC: 0.8070, Train AUPRC: 0.3600, Train Accuracy: 0.9206, Train F1: 0.3580
+Valid AUROC: 0.5334, Valid AUPRC: 0.2503, Valid Accuracy: 0.9217, Valid F1: 0.1273
+
+Epoch 20 Averages:
+  Positive Logit: -0.4645
+  Negative Logit: -1.4024
+  Positive Probability: 0.4007
+Validation Averages:
+  Positive Logit: -1.5623
+  Negative Logit: -2.8071
+  Positive Probability: 0.2219
+Epoch 20/100, Train Loss: 0.1034, Valid Loss: 0.2024, Time: 15.91 seconds
+Train AUROC: 0.8128, Train AUPRC: 0.3893, Train Accuracy: 0.9182, Train F1: 0.3548
+Valid AUROC: 0.5399, Valid AUPRC: 0.2742, Valid Accuracy: 0.9220, Valid F1: 0.1484
+
+Epoch 21 Averages:
+  Positive Logit: -0.4428
+  Negative Logit: -1.3981
+  Positive Probability: 0.4046
+Validation Averages:
+  Positive Logit: -1.5369
+  Negative Logit: -2.8129
+  Positive Probability: 0.2258
+Epoch 21/100, Train Loss: 0.0962, Valid Loss: 0.2007, Time: 16.22 seconds
+Train AUROC: 0.8174, Train AUPRC: 0.3726, Train Accuracy: 0.9230, Train F1: 0.3751
+Valid AUROC: 0.5429, Valid AUPRC: 0.2742, Valid Accuracy: 0.9217, Valid F1: 0.1579
+
+Epoch 22 Averages:
+  Positive Logit: -0.4357
+  Negative Logit: -1.3903
+  Positive Probability: 0.4070
+Validation Averages:
+  Positive Logit: -1.2586
+  Negative Logit: -2.6605
+  Positive Probability: 0.2653
+Epoch 22/100, Train Loss: 0.0964, Valid Loss: 0.1693, Time: 16.19 seconds
+Train AUROC: 0.8181, Train AUPRC: 0.3822, Train Accuracy: 0.9245, Train F1: 0.3746
+Valid AUROC: 0.5563, Valid AUPRC: 0.3670, Valid Accuracy: 0.9261, Valid F1: 0.2000
+
+Epoch 23 Averages:
+  Positive Logit: -0.4240
+  Negative Logit: -1.3850
+  Positive Probability: 0.4081
+Validation Averages:
+  Positive Logit: -1.4423
+  Negative Logit: -2.6776
+  Positive Probability: 0.2344
+Epoch 23/100, Train Loss: 0.0964, Valid Loss: 0.1814, Time: 16.16 seconds
+Train AUROC: 0.8193, Train AUPRC: 0.3910, Train Accuracy: 0.9242, Train F1: 0.3888
+Valid AUROC: 0.5423, Valid AUPRC: 0.3254, Valid Accuracy: 0.9236, Valid F1: 0.1562
+
+Epoch 24 Averages:
+  Positive Logit: -0.4601
+  Negative Logit: -1.3717
+  Positive Probability: 0.4018
+Validation Averages:
+  Positive Logit: -1.2177
+  Negative Logit: -2.4732
+  Positive Probability: 0.2659
+Epoch 24/100, Train Loss: 0.0980, Valid Loss: 0.1632, Time: 15.97 seconds
+Train AUROC: 0.8049, Train AUPRC: 0.3712, Train Accuracy: 0.9238, Train F1: 0.3670
+Valid AUROC: 0.5496, Valid AUPRC: 0.3391, Valid Accuracy: 0.9226, Valid F1: 0.1787
+
+Epoch 25 Averages:
+  Positive Logit: -0.4041
+  Negative Logit: -1.3748
+  Positive Probability: 0.4132
+Validation Averages:
+  Positive Logit: -1.2926
+  Negative Logit: -2.5246
+  Positive Probability: 0.2607
+Epoch 25/100, Train Loss: 0.0966, Valid Loss: 0.1732, Time: 16.18 seconds
+Train AUROC: 0.8248, Train AUPRC: 0.4209, Train Accuracy: 0.9226, Train F1: 0.3910
+Valid AUROC: 0.5618, Valid AUPRC: 0.3206, Valid Accuracy: 0.9247, Valid F1: 0.2153
+
+Epoch 26 Averages:
+  Positive Logit: -0.4067
+  Negative Logit: -1.3730
+  Positive Probability: 0.4120
+Validation Averages:
+  Positive Logit: -1.3911
+  Negative Logit: -2.6203
+  Positive Probability: 0.2399
+Epoch 26/100, Train Loss: 0.1001, Valid Loss: 0.1826, Time: 16.07 seconds
+Train AUROC: 0.8247, Train AUPRC: 0.4067, Train Accuracy: 0.9179, Train F1: 0.3693
+Valid AUROC: 0.5411, Valid AUPRC: 0.2941, Valid Accuracy: 0.9215, Valid F1: 0.1525
+
+Epoch 27 Averages:
+  Positive Logit: -0.3801
+  Negative Logit: -1.3663
+  Positive Probability: 0.4185
+Validation Averages:
+  Positive Logit: -1.4060
+  Negative Logit: -2.7122
+  Positive Probability: 0.2425
+Epoch 27/100, Train Loss: 0.0961, Valid Loss: 0.1847, Time: 16.15 seconds
+Train AUROC: 0.8241, Train AUPRC: 0.4046, Train Accuracy: 0.9224, Train F1: 0.4013
+Valid AUROC: 0.5510, Valid AUPRC: 0.3128, Valid Accuracy: 0.9223, Valid F1: 0.1829
+
+Epoch 28 Averages:
+  Positive Logit: -0.4297
+  Negative Logit: -1.3550
+  Positive Probability: 0.4081
+Validation Averages:
+  Positive Logit: -1.2704
+  Negative Logit: -2.5159
+  Positive Probability: 0.2665
+Epoch 28/100, Train Loss: 0.1022, Valid Loss: 0.1767, Time: 16.17 seconds
+Train AUROC: 0.8112, Train AUPRC: 0.3962, Train Accuracy: 0.9192, Train F1: 0.3791
+Valid AUROC: 0.5621, Valid AUPRC: 0.3253, Valid Accuracy: 0.9253, Valid F1: 0.2165
+
+Epoch 29 Averages:
+  Positive Logit: -0.4071
+  Negative Logit: -1.3458
+  Positive Probability: 0.4113
+Validation Averages:
+  Positive Logit: -1.2625
+  Negative Logit: -2.5082
+  Positive Probability: 0.2626
+Epoch 29/100, Train Loss: 0.0959, Valid Loss: 0.1718, Time: 16.31 seconds
+Train AUROC: 0.8195, Train AUPRC: 0.3809, Train Accuracy: 0.9217, Train F1: 0.3598
+Valid AUROC: 0.5551, Valid AUPRC: 0.3309, Valid Accuracy: 0.9239, Valid F1: 0.1954
+
+Epoch 30 Averages:
+  Positive Logit: -0.4029
+  Negative Logit: -1.3434
+  Positive Probability: 0.4121
+Validation Averages:
+  Positive Logit: -1.3935
+  Negative Logit: -2.5578
+  Positive Probability: 0.2406
+Epoch 30/100, Train Loss: 0.0989, Valid Loss: 0.1859, Time: 16.15 seconds
+Train AUROC: 0.8200, Train AUPRC: 0.3764, Train Accuracy: 0.9196, Train F1: 0.3801
+Valid AUROC: 0.5342, Valid AUPRC: 0.3011, Valid Accuracy: 0.9204, Valid F1: 0.1306
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 2 finished. Best Valid AUPRC: 0.3670 at epoch 22. Time: 485.47 seconds 
+
+Model saved to /users/wmqn2362/PhysioNet2025/ECGFounder_add_Augmentation_0707_4/Model/model_fold2.pth
+Finetuning completed for fold 2
+Fold 3
+Epoch 1 Averages:
+  Positive Logit: -0.9858
+  Negative Logit: -1.6252
+  Positive Probability: 0.2867
+Validation Averages:
+  Positive Logit: -1.8331
+  Negative Logit: -2.9572
+  Positive Probability: 0.1739
+Epoch 1/100, Train Loss: 0.1278, Valid Loss: 0.2170, Time: 16.28 seconds
+Train AUROC: 0.7616, Train AUPRC: 0.2502, Train Accuracy: 0.9218, Train F1: 0.0589
+Valid AUROC: 0.5049, Valid AUPRC: 0.2733, Valid Accuracy: 0.9215, Valid F1: 0.0203
+
+Epoch 2 Averages:
+  Positive Logit: -0.9343
+  Negative Logit: -1.6113
+  Positive Probability: 0.2992
+Validation Averages:
+  Positive Logit: -1.7692
+  Negative Logit: -3.0258
+  Positive Probability: 0.1900
+Epoch 2/100, Train Loss: 0.1245, Valid Loss: 0.2115, Time: 16.20 seconds
+Train AUROC: 0.7549, Train AUPRC: 0.2395, Train Accuracy: 0.9226, Train F1: 0.1024
+Valid AUROC: 0.5187, Valid AUPRC: 0.3101, Valid Accuracy: 0.9236, Valid F1: 0.0726
+
+Epoch 3 Averages:
+  Positive Logit: -0.8795
+  Negative Logit: -1.5969
+  Positive Probability: 0.3124
+Validation Averages:
+  Positive Logit: -1.8198
+  Negative Logit: -3.2372
+  Positive Probability: 0.1991
+Epoch 3/100, Train Loss: 0.1319, Valid Loss: 0.2222, Time: 16.30 seconds
+Train AUROC: 0.7585, Train AUPRC: 0.2611, Train Accuracy: 0.9148, Train F1: 0.1280
+Valid AUROC: 0.5336, Valid AUPRC: 0.3201, Valid Accuracy: 0.9250, Valid F1: 0.1266
+
+Epoch 4 Averages:
+  Positive Logit: -0.8401
+  Negative Logit: -1.5757
+  Positive Probability: 0.3200
+Validation Averages:
+  Positive Logit: -1.9635
+  Negative Logit: -3.4890
+  Positive Probability: 0.1852
+Epoch 4/100, Train Loss: 0.1226, Valid Loss: 0.2399, Time: 16.17 seconds
+Train AUROC: 0.7559, Train AUPRC: 0.2487, Train Accuracy: 0.9196, Train F1: 0.1470
+Valid AUROC: 0.5329, Valid AUPRC: 0.2984, Valid Accuracy: 0.9236, Valid F1: 0.1246
+
+Epoch 5 Averages:
+  Positive Logit: -0.8173
+  Negative Logit: -1.5623
+  Positive Probability: 0.3259
+Validation Averages:
+  Positive Logit: -2.0719
+  Negative Logit: -3.4763
+  Positive Probability: 0.1638
+Epoch 5/100, Train Loss: 0.1228, Valid Loss: 0.2509, Time: 16.10 seconds
+Train AUROC: 0.7553, Train AUPRC: 0.2616, Train Accuracy: 0.9195, Train F1: 0.1649
+Valid AUROC: 0.5170, Valid AUPRC: 0.2487, Valid Accuracy: 0.9207, Valid F1: 0.0701
+
+Epoch 6 Averages:
+  Positive Logit: -0.7635
+  Negative Logit: -1.5532
+  Positive Probability: 0.3376
+Validation Averages:
+  Positive Logit: -1.9359
+  Negative Logit: -3.4148
+  Positive Probability: 0.1824
+Epoch 6/100, Train Loss: 0.1253, Valid Loss: 0.2362, Time: 16.29 seconds
+Train AUROC: 0.7646, Train AUPRC: 0.2933, Train Accuracy: 0.9162, Train F1: 0.2170
+Valid AUROC: 0.5264, Valid AUPRC: 0.2903, Valid Accuracy: 0.9234, Valid F1: 0.1019
+
+Epoch 7 Averages:
+  Positive Logit: -0.6996
+  Negative Logit: -1.5343
+  Positive Probability: 0.3508
+Validation Averages:
+  Positive Logit: -1.9190
+  Negative Logit: -3.3545
+  Positive Probability: 0.1954
+Epoch 7/100, Train Loss: 0.1181, Valid Loss: 0.2393, Time: 16.22 seconds
+Train AUROC: 0.7803, Train AUPRC: 0.2911, Train Accuracy: 0.9163, Train F1: 0.2261
+Valid AUROC: 0.5379, Valid AUPRC: 0.2775, Valid Accuracy: 0.9242, Valid F1: 0.1415
+
+Epoch 8 Averages:
+  Positive Logit: -0.7020
+  Negative Logit: -1.5138
+  Positive Probability: 0.3511
+Validation Averages:
+  Positive Logit: -1.5901
+  Negative Logit: -3.1536
+  Positive Probability: 0.2312
+Epoch 8/100, Train Loss: 0.1175, Valid Loss: 0.2003, Time: 16.02 seconds
+Train AUROC: 0.7721, Train AUPRC: 0.3013, Train Accuracy: 0.9175, Train F1: 0.2382
+Valid AUROC: 0.5627, Valid AUPRC: 0.3197, Valid Accuracy: 0.9264, Valid F1: 0.2190
+
+Epoch 9 Averages:
+  Positive Logit: -0.6839
+  Negative Logit: -1.5038
+  Positive Probability: 0.3546
+Validation Averages:
+  Positive Logit: -1.6464
+  Negative Logit: -3.2592
+  Positive Probability: 0.2254
+Epoch 9/100, Train Loss: 0.1087, Valid Loss: 0.2076, Time: 16.11 seconds
+Train AUROC: 0.7786, Train AUPRC: 0.2947, Train Accuracy: 0.9233, Train F1: 0.2458
+Valid AUROC: 0.5557, Valid AUPRC: 0.3697, Valid Accuracy: 0.9280, Valid F1: 0.1994
+
+Epoch 10 Averages:
+  Positive Logit: -0.6730
+  Negative Logit: -1.4894
+  Positive Probability: 0.3556
+Validation Averages:
+  Positive Logit: -1.4437
+  Negative Logit: -2.9820
+  Positive Probability: 0.2545
+Epoch 10/100, Train Loss: 0.1144, Valid Loss: 0.1864, Time: 16.12 seconds
+Train AUROC: 0.7784, Train AUPRC: 0.3052, Train Accuracy: 0.9164, Train F1: 0.2351
+Valid AUROC: 0.5600, Valid AUPRC: 0.3853, Valid Accuracy: 0.9272, Valid F1: 0.2118
+
+Epoch 11 Averages:
+  Positive Logit: -0.6160
+  Negative Logit: -1.4745
+  Positive Probability: 0.3701
+Validation Averages:
+  Positive Logit: -1.5478
+  Negative Logit: -3.0673
+  Positive Probability: 0.2334
+Epoch 11/100, Train Loss: 0.1136, Valid Loss: 0.1978, Time: 16.27 seconds
+Train AUROC: 0.7893, Train AUPRC: 0.3346, Train Accuracy: 0.9181, Train F1: 0.2891
+Valid AUROC: 0.5452, Valid AUPRC: 0.3263, Valid Accuracy: 0.9231, Valid F1: 0.1652
+
+Epoch 12 Averages:
+  Positive Logit: -0.6055
+  Negative Logit: -1.4612
+  Positive Probability: 0.3701
+Validation Averages:
+  Positive Logit: -1.4378
+  Negative Logit: -3.0526
+  Positive Probability: 0.2509
+Epoch 12/100, Train Loss: 0.1083, Valid Loss: 0.1891, Time: 16.37 seconds
+Train AUROC: 0.7869, Train AUPRC: 0.3044, Train Accuracy: 0.9192, Train F1: 0.2645
+Valid AUROC: 0.5574, Valid AUPRC: 0.3362, Valid Accuracy: 0.9253, Valid F1: 0.2029
+
+Epoch 13 Averages:
+  Positive Logit: -0.5944
+  Negative Logit: -1.4558
+  Positive Probability: 0.3729
+Validation Averages:
+  Positive Logit: -1.2826
+  Negative Logit: -2.8699
+  Positive Probability: 0.2763
+Epoch 13/100, Train Loss: 0.1103, Valid Loss: 0.1771, Time: 16.43 seconds
+Train AUROC: 0.7875, Train AUPRC: 0.3228, Train Accuracy: 0.9169, Train F1: 0.2943
+Valid AUROC: 0.5838, Valid AUPRC: 0.3605, Valid Accuracy: 0.9274, Valid F1: 0.2764
+
+Epoch 14 Averages:
+  Positive Logit: -0.6139
+  Negative Logit: -1.4441
+  Positive Probability: 0.3693
+Validation Averages:
+  Positive Logit: -1.4417
+  Negative Logit: -2.8683
+  Positive Probability: 0.2510
+Epoch 14/100, Train Loss: 0.1125, Valid Loss: 0.1858, Time: 16.07 seconds
+Train AUROC: 0.7839, Train AUPRC: 0.3141, Train Accuracy: 0.9171, Train F1: 0.2813
+Valid AUROC: 0.5591, Valid AUPRC: 0.3729, Valid Accuracy: 0.9255, Valid F1: 0.2081
+
+Epoch 15 Averages:
+  Positive Logit: -0.5376
+  Negative Logit: -1.4350
+  Positive Probability: 0.3840
+Validation Averages:
+  Positive Logit: -1.3146
+  Negative Logit: -2.8906
+  Positive Probability: 0.2633
+Epoch 15/100, Train Loss: 0.1035, Valid Loss: 0.1707, Time: 16.17 seconds
+Train AUROC: 0.7988, Train AUPRC: 0.3596, Train Accuracy: 0.9229, Train F1: 0.3343
+Valid AUROC: 0.5754, Valid AUPRC: 0.3926, Valid Accuracy: 0.9293, Valid F1: 0.2571
+
+Epoch 16 Averages:
+  Positive Logit: -0.5229
+  Negative Logit: -1.4309
+  Positive Probability: 0.3876
+Validation Averages:
+  Positive Logit: -1.4697
+  Negative Logit: -2.9095
+  Positive Probability: 0.2463
+Epoch 16/100, Train Loss: 0.1061, Valid Loss: 0.1956, Time: 16.30 seconds
+Train AUROC: 0.8033, Train AUPRC: 0.3450, Train Accuracy: 0.9173, Train F1: 0.3188
+Valid AUROC: 0.5612, Valid AUPRC: 0.3204, Valid Accuracy: 0.9236, Valid F1: 0.2129
+
+Epoch 17 Averages:
+  Positive Logit: -0.5309
+  Negative Logit: -1.4197
+  Positive Probability: 0.3868
+Validation Averages:
+  Positive Logit: -1.4279
+  Negative Logit: -2.9554
+  Positive Probability: 0.2510
+Epoch 17/100, Train Loss: 0.1049, Valid Loss: 0.1876, Time: 16.06 seconds
+Train AUROC: 0.8006, Train AUPRC: 0.3638, Train Accuracy: 0.9216, Train F1: 0.3345
+Valid AUROC: 0.5570, Valid AUPRC: 0.3402, Valid Accuracy: 0.9245, Valid F1: 0.2011
+
+Epoch 18 Averages:
+  Positive Logit: -0.5437
+  Negative Logit: -1.4039
+  Positive Probability: 0.3840
+Validation Averages:
+  Positive Logit: -1.2717
+  Negative Logit: -2.7981
+  Positive Probability: 0.2704
+Epoch 18/100, Train Loss: 0.1028, Valid Loss: 0.1734, Time: 16.14 seconds
+Train AUROC: 0.7938, Train AUPRC: 0.3332, Train Accuracy: 0.9233, Train F1: 0.3170
+Valid AUROC: 0.5810, Valid AUPRC: 0.3965, Valid Accuracy: 0.9310, Valid F1: 0.2743
+
+Epoch 19 Averages:
+  Positive Logit: -0.4849
+  Negative Logit: -1.4037
+  Positive Probability: 0.3963
+Validation Averages:
+  Positive Logit: -1.1588
+  Negative Logit: -2.6114
+  Positive Probability: 0.2869
+Epoch 19/100, Train Loss: 0.0992, Valid Loss: 0.1602, Time: 16.11 seconds
+Train AUROC: 0.8080, Train AUPRC: 0.3592, Train Accuracy: 0.9221, Train F1: 0.3360
+Valid AUROC: 0.5746, Valid AUPRC: 0.3922, Valid Accuracy: 0.9280, Valid F1: 0.2535
+
+Epoch 20 Averages:
+  Positive Logit: -0.4645
+  Negative Logit: -1.3982
+  Positive Probability: 0.3986
+Validation Averages:
+  Positive Logit: -1.2183
+  Negative Logit: -2.7723
+  Positive Probability: 0.2768
+Epoch 20/100, Train Loss: 0.1024, Valid Loss: 0.1721, Time: 16.03 seconds
+Train AUROC: 0.8176, Train AUPRC: 0.3945, Train Accuracy: 0.9192, Train F1: 0.3630
+Valid AUROC: 0.5670, Valid AUPRC: 0.3697, Valid Accuracy: 0.9255, Valid F1: 0.2303
+
+Epoch 21 Averages:
+  Positive Logit: -0.4915
+  Negative Logit: -1.3819
+  Positive Probability: 0.3932
+Validation Averages:
+  Positive Logit: -1.2897
+  Negative Logit: -2.8983
+  Positive Probability: 0.2702
+Epoch 21/100, Train Loss: 0.1043, Valid Loss: 0.1742, Time: 16.27 seconds
+Train AUROC: 0.8014, Train AUPRC: 0.3410, Train Accuracy: 0.9152, Train F1: 0.3158
+Valid AUROC: 0.5686, Valid AUPRC: 0.3957, Valid Accuracy: 0.9285, Valid F1: 0.2377
+
+Epoch 22 Averages:
+  Positive Logit: -0.4199
+  Negative Logit: -1.3809
+  Positive Probability: 0.4090
+Validation Averages:
+  Positive Logit: -1.3192
+  Negative Logit: -2.8573
+  Positive Probability: 0.2666
+Epoch 22/100, Train Loss: 0.0947, Valid Loss: 0.1832, Time: 16.07 seconds
+Train AUROC: 0.8217, Train AUPRC: 0.3858, Train Accuracy: 0.9232, Train F1: 0.3659
+Valid AUROC: 0.5636, Valid AUPRC: 0.3566, Valid Accuracy: 0.9250, Valid F1: 0.2203
+
+Epoch 23 Averages:
+  Positive Logit: -0.4229
+  Negative Logit: -1.3764
+  Positive Probability: 0.4084
+Validation Averages:
+  Positive Logit: -1.3511
+  Negative Logit: -2.8323
+  Positive Probability: 0.2586
+Epoch 23/100, Train Loss: 0.0967, Valid Loss: 0.1818, Time: 16.12 seconds
+Train AUROC: 0.8208, Train AUPRC: 0.3739, Train Accuracy: 0.9202, Train F1: 0.3505
+Valid AUROC: 0.5577, Valid AUPRC: 0.3650, Valid Accuracy: 0.9258, Valid F1: 0.2041
+
+Epoch 24 Averages:
+  Positive Logit: -0.4942
+  Negative Logit: -1.3596
+  Positive Probability: 0.3927
+Validation Averages:
+  Positive Logit: -1.2524
+  Negative Logit: -2.6858
+  Positive Probability: 0.2728
+Epoch 24/100, Train Loss: 0.1027, Valid Loss: 0.1666, Time: 16.08 seconds
+Train AUROC: 0.7956, Train AUPRC: 0.3446, Train Accuracy: 0.9194, Train F1: 0.3367
+Valid AUROC: 0.5752, Valid AUPRC: 0.3912, Valid Accuracy: 0.9291, Valid F1: 0.2564
+
+Epoch 25 Averages:
+  Positive Logit: -0.4396
+  Negative Logit: -1.3630
+  Positive Probability: 0.4062
+Validation Averages:
+  Positive Logit: -1.1313
+  Negative Logit: -2.7157
+  Positive Probability: 0.2905
+Epoch 25/100, Train Loss: 0.0984, Valid Loss: 0.1610, Time: 16.00 seconds
+Train AUROC: 0.8149, Train AUPRC: 0.3811, Train Accuracy: 0.9226, Train F1: 0.3655
+Valid AUROC: 0.5871, Valid AUPRC: 0.4106, Valid Accuracy: 0.9307, Valid F1: 0.2897
+
+Epoch 26 Averages:
+  Positive Logit: -0.4157
+  Negative Logit: -1.3610
+  Positive Probability: 0.4112
+Validation Averages:
+  Positive Logit: -1.2654
+  Negative Logit: -2.8031
+  Positive Probability: 0.2756
+Epoch 26/100, Train Loss: 0.0991, Valid Loss: 0.1740, Time: 16.18 seconds
+Train AUROC: 0.8170, Train AUPRC: 0.4032, Train Accuracy: 0.9214, Train F1: 0.3681
+Valid AUROC: 0.5759, Valid AUPRC: 0.3632, Valid Accuracy: 0.9274, Valid F1: 0.2563
+
+Epoch 27 Averages:
+  Positive Logit: -0.4371
+  Negative Logit: -1.3481
+  Positive Probability: 0.4059
+Validation Averages:
+  Positive Logit: -1.0929
+  Negative Logit: -2.5955
+  Positive Probability: 0.2962
+Epoch 27/100, Train Loss: 0.0988, Valid Loss: 0.1564, Time: 16.08 seconds
+Train AUROC: 0.8086, Train AUPRC: 0.3767, Train Accuracy: 0.9213, Train F1: 0.3656
+Valid AUROC: 0.5952, Valid AUPRC: 0.3942, Valid Accuracy: 0.9310, Valid F1: 0.3098
+
+Epoch 28 Averages:
+  Positive Logit: -0.3954
+  Negative Logit: -1.3507
+  Positive Probability: 0.4139
+Validation Averages:
+  Positive Logit: -1.1153
+  Negative Logit: -2.6879
+  Positive Probability: 0.2939
+Epoch 28/100, Train Loss: 0.0945, Valid Loss: 0.1664, Time: 16.08 seconds
+Train AUROC: 0.8252, Train AUPRC: 0.3915, Train Accuracy: 0.9235, Train F1: 0.3751
+Valid AUROC: 0.5871, Valid AUPRC: 0.3707, Valid Accuracy: 0.9277, Valid F1: 0.2849
+
+Epoch 29 Averages:
+  Positive Logit: -0.4215
+  Negative Logit: -1.3420
+  Positive Probability: 0.4091
+Validation Averages:
+  Positive Logit: -1.2970
+  Negative Logit: -2.7573
+  Positive Probability: 0.2673
+Epoch 29/100, Train Loss: 0.0959, Valid Loss: 0.1843, Time: 16.04 seconds
+Train AUROC: 0.8169, Train AUPRC: 0.3884, Train Accuracy: 0.9235, Train F1: 0.3688
+Valid AUROC: 0.5663, Valid AUPRC: 0.3465, Valid Accuracy: 0.9242, Valid F1: 0.2271
+
+Epoch 30 Averages:
+  Positive Logit: -0.4225
+  Negative Logit: -1.3331
+  Positive Probability: 0.4084
+Validation Averages:
+  Positive Logit: -1.2481
+  Negative Logit: -2.6947
+  Positive Probability: 0.2742
+Epoch 30/100, Train Loss: 0.0997, Valid Loss: 0.1757, Time: 16.20 seconds
+Train AUROC: 0.8108, Train AUPRC: 0.3935, Train Accuracy: 0.9191, Train F1: 0.3655
+Valid AUROC: 0.5715, Valid AUPRC: 0.3707, Valid Accuracy: 0.9280, Valid F1: 0.2450
+
+Epoch 31 Averages:
+  Positive Logit: -0.4251
+  Negative Logit: -1.3370
+  Positive Probability: 0.4089
+Validation Averages:
+  Positive Logit: -1.0301
+  Negative Logit: -2.4943
+  Positive Probability: 0.3074
+Epoch 31/100, Train Loss: 0.1021, Valid Loss: 0.1564, Time: 16.12 seconds
+Train AUROC: 0.8116, Train AUPRC: 0.4000, Train Accuracy: 0.9201, Train F1: 0.3888
+Valid AUROC: 0.5962, Valid AUPRC: 0.3937, Valid Accuracy: 0.9299, Valid F1: 0.3102
+
+Epoch 32 Averages:
+  Positive Logit: -0.3810
+  Negative Logit: -1.3220
+  Positive Probability: 0.4171
+Validation Averages:
+  Positive Logit: -1.1092
+  Negative Logit: -2.6073
+  Positive Probability: 0.2985
+Epoch 32/100, Train Loss: 0.0983, Valid Loss: 0.1598, Time: 16.10 seconds
+Train AUROC: 0.8210, Train AUPRC: 0.4174, Train Accuracy: 0.9207, Train F1: 0.3954
+Valid AUROC: 0.5841, Valid AUPRC: 0.4021, Valid Accuracy: 0.9280, Valid F1: 0.2779
+
+Epoch 33 Averages:
+  Positive Logit: -0.3866
+  Negative Logit: -1.3192
+  Positive Probability: 0.4159
+Validation Averages:
+  Positive Logit: -1.0822
+  Negative Logit: -2.4953
+  Positive Probability: 0.2963
+Epoch 33/100, Train Loss: 0.0963, Valid Loss: 0.1548, Time: 16.17 seconds
+Train AUROC: 0.8179, Train AUPRC: 0.3923, Train Accuracy: 0.9204, Train F1: 0.3857
+Valid AUROC: 0.5852, Valid AUPRC: 0.3708, Valid Accuracy: 0.9272, Valid F1: 0.2796
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 3 finished. Best Valid AUPRC: 0.4106 at epoch 25. Time: 533.32 seconds 
+
+Model saved to /users/wmqn2362/PhysioNet2025/ECGFounder_add_Augmentation_0707_4/Model/model_fold3.pth
+Finetuning completed for fold 3
+Fold 4
+Epoch 1 Averages:
+  Positive Logit: -1.0347
+  Negative Logit: -1.6286
+  Positive Probability: 0.2789
+Validation Averages:
+  Positive Logit: -1.9868
+  Negative Logit: -2.9314
+  Positive Probability: 0.1563
+Epoch 1/100, Train Loss: 0.1386, Valid Loss: 0.2356, Time: 15.98 seconds
+Train AUROC: 0.7453, Train AUPRC: 0.2496, Train Accuracy: 0.9185, Train F1: 0.0581
+Valid AUROC: 0.5080, Valid AUPRC: 0.2338, Valid Accuracy: 0.9215, Valid F1: 0.0334
+
+Epoch 2 Averages:
+  Positive Logit: -0.9160
+  Negative Logit: -1.6147
+  Positive Probability: 0.3028
+Validation Averages:
+  Positive Logit: -1.9506
+  Negative Logit: -3.1254
+  Positive Probability: 0.1707
+Epoch 2/100, Train Loss: 0.1321, Valid Loss: 0.2335, Time: 16.12 seconds
+Train AUROC: 0.7674, Train AUPRC: 0.2875, Train Accuracy: 0.9179, Train F1: 0.1182
+Valid AUROC: 0.5077, Valid AUPRC: 0.2667, Valid Accuracy: 0.9209, Valid F1: 0.0332
+
+Epoch 3 Averages:
+  Positive Logit: -0.8337
+  Negative Logit: -1.5948
+  Positive Probability: 0.3226
+Validation Averages:
+  Positive Logit: -2.1342
+  Negative Logit: -3.2335
+  Positive Probability: 0.1637
+Epoch 3/100, Train Loss: 0.1221, Valid Loss: 0.2586, Time: 16.03 seconds
+Train AUROC: 0.7742, Train AUPRC: 0.2820, Train Accuracy: 0.9202, Train F1: 0.1553
+Valid AUROC: 0.5267, Valid AUPRC: 0.2533, Valid Accuracy: 0.9239, Valid F1: 0.1026
+
+Epoch 4 Averages:
+  Positive Logit: -0.8077
+  Negative Logit: -1.5707
+  Positive Probability: 0.3275
+Validation Averages:
+  Positive Logit: -2.0170
+  Negative Logit: -3.1297
+  Positive Probability: 0.1697
+Epoch 4/100, Train Loss: 0.1215, Valid Loss: 0.2448, Time: 16.17 seconds
+Train AUROC: 0.7643, Train AUPRC: 0.2745, Train Accuracy: 0.9198, Train F1: 0.1793
+Valid AUROC: 0.5205, Valid AUPRC: 0.2321, Valid Accuracy: 0.9212, Valid F1: 0.0823
+
+Epoch 5 Averages:
+  Positive Logit: -0.7172
+  Negative Logit: -1.5652
+  Positive Probability: 0.3458
+Validation Averages:
+  Positive Logit: -1.8752
+  Negative Logit: -3.1540
+  Positive Probability: 0.1941
+Epoch 5/100, Train Loss: 0.1172, Valid Loss: 0.2308, Time: 16.30 seconds
+Train AUROC: 0.7882, Train AUPRC: 0.3188, Train Accuracy: 0.9166, Train F1: 0.2007
+Valid AUROC: 0.5310, Valid AUPRC: 0.2809, Valid Accuracy: 0.9231, Valid F1: 0.1184
+
+Epoch 6 Averages:
+  Positive Logit: -0.6995
+  Negative Logit: -1.5527
+  Positive Probability: 0.3502
+Validation Averages:
+  Positive Logit: -1.9067
+  Negative Logit: -3.1313
+  Positive Probability: 0.1924
+Epoch 6/100, Train Loss: 0.1098, Valid Loss: 0.2354, Time: 16.26 seconds
+Train AUROC: 0.7855, Train AUPRC: 0.3144, Train Accuracy: 0.9243, Train F1: 0.2473
+Valid AUROC: 0.5311, Valid AUPRC: 0.2671, Valid Accuracy: 0.9234, Valid F1: 0.1187
+
+Epoch 7 Averages:
+  Positive Logit: -0.6625
+  Negative Logit: -1.5347
+  Positive Probability: 0.3590
+Validation Averages:
+  Positive Logit: -2.0380
+  Negative Logit: -3.2908
+  Positive Probability: 0.1783
+Epoch 7/100, Train Loss: 0.1134, Valid Loss: 0.2523, Time: 16.28 seconds
+Train AUROC: 0.7880, Train AUPRC: 0.3328, Train Accuracy: 0.9201, Train F1: 0.2594
+Valid AUROC: 0.5265, Valid AUPRC: 0.2506, Valid Accuracy: 0.9207, Valid F1: 0.1043
+
+Epoch 8 Averages:
+  Positive Logit: -0.6509
+  Negative Logit: -1.5274
+  Positive Probability: 0.3618
+Validation Averages:
+  Positive Logit: -1.8805
+  Negative Logit: -3.0941
+  Positive Probability: 0.1914
+Epoch 8/100, Train Loss: 0.1094, Valid Loss: 0.2329, Time: 16.15 seconds
+Train AUROC: 0.7889, Train AUPRC: 0.3014, Train Accuracy: 0.9217, Train F1: 0.2716
+Valid AUROC: 0.5248, Valid AUPRC: 0.2455, Valid Accuracy: 0.9204, Valid F1: 0.0985
+
+Epoch 9 Averages:
+  Positive Logit: -0.6445
+  Negative Logit: -1.5128
+  Positive Probability: 0.3626
+Validation Averages:
+  Positive Logit: -1.7928
+  Negative Logit: -3.0685
+  Positive Probability: 0.2065
+Epoch 9/100, Train Loss: 0.1117, Valid Loss: 0.2242, Time: 16.19 seconds
+Train AUROC: 0.7900, Train AUPRC: 0.3134, Train Accuracy: 0.9190, Train F1: 0.2548
+Valid AUROC: 0.5373, Valid AUPRC: 0.2729, Valid Accuracy: 0.9231, Valid F1: 0.1398
+
+Epoch 10 Averages:
+  Positive Logit: -0.6030
+  Negative Logit: -1.5010
+  Positive Probability: 0.3687
+Validation Averages:
+  Positive Logit: -1.7901
+  Negative Logit: -3.1538
+  Positive Probability: 0.2105
+Epoch 10/100, Train Loss: 0.1085, Valid Loss: 0.2276, Time: 16.13 seconds
+Train AUROC: 0.7996, Train AUPRC: 0.3070, Train Accuracy: 0.9156, Train F1: 0.2509
+Valid AUROC: 0.5502, Valid AUPRC: 0.2882, Valid Accuracy: 0.9236, Valid F1: 0.1808
+
+Epoch 11 Averages:
+  Positive Logit: -0.5728
+  Negative Logit: -1.4899
+  Positive Probability: 0.3783
+Validation Averages:
+  Positive Logit: -1.7206
+  Negative Logit: -2.9593
+  Positive Probability: 0.2104
+Epoch 11/100, Train Loss: 0.1052, Valid Loss: 0.2185, Time: 16.11 seconds
+Train AUROC: 0.7963, Train AUPRC: 0.3450, Train Accuracy: 0.9215, Train F1: 0.3030
+Valid AUROC: 0.5491, Valid AUPRC: 0.2697, Valid Accuracy: 0.9245, Valid F1: 0.1775
+
+Epoch 12 Averages:
+  Positive Logit: -0.5698
+  Negative Logit: -1.4832
+  Positive Probability: 0.3775
+Validation Averages:
+  Positive Logit: -1.6330
+  Negative Logit: -3.0332
+  Positive Probability: 0.2294
+Epoch 12/100, Train Loss: 0.1083, Valid Loss: 0.2073, Time: 16.13 seconds
+Train AUROC: 0.7994, Train AUPRC: 0.3295, Train Accuracy: 0.9174, Train F1: 0.3028
+Valid AUROC: 0.5514, Valid AUPRC: 0.3339, Valid Accuracy: 0.9258, Valid F1: 0.1851
+
+Epoch 13 Averages:
+  Positive Logit: -0.5820
+  Negative Logit: -1.4747
+  Positive Probability: 0.3771
+Validation Averages:
+  Positive Logit: -1.6823
+  Negative Logit: -2.9814
+  Positive Probability: 0.2192
+Epoch 13/100, Train Loss: 0.1137, Valid Loss: 0.2148, Time: 16.11 seconds
+Train AUROC: 0.7954, Train AUPRC: 0.3487, Train Accuracy: 0.9160, Train F1: 0.3072
+Valid AUROC: 0.5558, Valid AUPRC: 0.2797, Valid Accuracy: 0.9253, Valid F1: 0.1983
+
+Epoch 14 Averages:
+  Positive Logit: -0.5096
+  Negative Logit: -1.4565
+  Positive Probability: 0.3918
+Validation Averages:
+  Positive Logit: -1.5714
+  Negative Logit: -2.9017
+  Positive Probability: 0.2311
+Epoch 14/100, Train Loss: 0.1047, Valid Loss: 0.2011, Time: 16.00 seconds
+Train AUROC: 0.8051, Train AUPRC: 0.3673, Train Accuracy: 0.9186, Train F1: 0.3374
+Valid AUROC: 0.5554, Valid AUPRC: 0.3126, Valid Accuracy: 0.9245, Valid F1: 0.1965
+
+Epoch 15 Averages:
+  Positive Logit: -0.4818
+  Negative Logit: -1.4545
+  Positive Probability: 0.3956
+Validation Averages:
+  Positive Logit: -1.5977
+  Negative Logit: -2.9857
+  Positive Probability: 0.2355
+Epoch 15/100, Train Loss: 0.1051, Valid Loss: 0.2073, Time: 15.97 seconds
+Train AUROC: 0.8178, Train AUPRC: 0.3761, Train Accuracy: 0.9173, Train F1: 0.3416
+Valid AUROC: 0.5591, Valid AUPRC: 0.3174, Valid Accuracy: 0.9255, Valid F1: 0.2081
+
+Epoch 16 Averages:
+  Positive Logit: -0.4770
+  Negative Logit: -1.4448
+  Positive Probability: 0.3976
+Validation Averages:
+  Positive Logit: -1.5925
+  Negative Logit: -2.8503
+  Positive Probability: 0.2340
+Epoch 16/100, Train Loss: 0.0998, Valid Loss: 0.2112, Time: 16.19 seconds
+Train AUROC: 0.8170, Train AUPRC: 0.3824, Train Accuracy: 0.9228, Train F1: 0.3479
+Valid AUROC: 0.5501, Valid AUPRC: 0.2770, Valid Accuracy: 0.9234, Valid F1: 0.1802
+
+Epoch 17 Averages:
+  Positive Logit: -0.4796
+  Negative Logit: -1.4340
+  Positive Probability: 0.3970
+Validation Averages:
+  Positive Logit: -1.5238
+  Negative Logit: -2.7764
+  Positive Probability: 0.2366
+Epoch 17/100, Train Loss: 0.0979, Valid Loss: 0.2004, Time: 16.05 seconds
+Train AUROC: 0.8111, Train AUPRC: 0.3431, Train Accuracy: 0.9229, Train F1: 0.3436
+Valid AUROC: 0.5481, Valid AUPRC: 0.2699, Valid Accuracy: 0.9198, Valid F1: 0.1737
+
+Epoch 18 Averages:
+  Positive Logit: -0.4667
+  Negative Logit: -1.4317
+  Positive Probability: 0.4019
+Validation Averages:
+  Positive Logit: -1.4066
+  Negative Logit: -2.7058
+  Positive Probability: 0.2512
+Epoch 18/100, Train Loss: 0.1042, Valid Loss: 0.1818, Time: 16.10 seconds
+Train AUROC: 0.8175, Train AUPRC: 0.3962, Train Accuracy: 0.9200, Train F1: 0.3763
+Valid AUROC: 0.5624, Valid AUPRC: 0.3340, Valid Accuracy: 0.9258, Valid F1: 0.2178
+
+Epoch 19 Averages:
+  Positive Logit: -0.4178
+  Negative Logit: -1.4203
+  Positive Probability: 0.4110
+Validation Averages:
+  Positive Logit: -1.5370
+  Negative Logit: -2.7739
+  Positive Probability: 0.2339
+Epoch 19/100, Train Loss: 0.0955, Valid Loss: 0.1984, Time: 15.99 seconds
+Train AUROC: 0.8231, Train AUPRC: 0.4035, Train Accuracy: 0.9234, Train F1: 0.3777
+Valid AUROC: 0.5499, Valid AUPRC: 0.2994, Valid Accuracy: 0.9231, Valid F1: 0.1797
+
+Epoch 20 Averages:
+  Positive Logit: -0.4634
+  Negative Logit: -1.4041
+  Positive Probability: 0.4017
+Validation Averages:
+  Positive Logit: -1.3640
+  Negative Logit: -2.6161
+  Positive Probability: 0.2553
+Epoch 20/100, Train Loss: 0.0990, Valid Loss: 0.1828, Time: 16.18 seconds
+Train AUROC: 0.8137, Train AUPRC: 0.3700, Train Accuracy: 0.9240, Train F1: 0.3766
+Valid AUROC: 0.5539, Valid AUPRC: 0.3216, Valid Accuracy: 0.9247, Valid F1: 0.1924
+
+Epoch 21 Averages:
+  Positive Logit: -0.4516
+  Negative Logit: -1.4055
+  Positive Probability: 0.4033
+Validation Averages:
+  Positive Logit: -1.4855
+  Negative Logit: -2.7111
+  Positive Probability: 0.2407
+Epoch 21/100, Train Loss: 0.1003, Valid Loss: 0.1954, Time: 16.37 seconds
+Train AUROC: 0.8133, Train AUPRC: 0.3747, Train Accuracy: 0.9207, Train F1: 0.3626
+Valid AUROC: 0.5621, Valid AUPRC: 0.2990, Valid Accuracy: 0.9253, Valid F1: 0.2165
+
+Epoch 22 Averages:
+  Positive Logit: -0.4245
+  Negative Logit: -1.4024
+  Positive Probability: 0.4093
+Validation Averages:
+  Positive Logit: -1.3435
+  Negative Logit: -2.6286
+  Positive Probability: 0.2582
+Epoch 22/100, Train Loss: 0.0986, Valid Loss: 0.1786, Time: 16.09 seconds
+Train AUROC: 0.8222, Train AUPRC: 0.3965, Train Accuracy: 0.9202, Train F1: 0.3720
+Valid AUROC: 0.5618, Valid AUPRC: 0.3250, Valid Accuracy: 0.9247, Valid F1: 0.2153
+
+Epoch 23 Averages:
+  Positive Logit: -0.4628
+  Negative Logit: -1.3975
+  Positive Probability: 0.4029
+Validation Averages:
+  Positive Logit: -1.4951
+  Negative Logit: -2.7147
+  Positive Probability: 0.2374
+Epoch 23/100, Train Loss: 0.1072, Valid Loss: 0.1949, Time: 16.42 seconds
+Train AUROC: 0.8083, Train AUPRC: 0.3953, Train Accuracy: 0.9164, Train F1: 0.3729
+Valid AUROC: 0.5610, Valid AUPRC: 0.3000, Valid Accuracy: 0.9261, Valid F1: 0.2139
+
+Epoch 24 Averages:
+  Positive Logit: -0.4084
+  Negative Logit: -1.3821
+  Positive Probability: 0.4122
+Validation Averages:
+  Positive Logit: -1.3574
+  Negative Logit: -2.5387
+  Positive Probability: 0.2530
+Epoch 24/100, Train Loss: 0.0969, Valid Loss: 0.1819, Time: 16.12 seconds
+Train AUROC: 0.8293, Train AUPRC: 0.3981, Train Accuracy: 0.9203, Train F1: 0.3830
+Valid AUROC: 0.5629, Valid AUPRC: 0.3231, Valid Accuracy: 0.9266, Valid F1: 0.2197
+
+Epoch 25 Averages:
+  Positive Logit: -0.4149
+  Negative Logit: -1.3807
+  Positive Probability: 0.4106
+Validation Averages:
+  Positive Logit: -1.3007
+  Negative Logit: -2.5955
+  Positive Probability: 0.2626
+Epoch 25/100, Train Loss: 0.0957, Valid Loss: 0.1714, Time: 16.36 seconds
+Train AUROC: 0.8238, Train AUPRC: 0.3902, Train Accuracy: 0.9228, Train F1: 0.3738
+Valid AUROC: 0.5630, Valid AUPRC: 0.3575, Valid Accuracy: 0.9269, Valid F1: 0.2203
+
+Epoch 26 Averages:
+  Positive Logit: -0.3968
+  Negative Logit: -1.3714
+  Positive Probability: 0.4138
+Validation Averages:
+  Positive Logit: -1.3056
+  Negative Logit: -2.5102
+  Positive Probability: 0.2624
+Epoch 26/100, Train Loss: 0.0991, Valid Loss: 0.1797, Time: 16.11 seconds
+Train AUROC: 0.8232, Train AUPRC: 0.4048, Train Accuracy: 0.9190, Train F1: 0.3770
+Valid AUROC: 0.5663, Valid AUPRC: 0.3118, Valid Accuracy: 0.9242, Valid F1: 0.2271
+
+Epoch 27 Averages:
+  Positive Logit: -0.3802
+  Negative Logit: -1.3695
+  Positive Probability: 0.4171
+Validation Averages:
+  Positive Logit: -1.3676
+  Negative Logit: -2.5382
+  Positive Probability: 0.2513
+Epoch 27/100, Train Loss: 0.0937, Valid Loss: 0.1840, Time: 16.24 seconds
+Train AUROC: 0.8320, Train AUPRC: 0.4001, Train Accuracy: 0.9226, Train F1: 0.3853
+Valid AUROC: 0.5514, Valid AUPRC: 0.2789, Valid Accuracy: 0.9201, Valid F1: 0.1833
+
+Epoch 28 Averages:
+  Positive Logit: -0.3853
+  Negative Logit: -1.3650
+  Positive Probability: 0.4161
+Validation Averages:
+  Positive Logit: -1.1970
+  Negative Logit: -2.4914
+  Positive Probability: 0.2775
+Epoch 28/100, Train Loss: 0.0932, Valid Loss: 0.1719, Time: 16.37 seconds
+Train AUROC: 0.8277, Train AUPRC: 0.3834, Train Accuracy: 0.9227, Train F1: 0.3740
+Valid AUROC: 0.5732, Valid AUPRC: 0.3345, Valid Accuracy: 0.9253, Valid F1: 0.2466
+
+Epoch 29 Averages:
+  Positive Logit: -0.3780
+  Negative Logit: -1.3631
+  Positive Probability: 0.4178
+Validation Averages:
+  Positive Logit: -1.2513
+  Negative Logit: -2.5375
+  Positive Probability: 0.2670
+Epoch 29/100, Train Loss: 0.0945, Valid Loss: 0.1701, Time: 16.26 seconds
+Train AUROC: 0.8304, Train AUPRC: 0.4104, Train Accuracy: 0.9224, Train F1: 0.3906
+Valid AUROC: 0.5643, Valid AUPRC: 0.3410, Valid Accuracy: 0.9264, Valid F1: 0.2235
+
+Epoch 30 Averages:
+  Positive Logit: -0.4146
+  Negative Logit: -1.3587
+  Positive Probability: 0.4107
+Validation Averages:
+  Positive Logit: -1.2423
+  Negative Logit: -2.4545
+  Positive Probability: 0.2738
+Epoch 30/100, Train Loss: 0.1008, Valid Loss: 0.1760, Time: 16.25 seconds
+Train AUROC: 0.8147, Train AUPRC: 0.3908, Train Accuracy: 0.9172, Train F1: 0.3739
+Valid AUROC: 0.5809, Valid AUPRC: 0.3082, Valid Accuracy: 0.9250, Valid F1: 0.2660
+
+Epoch 31 Averages:
+  Positive Logit: -0.3558
+  Negative Logit: -1.3522
+  Positive Probability: 0.4230
+Validation Averages:
+  Positive Logit: -1.0994
+  Negative Logit: -2.4352
+  Positive Probability: 0.2917
+Epoch 31/100, Train Loss: 0.0906, Valid Loss: 0.1501, Time: 16.25 seconds
+Train AUROC: 0.8326, Train AUPRC: 0.4194, Train Accuracy: 0.9253, Train F1: 0.3943
+Valid AUROC: 0.5891, Valid AUPRC: 0.3866, Valid Accuracy: 0.9285, Valid F1: 0.2911
+
+Epoch 32 Averages:
+  Positive Logit: -0.3507
+  Negative Logit: -1.3434
+  Positive Probability: 0.4255
+Validation Averages:
+  Positive Logit: -1.2218
+  Negative Logit: -2.4934
+  Positive Probability: 0.2702
+Epoch 32/100, Train Loss: 0.0904, Valid Loss: 0.1699, Time: 16.22 seconds
+Train AUROC: 0.8299, Train AUPRC: 0.4135, Train Accuracy: 0.9268, Train F1: 0.4173
+Valid AUROC: 0.5752, Valid AUPRC: 0.3260, Valid Accuracy: 0.9261, Valid F1: 0.2527
+
+Epoch 33 Averages:
+  Positive Logit: -0.3621
+  Negative Logit: -1.3469
+  Positive Probability: 0.4225
+Validation Averages:
+  Positive Logit: -1.1529
+  Negative Logit: -2.3999
+  Positive Probability: 0.2871
+Epoch 33/100, Train Loss: 0.0971, Valid Loss: 0.1652, Time: 16.19 seconds
+Train AUROC: 0.8297, Train AUPRC: 0.4307, Train Accuracy: 0.9213, Train F1: 0.4102
+Valid AUROC: 0.5848, Valid AUPRC: 0.3405, Valid Accuracy: 0.9264, Valid F1: 0.2773
+
+Epoch 34 Averages:
+  Positive Logit: -0.3393
+  Negative Logit: -1.3402
+  Positive Probability: 0.4273
+Validation Averages:
+  Positive Logit: -1.2860
+  Negative Logit: -2.4665
+  Positive Probability: 0.2616
+Epoch 34/100, Train Loss: 0.0937, Valid Loss: 0.1758, Time: 16.33 seconds
+Train AUROC: 0.8344, Train AUPRC: 0.4186, Train Accuracy: 0.9220, Train F1: 0.4039
+Valid AUROC: 0.5723, Valid AUPRC: 0.3127, Valid Accuracy: 0.9266, Valid F1: 0.2458
+
+Epoch 35 Averages:
+  Positive Logit: -0.3518
+  Negative Logit: -1.3373
+  Positive Probability: 0.4237
+Validation Averages:
+  Positive Logit: -1.2562
+  Negative Logit: -2.4006
+  Positive Probability: 0.2703
+Epoch 35/100, Train Loss: 0.0935, Valid Loss: 0.1747, Time: 16.13 seconds
+Train AUROC: 0.8319, Train AUPRC: 0.4059, Train Accuracy: 0.9199, Train F1: 0.3875
+Valid AUROC: 0.5702, Valid AUPRC: 0.3088, Valid Accuracy: 0.9255, Valid F1: 0.2389
+
+Epoch 36 Averages:
+  Positive Logit: -0.3664
+  Negative Logit: -1.3406
+  Positive Probability: 0.4205
+Validation Averages:
+  Positive Logit: -1.1157
+  Negative Logit: -2.3466
+  Positive Probability: 0.2901
+Epoch 36/100, Train Loss: 0.0961, Valid Loss: 0.1635, Time: 16.18 seconds
+Train AUROC: 0.8283, Train AUPRC: 0.4163, Train Accuracy: 0.9222, Train F1: 0.4089
+Valid AUROC: 0.5890, Valid AUPRC: 0.3393, Valid Accuracy: 0.9283, Valid F1: 0.2903
+
+Epoch 37 Averages:
+  Positive Logit: -0.3188
+  Negative Logit: -1.3307
+  Positive Probability: 0.4311
+Validation Averages:
+  Positive Logit: -1.1088
+  Negative Logit: -2.3485
+  Positive Probability: 0.2898
+Epoch 37/100, Train Loss: 0.0912, Valid Loss: 0.1679, Time: 16.16 seconds
+Train AUROC: 0.8368, Train AUPRC: 0.4338, Train Accuracy: 0.9224, Train F1: 0.4191
+Valid AUROC: 0.5803, Valid AUPRC: 0.3154, Valid Accuracy: 0.9239, Valid F1: 0.2632
+
+Epoch 38 Averages:
+  Positive Logit: -0.3764
+  Negative Logit: -1.3296
+  Positive Probability: 0.4180
+Validation Averages:
+  Positive Logit: -1.2150
+  Negative Logit: -2.3652
+  Positive Probability: 0.2773
+Epoch 38/100, Train Loss: 0.0965, Valid Loss: 0.1729, Time: 16.18 seconds
+Train AUROC: 0.8221, Train AUPRC: 0.3839, Train Accuracy: 0.9186, Train F1: 0.3773
+Valid AUROC: 0.5702, Valid AUPRC: 0.3280, Valid Accuracy: 0.9255, Valid F1: 0.2389
+
+Epoch 39 Averages:
+  Positive Logit: -0.3529
+  Negative Logit: -1.3253
+  Positive Probability: 0.4227
+Validation Averages:
+  Positive Logit: -1.0971
+  Negative Logit: -2.3092
+  Positive Probability: 0.2934
+Epoch 39/100, Train Loss: 0.0928, Valid Loss: 0.1540, Time: 16.26 seconds
+Train AUROC: 0.8278, Train AUPRC: 0.4050, Train Accuracy: 0.9239, Train F1: 0.4074
+Valid AUROC: 0.5775, Valid AUPRC: 0.3732, Valid Accuracy: 0.9274, Valid F1: 0.2604
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 4 finished. Best Valid AUPRC: 0.3866 at epoch 31. Time: 630.97 seconds 
+
+Model saved to /users/wmqn2362/PhysioNet2025/ECGFounder_add_Augmentation_0707_4/Model/model_fold4.pth
+Finetuning completed for fold 4
+Fold 5
+Epoch 1 Averages:
+  Positive Logit: -1.0262
+  Negative Logit: -1.6288
+  Positive Probability: 0.2793
+Validation Averages:
+  Positive Logit: -1.9420
+  Negative Logit: -2.8964
+  Positive Probability: 0.1572
+Epoch 1/100, Train Loss: 0.1330, Valid Loss: 0.2306, Time: 16.06 seconds
+Train AUROC: 0.7463, Train AUPRC: 0.2393, Train Accuracy: 0.9211, Train F1: 0.0584
+Valid AUROC: 0.5008, Valid AUPRC: 0.2054, Valid Accuracy: 0.9196, Valid F1: 0.0067
+
+Epoch 2 Averages:
+  Positive Logit: -0.9452
+  Negative Logit: -1.6155
+  Positive Probability: 0.2976
+Validation Averages:
+  Positive Logit: -1.8706
+  Negative Logit: -2.9554
+  Positive Probability: 0.1720
+Epoch 2/100, Train Loss: 0.1321, Valid Loss: 0.2224, Time: 16.04 seconds
+Train AUROC: 0.7545, Train AUPRC: 0.2710, Train Accuracy: 0.9183, Train F1: 0.1030
+Valid AUROC: 0.5049, Valid AUPRC: 0.2836, Valid Accuracy: 0.9212, Valid F1: 0.0203
+
+Epoch 3 Averages:
+  Positive Logit: -0.8566
+  Negative Logit: -1.5914
+  Positive Probability: 0.3174
+Validation Averages:
+  Positive Logit: -2.0120
+  Negative Logit: -3.1945
+  Positive Probability: 0.1651
+Epoch 3/100, Train Loss: 0.1225, Valid Loss: 0.2423, Time: 16.22 seconds
+Train AUROC: 0.7634, Train AUPRC: 0.2844, Train Accuracy: 0.9222, Train F1: 0.1599
+Valid AUROC: 0.5126, Valid AUPRC: 0.2417, Valid Accuracy: 0.9209, Valid F1: 0.0521
+
+Epoch 4 Averages:
+  Positive Logit: -0.8039
+  Negative Logit: -1.5818
+  Positive Probability: 0.3286
+Validation Averages:
+  Positive Logit: -2.1726
+  Negative Logit: -3.3805
+  Positive Probability: 0.1551
+Epoch 4/100, Train Loss: 0.1203, Valid Loss: 0.2645, Time: 16.21 seconds
+Train AUROC: 0.7695, Train AUPRC: 0.2864, Train Accuracy: 0.9213, Train F1: 0.1923
+Valid AUROC: 0.5190, Valid AUPRC: 0.2171, Valid Accuracy: 0.9212, Valid F1: 0.0764
+
+Epoch 5 Averages:
+  Positive Logit: -0.7731
+  Negative Logit: -1.5644
+  Positive Probability: 0.3367
+Validation Averages:
+  Positive Logit: -1.9093
+  Negative Logit: -3.1540
+  Positive Probability: 0.1762
+Epoch 5/100, Train Loss: 0.1152, Valid Loss: 0.2340, Time: 16.13 seconds
+Train AUROC: 0.7691, Train AUPRC: 0.2873, Train Accuracy: 0.9243, Train F1: 0.2087
+Valid AUROC: 0.5176, Valid AUPRC: 0.2306, Valid Accuracy: 0.9215, Valid F1: 0.0707
+
+Epoch 6 Averages:
+  Positive Logit: -0.6875
+  Negative Logit: -1.5555
+  Positive Probability: 0.3539
+Validation Averages:
+  Positive Logit: -1.9379
+  Negative Logit: -3.2124
+  Positive Probability: 0.1785
+Epoch 6/100, Train Loss: 0.1140, Valid Loss: 0.2378, Time: 16.35 seconds
+Train AUROC: 0.7877, Train AUPRC: 0.3315, Train Accuracy: 0.9202, Train F1: 0.2540
+Valid AUROC: 0.5186, Valid AUPRC: 0.2465, Valid Accuracy: 0.9204, Valid F1: 0.0757
+
+Epoch 7 Averages:
+  Positive Logit: -0.6729
+  Negative Logit: -1.5346
+  Positive Probability: 0.3581
+Validation Averages:
+  Positive Logit: -1.8380
+  Negative Logit: -3.1182
+  Positive Probability: 0.1922
+Epoch 7/100, Train Loss: 0.1086, Valid Loss: 0.2258, Time: 16.12 seconds
+Train AUROC: 0.7853, Train AUPRC: 0.3306, Train Accuracy: 0.9251, Train F1: 0.2683
+Valid AUROC: 0.5206, Valid AUPRC: 0.2595, Valid Accuracy: 0.9212, Valid F1: 0.0823
+
+Epoch 8 Averages:
+  Positive Logit: -0.6527
+  Negative Logit: -1.5243
+  Positive Probability: 0.3626
+Validation Averages:
+  Positive Logit: -1.5718
+  Negative Logit: -2.9472
+  Positive Probability: 0.2236
+Epoch 8/100, Train Loss: 0.1112, Valid Loss: 0.1975, Time: 16.05 seconds
+Train AUROC: 0.7879, Train AUPRC: 0.3333, Train Accuracy: 0.9206, Train F1: 0.2788
+Valid AUROC: 0.5336, Valid AUPRC: 0.2951, Valid Accuracy: 0.9220, Valid F1: 0.1277
+
+Epoch 9 Averages:
+  Positive Logit: -0.6497
+  Negative Logit: -1.5063
+  Positive Probability: 0.3613
+Validation Averages:
+  Positive Logit: -1.6239
+  Negative Logit: -2.8837
+  Positive Probability: 0.2166
+Epoch 9/100, Train Loss: 0.1106, Valid Loss: 0.2045, Time: 16.22 seconds
+Train AUROC: 0.7852, Train AUPRC: 0.3216, Train Accuracy: 0.9210, Train F1: 0.2708
+Valid AUROC: 0.5322, Valid AUPRC: 0.2851, Valid Accuracy: 0.9223, Valid F1: 0.1227
+
+Epoch 10 Averages:
+  Positive Logit: -0.6492
+  Negative Logit: -1.5005
+  Positive Probability: 0.3610
+Validation Averages:
+  Positive Logit: -1.6191
+  Negative Logit: -2.9189
+  Positive Probability: 0.2158
+Epoch 10/100, Train Loss: 0.1105, Valid Loss: 0.2017, Time: 16.25 seconds
+Train AUROC: 0.7818, Train AUPRC: 0.3112, Train Accuracy: 0.9209, Train F1: 0.2741
+Valid AUROC: 0.5278, Valid AUPRC: 0.2649, Valid Accuracy: 0.9201, Valid F1: 0.1091
+
+Epoch 11 Averages:
+  Positive Logit: -0.5609
+  Negative Logit: -1.4867
+  Positive Probability: 0.3806
+Validation Averages:
+  Positive Logit: -1.6595
+  Negative Logit: -3.0565
+  Positive Probability: 0.2133
+Epoch 11/100, Train Loss: 0.1089, Valid Loss: 0.2082, Time: 15.95 seconds
+Train AUROC: 0.8062, Train AUPRC: 0.3657, Train Accuracy: 0.9197, Train F1: 0.3314
+Valid AUROC: 0.5247, Valid AUPRC: 0.2720, Valid Accuracy: 0.9201, Valid F1: 0.0982
+
+Epoch 12 Averages:
+  Positive Logit: -0.5752
+  Negative Logit: -1.4743
+  Positive Probability: 0.3776
+Validation Averages:
+  Positive Logit: -1.5714
+  Negative Logit: -2.8449
+  Positive Probability: 0.2211
+Epoch 12/100, Train Loss: 0.1089, Valid Loss: 0.1973, Time: 16.11 seconds
+Train AUROC: 0.7938, Train AUPRC: 0.3503, Train Accuracy: 0.9196, Train F1: 0.3166
+Valid AUROC: 0.5314, Valid AUPRC: 0.2852, Valid Accuracy: 0.9209, Valid F1: 0.1208
+
+Epoch 13 Averages:
+  Positive Logit: -0.5494
+  Negative Logit: -1.4626
+  Positive Probability: 0.3836
+Validation Averages:
+  Positive Logit: -1.5354
+  Negative Logit: -2.8111
+  Positive Probability: 0.2255
+Epoch 13/100, Train Loss: 0.1061, Valid Loss: 0.1959, Time: 16.15 seconds
+Train AUROC: 0.8006, Train AUPRC: 0.3611, Train Accuracy: 0.9213, Train F1: 0.3314
+Valid AUROC: 0.5325, Valid AUPRC: 0.2752, Valid Accuracy: 0.9201, Valid F1: 0.1250
+
+Epoch 14 Averages:
+  Positive Logit: -0.5378
+  Negative Logit: -1.4488
+  Positive Probability: 0.3846
+Validation Averages:
+  Positive Logit: -1.4795
+  Negative Logit: -2.7682
+  Positive Probability: 0.2322
+Epoch 14/100, Train Loss: 0.1025, Valid Loss: 0.2012, Time: 16.06 seconds
+Train AUROC: 0.7999, Train AUPRC: 0.3517, Train Accuracy: 0.9227, Train F1: 0.3186
+Valid AUROC: 0.5375, Valid AUPRC: 0.2525, Valid Accuracy: 0.9177, Valid F1: 0.1416
+
+Epoch 15 Averages:
+  Positive Logit: -0.5002
+  Negative Logit: -1.4458
+  Positive Probability: 0.3927
+Validation Averages:
+  Positive Logit: -1.4949
+  Negative Logit: -2.8312
+  Positive Probability: 0.2304
+Epoch 15/100, Train Loss: 0.0993, Valid Loss: 0.1964, Time: 16.15 seconds
+Train AUROC: 0.8128, Train AUPRC: 0.3669, Train Accuracy: 0.9231, Train F1: 0.3333
+Valid AUROC: 0.5240, Valid AUPRC: 0.2763, Valid Accuracy: 0.9187, Valid F1: 0.0967
+
+Epoch 16 Averages:
+  Positive Logit: -0.5085
+  Negative Logit: -1.4367
+  Positive Probability: 0.3910
+Validation Averages:
+  Positive Logit: -1.4335
+  Negative Logit: -2.7120
+  Positive Probability: 0.2439
+Epoch 16/100, Train Loss: 0.1042, Valid Loss: 0.1871, Time: 16.10 seconds
+Train AUROC: 0.8044, Train AUPRC: 0.3791, Train Accuracy: 0.9227, Train F1: 0.3578
+Valid AUROC: 0.5426, Valid AUPRC: 0.2907, Valid Accuracy: 0.9212, Valid F1: 0.1570
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 5 finished. Best Valid AUPRC: 0.2951 at epoch 8. Time: 258.17 seconds 
+
+Model saved to /users/wmqn2362/PhysioNet2025/ECGFounder_add_Augmentation_0707_4/Model/model_fold5.pth
+Finetuning completed for fold 5
+Done.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: ecgfounder
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 2e-05
+Batch Size: 256
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 1e-06
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.3
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.2
+Use Shift Augmentation: True, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: True, Max Probability: 0.02, Probability: 0.3
+Use 50Hz Power Noise: False, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 0.08, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.08, Probability: 0.3
+Use Cutout Augmentation: True, Max Ratio: 0.2, Probability: 0.3
+Use Lead Mixing Augmentation: True, Lambda: 0.2, Probability: 0.3
+Use Time Warping Augmentation: True, Freq Range: [450, 550], Probability: 0.3
+>>>>>>>>>Loss Parameters:<<<<<<<<<<
+Pretrain Focal Gamma: 2
+Pretrain Margin: 0.1
+Pretrain S: 30
+Pretrain LMF Alpha: 0.98
+Pretrain LMF Beta: 0.02
+Finetune Focal Gamma: 2
+Finetune Margin: 0.35
+Finetune S: 30
+Finetune LMF Alpha: 0.98
+Finetune LMF Beta: 0.02
+Positive Sample Weight Multiplier: 1.0
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+/mnt/flash/tmp/job.1231449
+Challenge score: 0.527
+AUROC: 0.879
+AUPRC: 0.409
+Accuracy: 0.973
+F-measure: 0.964
+
