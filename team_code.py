@@ -51,7 +51,7 @@ class Config:
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 2e-5
-        self.pretrain_batch_size = 256
+        self.pretrain_batch_size = 128
         self.gradient_accumulation_steps = 4
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
@@ -60,7 +60,7 @@ class Config:
         self.net1d_dropout_rate = 0.3
         self.batch_size = 32
         self.early_stop_patience = 8
-        self.num_preprocess_workers = 2
+        self.num_preprocess_workers = 1
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
