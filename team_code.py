@@ -51,7 +51,7 @@ class Config:
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 2e-5
-        self.pretrain_batch_size = 256
+        self.pretrain_batch_size = 128
         self.gradient_accumulation_steps = 4
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
@@ -60,7 +60,7 @@ class Config:
         self.net1d_dropout_rate = 0.3
         self.batch_size = 32
         self.early_stop_patience = 8
-        self.num_preprocess_workers = 2
+        self.num_preprocess_workers = 1
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
@@ -273,6 +273,9 @@ def train_model(data_folder, model_folder, verbose):
     code15_records = [os.path.join(data_folder, r) for r, src in results if src == 'CODE-15%']
     finetune_records = [os.path.join(data_folder, r) for r, src in results if src != 'CODE-15%']
     
+    del records, results
+    torch.cuda.empty_cache()
+
     # Create datasets
     pretrain_dataset = ECGDataset(code15_records, is_training=True, config=config)
     finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
@@ -398,9 +401,10 @@ def train_model(data_folder, model_folder, verbose):
     ############################################################################
     # Stage 2: Evaluate pretrained model
     ############################################################################
-    pretrain_eval_dataset = ECGDataset(code15_records, is_training=False, config=config)
-    finetune_eval_dataset = ECGDataset(finetune_records, is_training=False, config=config)
-    evaluate_model(model, pretrain_eval_dataset, finetune_eval_dataset, verbose)
+    if verbose:
+        pretrain_eval_dataset = ECGDataset(code15_records, is_training=False, config=config)
+        finetune_eval_dataset = ECGDataset(finetune_records, is_training=False, config=config)
+        evaluate_model(model, pretrain_eval_dataset, finetune_eval_dataset, verbose)
     
     ############################################################################
     # Stage 3: Finetune on target datasets
@@ -531,6 +535,7 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                           num_workers=config.num_preprocess_workers)
 
     best_auprc = 0.0
+    best_loss = float('inf')
     best_epoch = 0
     epochs_no_improve = 0
     
@@ -540,11 +545,12 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         train_loss = 0.0
         train_targets = []
         train_outputs = []
-        pos_logits_sum = 0.0
-        neg_logits_sum = 0.0
-        pos_probs_sum = 0.0
-        pos_count = 0
-        neg_count = 0
+        if verbose:
+            pos_logits_sum = 0.0
+            neg_logits_sum = 0.0
+            pos_probs_sum = 0.0
+            pos_count = 0
+            neg_count = 0
         
         for i, (features, label) in enumerate(train_loader):
             signal, meta_features = features
@@ -556,25 +562,25 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
             optimizer.zero_grad()
             # with autocast:
             # Check input data
-            if torch.isnan(signal).any() or torch.isinf(signal).any():
-                print(f"WARNING: Input signal contains NaN/Inf values at batch {i}")
-            if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
-                print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
+            # if torch.isnan(signal).any() or torch.isinf(signal).any():
+            #     print(f"WARNING: Input signal contains NaN/Inf values at batch {i}")
+            # if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
+            #     print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
             
             output = model(signal, meta_features)
             
             # Check model output
-            if torch.isnan(output).any() or torch.isinf(output).any():
-                print(f"WARNING: Model output contains NaN/Inf values at batch {i}")
-                print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
+            # if torch.isnan(output).any() or torch.isinf(output).any():
+            #     print(f"WARNING: Model output contains NaN/Inf values at batch {i}")
+            #     print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
             
             # Reshape label to match output shape [batch_size, 1]
             label_reshaped = label.view(-1, 1)
             loss = criterion(output, label_reshaped)
             
             # Check loss value
-            if torch.isnan(loss).any() or torch.isinf(loss).any():
-                print(f"WARNING: Loss contains NaN/Inf values at batch {i}")
+            # if torch.isnan(loss).any() or torch.isinf(loss).any():
+            #     print(f"WARNING: Loss contains NaN/Inf values at batch {i}")
             
             # Gradient accumulation
             loss = loss / config.gradient_accumulation_steps
@@ -595,43 +601,45 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                 train_targets.extend(label.cpu().numpy())
                 train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
                 
-                # Calculate positive/negative logit stats
-                pos_mask = label == 1
-                neg_mask = ~pos_mask
-                if pos_mask.any():
-                    pos_logits = output[pos_mask].mean().item()
-                    pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                else:
-                    pos_logits = 0.0
-                    pos_probs = 0.0
-                if neg_mask.any():
-                    neg_logits = output[neg_mask].mean().item()
-                else:
-                    neg_logits = 0.0
-                
-                # Accumulate stats for epoch average
-                if pos_mask.any():
-                    pos_logits_sum += pos_logits * pos_mask.sum().item()
-                    pos_probs_sum += pos_probs * pos_mask.sum().item()
-                    pos_count += pos_mask.sum().item()
-                if neg_mask.any():
-                    neg_logits_sum += neg_logits * neg_mask.sum().item()
-                    neg_count += neg_mask.sum().item()
+                if verbose:
+                    # Calculate positive/negative logit stats
+                    pos_mask = label == 1
+                    neg_mask = ~pos_mask
+                    if pos_mask.any():
+                        pos_logits = output[pos_mask].mean().item()
+                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
+                    else:
+                        pos_logits = 0.0
+                        pos_probs = 0.0
+                    if neg_mask.any():
+                        neg_logits = output[neg_mask].mean().item()
+                    else:
+                        neg_logits = 0.0
+                    
+                    # Accumulate stats for epoch average
+                    if pos_mask.any():
+                        pos_logits_sum += pos_logits * pos_mask.sum().item()
+                        pos_probs_sum += pos_probs * pos_mask.sum().item()
+                        pos_count += pos_mask.sum().item()
+                    if neg_mask.any():
+                        neg_logits_sum += neg_logits * neg_mask.sum().item()
+                        neg_count += neg_mask.sum().item()
 
         train_loss /= len(train_loader)
-        
-        # Calculate epoch averages
-        epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
-        epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
-        epoch_pos_prob = pos_probs_sum / pos_count if pos_count > 0 else 0.0
-        
-        print(f"Epoch {epoch + 1} Averages:")
-        print(f"  Positive Logit: {epoch_pos_logit:.4f}")
-        print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
-        print(f"  Positive Probability: {epoch_pos_prob:.4f}")
+
+        if verbose:
+            # Calculate epoch averages
+            epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
+            epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
+            epoch_pos_prob = pos_probs_sum / pos_count if pos_count > 0 else 0.0
+            
+            print(f"Epoch {epoch + 1} Averages:")
+            print(f"  Positive Logit: {epoch_pos_logit:.4f}")
+            print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
+            print(f"  Positive Probability: {epoch_pos_prob:.4f}")
         
         # Calculate training metrics
-        train_auroc = roc_auc_score(train_targets, np.round(train_outputs))
+        train_auroc = roc_auc_score(train_targets, train_outputs)
         train_auprc = average_precision_score(train_targets, train_outputs)
         train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
         train_f1 = f1_score(train_targets, np.round(train_outputs))
@@ -639,13 +647,14 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         # Validation
         model.eval()
         val_loss = 0.0
-        val_targets = []
-        val_outputs = []
-        val_pos_logits_sum = 0.0
-        val_neg_logits_sum = 0.0
-        val_pos_probs_sum = 0.0
-        val_pos_count = 0
-        val_neg_count = 0
+        if verbose:
+            val_targets = []
+            val_outputs = []
+            val_pos_logits_sum = 0.0
+            val_neg_logits_sum = 0.0
+            val_pos_probs_sum = 0.0
+            val_pos_count = 0
+            val_neg_count = 0
         
         with torch.no_grad():
             for features, label in val_loader:
@@ -664,42 +673,44 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                 val_targets.extend(label.cpu().numpy())
                 val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
                 
-                # Calculate positive/negative logit stats for validation
-                pos_mask = label == 1
-                neg_mask = ~pos_mask
-                if pos_mask.any():
-                    pos_logits = output[pos_mask].mean().item()
-                    pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                    val_pos_logits_sum += pos_logits * pos_mask.sum().item()
-                    val_pos_probs_sum += pos_probs * pos_mask.sum().item()
-                    val_pos_count += pos_mask.sum().item()
-                if neg_mask.any():
-                    neg_logits = output[neg_mask].mean().item()
-                    val_neg_logits_sum += neg_logits * neg_mask.sum().item()
-                    val_neg_count += neg_mask.sum().item()
+                if verbose:
+                    # Calculate positive/negative logit stats for validation
+                    pos_mask = label == 1
+                    neg_mask = ~pos_mask
+                    if pos_mask.any():
+                        pos_logits = output[pos_mask].mean().item()
+                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
+                        val_pos_logits_sum += pos_logits * pos_mask.sum().item()
+                        val_pos_probs_sum += pos_probs * pos_mask.sum().item()
+                        val_pos_count += pos_mask.sum().item()
+                    if neg_mask.any():
+                        neg_logits = output[neg_mask].mean().item()
+                        val_neg_logits_sum += neg_logits * neg_mask.sum().item()
+                        val_neg_count += neg_mask.sum().item()
 
         val_loss /= len(val_loader)
         
-        # Calculate validation epoch averages
-        val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
-        val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
-        val_epoch_pos_prob = val_pos_probs_sum / val_pos_count if val_pos_count > 0 else 0.0
-        
-        print(f"Validation Averages:")
-        print(f"  Positive Logit: {val_epoch_pos_logit:.4f}")
-        print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
-        print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
-        
-        # Calculate validation metrics
-        val_outputs_arr = np.array(val_outputs)
-        val_targets_arr = np.array(val_targets)
+        if verbose:
+            # Calculate validation epoch averages
+            val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
+            val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
+            val_epoch_pos_prob = val_pos_probs_sum / val_pos_count if val_pos_count > 0 else 0.0
+            
+            print(f"Validation Averages:")
+            print(f"  Positive Logit: {val_epoch_pos_logit:.4f}")
+            print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
+            print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
+            
+            # Calculate validation metrics
+            val_outputs_arr = np.array(val_outputs)
+            val_targets_arr = np.array(val_targets)
 
         if len(np.unique(val_targets_arr)) < 2:
             print("WARNING: Only one class present in validation targets")
             val_auroc = 0.5
         else:
             val_auroc = roc_auc_score(val_targets_arr, val_outputs_arr)
-        
+            
         val_auprc = average_precision_score(val_targets_arr, val_outputs_arr)
         val_accuracy = accuracy_score(val_targets_arr, np.round(val_outputs_arr))
         val_f1 = f1_score(val_targets_arr, np.round(val_outputs_arr))
@@ -728,6 +739,9 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
             if epochs_no_improve >= early_stop_patience:
                 print(f"Early stopping: Valid AUPRC not improved for {early_stop_patience} epochs")
                 break
+
+        del train_targets, train_outputs, val_targets, val_outputs
+        torch.cuda.empty_cache()
 
     # Save final model
     os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
@@ -804,11 +818,12 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             train_loss = 0.0
             train_targets = []
             train_outputs = []
-            pos_logits_sum = 0.0
-            neg_logits_sum = 0.0
-            pos_probs_sum = 0.0
-            pos_count = 0
-            neg_count = 0
+            if verbose:
+                pos_logits_sum = 0.0
+                neg_logits_sum = 0.0
+                pos_probs_sum = 0.0
+                pos_count = 0
+                neg_count = 0
             
             for i, (features, label) in enumerate(train_loader):
                 signal, meta_features = features
@@ -819,25 +834,25 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 optimizers[fold].zero_grad()
                 # with autocast:  # Disabled mixed precision training
                 # Check input data
-                if torch.isnan(signal).any() or torch.isinf(signal).any():
-                    print(f"WARNING: Input signal contains NaN/Inf values at batch {i}")
-                if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
-                    print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
+                # if torch.isnan(signal).any() or torch.isinf(signal).any():
+                #     print(f"WARNING: Input signal contains NaN/Inf values at batch {i}")
+                # if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
+                #     print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
                 
                 output = model(signal, meta_features)
                 
-                # Check model output
-                if torch.isnan(output).any() or torch.isinf(output).any():
-                    print(f"WARNING: Model output contains NaN/Inf values at batch {i}")
-                    print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
+                # # Check model output
+                # if torch.isnan(output).any() or torch.isinf(output).any():
+                #     print(f"WARNING: Model output contains NaN/Inf values at batch {i}")
+                #     print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
                 
                 # Reshape label to match output shape [batch_size, 1]
                 label_reshaped = label.view(-1, 1)
                 loss = criterion(output, label_reshaped)
                 
-                # Check loss value
-                if torch.isnan(loss).any() or torch.isinf(loss).any():
-                    print(f"WARNING: Loss contains NaN/Inf values at batch {i}")
+                # # Check loss value
+                # if torch.isnan(loss).any() or torch.isinf(loss).any():
+                #     print(f"WARNING: Loss contains NaN/Inf values at batch {i}")
                 
                 # Gradient clipping
                 # scaler.scale(loss).backward()
@@ -853,42 +868,44 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 train_targets.extend(label.cpu().numpy())
                 train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
 
-                # Calculate positive/negative logit stats
-                pos_mask = label == 1
-                neg_mask = ~pos_mask
-                if pos_mask.any():
-                    pos_logits = output[pos_mask].mean().item()
-                    pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                else:
-                    pos_logits = 0.0
-                    pos_probs = 0.0
-                if neg_mask.any():
-                    neg_logits = output[neg_mask].mean().item()
-                else:
-                    neg_logits = 0.0
-                
-                # Accumulate stats for epoch average
-                if pos_mask.any():
-                    pos_logits_sum += pos_logits * pos_mask.sum().item()
-                    pos_probs_sum += pos_probs * pos_mask.sum().item()
-                    pos_count += pos_mask.sum().item()
-                if neg_mask.any():
-                    neg_logits_sum += neg_logits * neg_mask.sum().item()
-                    neg_count += neg_mask.sum().item()
+                if verbose:
+                    # Calculate positive/negative logit stats
+                    pos_mask = label == 1
+                    neg_mask = ~pos_mask
+                    if pos_mask.any():
+                        pos_logits = output[pos_mask].mean().item()
+                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
+                    else:
+                        pos_logits = 0.0
+                        pos_probs = 0.0
+                    if neg_mask.any():
+                        neg_logits = output[neg_mask].mean().item()
+                    else:
+                        neg_logits = 0.0
+                    
+                    # Accumulate stats for epoch average
+                    if pos_mask.any():
+                        pos_logits_sum += pos_logits * pos_mask.sum().item()
+                        pos_probs_sum += pos_probs * pos_mask.sum().item()
+                        pos_count += pos_mask.sum().item()
+                    if neg_mask.any():
+                        neg_logits_sum += neg_logits * neg_mask.sum().item()
+                        neg_count += neg_mask.sum().item()
 
             train_loss /= len(train_loader)
-            
-            # Calculate epoch averages
-            epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
-            epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
-            epoch_pos_prob = pos_probs_sum / pos_count if pos_count > 0 else 0.0
-            
-            print(f"Epoch {epoch + 1} Averages:")
-            print(f"  Positive Logit: {epoch_pos_logit:.4f}")
-            print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
-            print(f"  Positive Probability: {epoch_pos_prob:.4f}")
 
-            schedulers[fold].step()
+            if verbose:
+                # Calculate epoch averages
+                epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
+                epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
+                epoch_pos_prob = pos_probs_sum / pos_count if pos_count > 0 else 0.0
+                
+                print(f"Epoch {epoch + 1} Averages:")
+                print(f"  Positive Logit: {epoch_pos_logit:.4f}")
+                print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
+                print(f"  Positive Probability: {epoch_pos_prob:.4f}")
+
+                schedulers[fold].step()
 
             # Calculate training metrics
             train_auroc = roc_auc_score(train_targets, train_outputs)
@@ -901,11 +918,13 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             val_loss = 0.0
             val_targets = []
             val_outputs = []
-            val_pos_logits_sum = 0.0
-            val_neg_logits_sum = 0.0
-            val_pos_probs_sum = 0.0
-            val_pos_count = 0
-            val_neg_count = 0
+            if verbose:
+                val_pos_logits_sum = 0.0
+                val_neg_logits_sum = 0.0
+                val_pos_probs_sum = 0.0
+                val_pos_count = 0
+                val_neg_count = 0
+
             with torch.no_grad():
                 for i, (features, label) in enumerate(val_loader):
                     signal, meta_features = features
@@ -922,32 +941,33 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                     val_loss += loss.item()
                     val_targets.extend(label.cpu().numpy())
                     val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
-
-                    # Calculate positive/negative logit stats for validation
-                    pos_mask = label == 1
-                    neg_mask = ~pos_mask
-                    if pos_mask.any():
-                        pos_logits = output[pos_mask].mean().item()
-                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                        val_pos_logits_sum += pos_logits * pos_mask.sum().item()
-                        val_pos_probs_sum += pos_probs * pos_mask.sum().item()
-                        val_pos_count += pos_mask.sum().item()
-                    if neg_mask.any():
-                        neg_logits = output[neg_mask].mean().item()
-                        val_neg_logits_sum += neg_logits * neg_mask.sum().item()
-                        val_neg_count += neg_mask.sum().item()
+                    if verbose:
+                        # Calculate positive/negative logit stats for validation
+                        pos_mask = label == 1
+                        neg_mask = ~pos_mask
+                        if pos_mask.any():
+                            pos_logits = output[pos_mask].mean().item()
+                            pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
+                            val_pos_logits_sum += pos_logits * pos_mask.sum().item()
+                            val_pos_probs_sum += pos_probs * pos_mask.sum().item()
+                            val_pos_count += pos_mask.sum().item()
+                        if neg_mask.any():
+                            neg_logits = output[neg_mask].mean().item()
+                            val_neg_logits_sum += neg_logits * neg_mask.sum().item()
+                            val_neg_count += neg_mask.sum().item()
 
             val_loss /= len(val_loader)
             
-            # Calculate validation epoch averages
-            val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
-            val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
-            val_epoch_pos_prob = val_pos_probs_sum / val_pos_count if val_pos_count > 0 else 0.0
-            
-            print(f"Validation Averages:")
-            print(f"  Positive Logit: {val_epoch_pos_logit:.4f}")
-            print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
-            print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
+            if verbose:
+                # Calculate validation epoch averages
+                val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
+                val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
+                val_epoch_pos_prob = val_pos_probs_sum / val_pos_count if val_pos_count > 0 else 0.0
+                
+                print(f"Validation Averages:")
+                print(f"  Positive Logit: {val_epoch_pos_logit:.4f}")
+                print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
+                print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
 
             val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
             val_auprc = average_precision_score(val_targets, val_outputs)
@@ -973,6 +993,9 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                     if verbose:
                         print(f"Early stopping: Valid AUPRC not improved for {config.early_stop_patience} epochs")
                     break
+
+            del train_targets, train_outputs, val_targets, val_outputs
+            torch.cuda.empty_cache()
         
         end_time = time.time()
         if verbose:
@@ -1031,6 +1054,9 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
             print(f"F1 Score: {f1:.4f}")
             print(f"Positive Logit: {avg_positive_logit:.4f}")
             print(f"Negative Logit: {avg_negative_logit:.4f}")
+
+        del outputs, targets, all_logits
+        torch.cuda.empty_cache()
     
     # Evaluate on pretrain dataset
     evaluate_dataset(pretrain_dataset, "Pretrain")

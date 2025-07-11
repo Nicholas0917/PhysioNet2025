@@ -21,17 +21,17 @@ class ECGDataset(Dataset):
         try:
             with open(signal_path, 'rb') as f:
                 signal = np.load(f)
-                if np.isnan(signal).any() or np.isinf(signal).any():
-                    print(f"WARNING: Signal contains NaN/Inf values in {signal_path}")
-                    print(f"Signal stats - min: {np.nanmin(signal):.4f}, max: {np.nanmax(signal):.4f}, mean: {np.nanmean(signal):.4f}")
+                # if np.isnan(signal).any() or np.isinf(signal).any():
+                #     print(f"WARNING: Signal contains NaN/Inf values in {signal_path}")
+                #     print(f"Signal stats - min: {np.nanmin(signal):.4f}, max: {np.nanmax(signal):.4f}, mean: {np.nanmean(signal):.4f}")
         except Exception as e:
             print(f"Error loading {signal_path}: {str(e)}")
             raise
         
         record = self.records[idx]
         label = float(load_label(record))
-        if np.isnan(label) or np.isinf(label):
-            print(f"WARNING: Label contains NaN/Inf in record {record}")
+        # if np.isnan(label) or np.isinf(label):
+        #     print(f"WARNING: Label contains NaN/Inf in record {record}")
         
         header = load_header(record)
         age = get_age(header) if self.config.use_age else 0
@@ -106,40 +106,40 @@ class ECGDataset(Dataset):
         
     def _add_noise(self, signal):
         noise = np.random.normal(0, self.config.noise_std, signal.shape)
-        augmented = signal + noise
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _add_noise")
-        return augmented
+        signal += noise
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _add_noise")
+        return signal
         
     def _scaling(self, signal):
         scaling_factors = np.random.uniform(self.config.scaling_min, self.config.scaling_max, signal.shape[0])
-        scaled = signal * scaling_factors[:, np.newaxis]
-        scaled = np.clip(scaled, -1e4, 1e4)
-        if np.isnan(scaled).any():
-            print("WARNING: NaN detected after _scaling")
-        return scaled
+        signal *= scaling_factors[:, np.newaxis]
+        signal = np.clip(signal, -1e4, 1e4)
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _scaling")
+        return signal
         
     def _flip(self, signal):
-        flipped = signal * -1
-        if np.isnan(flipped).any():
-            print("WARNING: NaN detected after _flip")
-        return flipped
+        signal *= -1
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _flip")
+        return signal
         
     def _shift(self, signal):
         length = signal.shape[1]
         max_shift = int(length * self.config.shift_max_ratio)
         shift_amount = np.random.randint(-max_shift, max_shift + 1)
         shifted = np.roll(signal, shift_amount, axis=1)
-        if np.isnan(shifted).any():
-            print("WARNING: NaN detected after _shift")
+        # if np.isnan(shifted).any():
+        #     print("WARNING: NaN detected after _shift")
         return shifted
         
     def _drop(self, signal):
         mask = np.random.rand(*signal.shape) > self.config.drop_max_prob
-        dropped = signal * mask
-        if np.isnan(dropped).any():
-            print("WARNING: NaN detected after _drop")
-        return dropped
+        signal *= mask
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _drop")
+        return signal
         
     def _sine_wave(self, signal):
         length = signal.shape[1]
@@ -147,10 +147,10 @@ class ECGDataset(Dataset):
         freq = np.random.uniform(self.config.sine_min_freq, self.config.sine_max_freq)
         amp = np.random.uniform(0, self.config.sine_max_amp)
         sine = amp * np.sin(2 * np.pi * freq * t)
-        augmented = signal + sine[np.newaxis, :]
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _sine_wave")
-        return augmented
+        signal += sine[np.newaxis, :]
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _sine_wave")
+        return signal
         
     def _square_wave(self, signal):
         length = signal.shape[1]
@@ -158,10 +158,10 @@ class ECGDataset(Dataset):
         freq = np.random.uniform(self.config.square_min_freq, self.config.square_max_freq)
         amp = np.random.uniform(0, self.config.square_max_amp)
         square = amp * np.sign(np.sin(2 * np.pi * freq * t))
-        augmented = signal + square[np.newaxis, :]
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _square_wave")
-        return augmented
+        signal += square[np.newaxis, :]
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _square_wave")
+        return signal
         
     def _cutout(self, signal):
         length = signal.shape[1]
@@ -178,8 +178,8 @@ class ECGDataset(Dataset):
             start = np.random.randint(0, length - cutout_width + 1)
             signal[lead, start:start+cutout_width] = 0
             
-        if np.isnan(signal).any():
-            print("WARNING: NaN detected after _cutout")
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _cutout")
         return signal
         
     def _add_power_noise(self, signal):
@@ -190,11 +190,11 @@ class ECGDataset(Dataset):
             t = np.arange(length) / 500.0
             phase = np.random.uniform(0, 2 * np.pi)
             power_noise = amplitude * np.sin(2 * np.pi * 50 * t + phase)
-            signal = signal + power_noise
+            signal += power_noise
             signal = np.clip(signal, -1e4, 1e4)
             
-        if np.isnan(signal).any():
-            print("WARNING: NaN detected after _add_power_noise")
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _add_power_noise")
         return signal
 
     def _lead_mixing_augmentation(self, signal, lambda_val=0.2):
@@ -219,12 +219,13 @@ class ECGDataset(Dataset):
                     weights = A[i].reshape(-1, 1)
                     new_signal[i] = np.sum(signal * weights, axis=0)
             
-            augmented = (1 - lambda_val) * signal + lambda_val * new_signal
-            augmented = np.clip(augmented, -1e4, 1e4)
+            # Perform in-place update for the final augmented signal
+            signal = (1 - lambda_val) * signal + lambda_val * new_signal
+            signal = np.clip(signal, -1e4, 1e4)
             
-            if np.isnan(augmented).any():
-                print("WARNING: NaN detected after _lead_mixing_augmentation")
-            return augmented
+            # if np.isnan(signal).any():
+            #     print("WARNING: NaN detected after _lead_mixing_augmentation")
+            return signal
             
         except Exception as e:
             print(f"Lead mixing failed: {str(e)}")
@@ -235,10 +236,10 @@ class ECGDataset(Dataset):
         freq = np.random.uniform(self.config.baseline_wander_min_freq, self.config.baseline_wander_max_freq)
         amp = self.config.baseline_wander_amp_ratio * np.std(signal)
         drift = amp * np.sin(2 * np.pi * freq * t)
-        augmented = signal + drift
-        if np.isnan(augmented).any():
-            print("WARNING: NaN detected after _baseline_wander")
-        return augmented
+        signal += drift
+        # if np.isnan(signal).any():
+        #     print("WARNING: NaN detected after _baseline_wander")
+        return signal
 
     def _time_wrapping(self, signal):
         original_length = signal.shape[1]
@@ -260,6 +261,6 @@ class ECGDataset(Dataset):
             else:
                 result[i, :new_length] = resampled
         
-        if np.isnan(result).any() or np.isinf(result).any():
-            print("WARNING: NaN/Inf detected after _time_wrapping")
+        # if np.isnan(result).any() or np.isinf(result).any():
+        #     print("WARNING: NaN/Inf detected after _time_wrapping")
         return result
