@@ -51,8 +51,8 @@ class Config:
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 2e-5
-        self.pretrain_batch_size = 128
-        self.gradient_accumulation_steps = 4
+        self.pretrain_batch_size = 64
+        self.gradient_accumulation_steps = 8
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
         self.learning_rate = 1e-6
