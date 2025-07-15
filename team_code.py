@@ -51,7 +51,7 @@ class Config:
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 2e-5
-        self.pretrain_batch_size = 32
+        self.pretrain_batch_size = 64
         self.gradient_accumulation_steps = 4
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
@@ -238,7 +238,7 @@ if torch.cuda.is_available():
 # Train your model.
 def train_model(data_folder, model_folder, verbose):
     """Train the model using the three-stage process"""
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     
     ############################################################################
     # Stage 0: Data Loading and Preprocessing
@@ -489,7 +489,7 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                   num_epochs, batch_size, early_stop_patience, device,
                   pretrain_model_pth, verbose):
     """Core pretraining logic with training loop and model saving"""
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     
     # Check if pretrained model exists
     if os.path.exists(pretrain_model_pth):
@@ -769,7 +769,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         autocast: Autocast context manager
         kf: StratifiedKFold instance
     """
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     
     # Save initial model state
     initial_state = copy.deepcopy(model.state_dict())
