@@ -742,6 +742,7 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
 
         del train_targets, train_outputs, val_targets, val_outputs
         torch.cuda.empty_cache()
+        gc.collect()
 
     # Save final model
     os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
@@ -996,7 +997,8 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
 
             del train_targets, train_outputs, val_targets, val_outputs
             torch.cuda.empty_cache()
-        
+            gc.collect()
+
         end_time = time.time()
         if verbose:
             print(f'Fold {fold + 1} finished. Best Valid AUPRC: {best_auprc:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
@@ -1057,6 +1059,8 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
 
         del outputs, targets, all_logits
         torch.cuda.empty_cache()
+        gc.collect()
+
     
     # Evaluate on pretrain dataset
     evaluate_dataset(pretrain_dataset, "Pretrain")
