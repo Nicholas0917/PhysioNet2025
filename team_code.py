@@ -279,7 +279,9 @@ def train_model(data_folder, model_folder, verbose):
     # Create datasets
     pretrain_dataset = ECGDataset(code15_records, is_training=True, config=config)
     finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
-    
+
+    return None
+
     ############################################################################
     # Stage 1: Pretrain Model
     ############################################################################
