@@ -256,7 +256,7 @@ def train_model(data_folder, model_folder, verbose):
     #         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
     
     num_cpus = os.cpu_count()
-    with ThreadPoolExecutor(max_workers=config.num_preprocess_workers) as executor:
+    with ThreadPoolExecutor(max_workers=num_cpus) as executor:
         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
     
 
