@@ -16,6 +16,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import gc
 import psutil
 
 import joblib
@@ -51,7 +52,7 @@ class Config:
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 2e-5
-        self.pretrain_batch_size = 128
+        self.pretrain_batch_size = 64
         self.gradient_accumulation_steps = 4
         self.pretrain_early_stop_patience = 5
         self.num_epochs = 100
@@ -66,6 +67,7 @@ class Config:
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
+        self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', './tmp'), 'pretrain_model.pth')
 
         # Loss parameters
         # self.pretrain_focal_alpha = 0.6
@@ -238,12 +240,14 @@ if torch.cuda.is_available():
 # Train your model.
 def train_model(data_folder, model_folder, verbose):
     """Train the model using the three-stage process"""
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
+    print_memory_usage("Initial Memory State in train_model")
     
     ############################################################################
     # Stage 0: Data Loading and Preprocessing
     ############################################################################
     records = find_records(data_folder)
+    # print_memory_usage("After finding records and getting full paths")
     
     # # Check if cache folder is not empty, if so, skip preprocessing
     # if os.path.exists(config.cache_folder) and os.listdir(config.cache_folder):
@@ -255,10 +259,21 @@ def train_model(data_folder, model_folder, verbose):
     #     with ThreadPoolExecutor(max_workers=num_cpus) as executor:
     #         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
     
+    # Check if cache folder is not empty, if so, skip preprocessing
+    # if os.path.exists(config.cache_folder) and os.listdir(config.cache_folder):
+    #     print(f"Cache folder '{config.cache_folder}' is not empty. Skipping data preprocessing.")
+    # else:
+    # print(f"Cache folder '{config.cache_folder}' is empty or does not exist. Starting data preprocessing...")
+    # Initialize filters once
+    start_time = time.time()
+    # filters = initialize_filters()
     num_cpus = os.cpu_count()
-    with ThreadPoolExecutor(max_workers=config.num_preprocess_workers) as executor:
+    with ThreadPoolExecutor(max_workers=num_cpus) as executor:
         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
-    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Data preprocessing took {elapsed_time:.2f} seconds.")
+    print_memory_usage("After data preprocessing")
 
     # Split into CODE-15% and other records (parallel processing)
     def classify_record(record):
@@ -273,13 +288,18 @@ def train_model(data_folder, model_folder, verbose):
     code15_records = [os.path.join(data_folder, r) for r, src in results if src == 'CODE-15%']
     finetune_records = [os.path.join(data_folder, r) for r, src in results if src != 'CODE-15%']
     
-    del records, results
-    torch.cuda.empty_cache()
+    # del records, results
+    # torch.cuda.empty_cache()
+    # gc.collect()
+    # print_memory_usage("After splitting records and cleaning up")
 
     # Create datasets
     pretrain_dataset = ECGDataset(code15_records, is_training=True, config=config)
     finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
-    
+    # print_memory_usage("After initializing pretrain and finetune datasets")
+
+    # return None
+
     ############################################################################
     # Stage 1: Pretrain Model
     ############################################################################
@@ -309,6 +329,7 @@ def train_model(data_folder, model_folder, verbose):
         pth_path=pretrained_weight_path,
         config=config
     )
+    # print_memory_usage("After initializing HybridModel")
 
     # First stage: update all parameters
     for param in model.parameters():
@@ -354,6 +375,7 @@ def train_model(data_folder, model_folder, verbose):
         lr=config.pretrain_learning_rate,
         weight_decay=2e-4
     )
+    # print_memory_usage("After initializing pretrain criterion and optimizer")
     
     warmup_epochs = int(config.pretrain_num_epochs * 0.1)
     def lr_lambda(epoch):
@@ -381,7 +403,7 @@ def train_model(data_folder, model_folder, verbose):
     #     steps_per_epoch=steps_per_epoch,
     #     pct_start=0.3
     # )
-    
+    print_memory_usage("Before pretrain_model function call")
     model = pretrain_model(
         pretrain_dataset=pretrain_dataset,
         model=model,
@@ -397,6 +419,7 @@ def train_model(data_folder, model_folder, verbose):
         pretrain_model_pth=os.path.join(model_folder, 'pretrain_model.pth'),
         verbose=verbose,
     )
+    print_memory_usage("After pretrain_model function call")
     
     ############################################################################
     # Stage 2: Evaluate pretrained model
@@ -465,11 +488,13 @@ def train_model(data_folder, model_folder, verbose):
         )
         optimizers.append(optimizer)
         schedulers.append(scheduler)
+    # print_memory_usage("After initializing finetune criterion, optimizers, and schedulers")
     
     # scaler = torch.amp.GradScaler('cuda')  # Disabled mixed precision training
     # autocast = torch.amp.autocast(device_type='cuda', dtype=torch.float16)  # Disabled mixed precision training
     kf = StratifiedKFold(n_splits=5)
     
+    print_memory_usage("Before finetune_model function call")
     finetune_model(
         model=model,
         finetune_dataset=finetune_dataset,
@@ -480,6 +505,7 @@ def train_model(data_folder, model_folder, verbose):
         schedulers=schedulers,
         kf=kf
     )
+    print_memory_usage("After finetune_model function call")
     
     if verbose:
         print('Done.')
@@ -489,14 +515,14 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                   num_epochs, batch_size, early_stop_patience, device,
                   pretrain_model_pth, verbose):
     """Core pretraining logic with training loop and model saving"""
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     
-    # Check if pretrained model exists
-    if os.path.exists(pretrain_model_pth):
+    # Check if pretrained model exists at the configured path to skip pretraining
+    if os.path.exists(config.pretrain_model_path):
         if verbose:
-            print(f'Loading pretrained model from {pretrain_model_pth}')
+            print(f'Loading pretrained model from {config.pretrain_model_path} to skip pretraining.')
         try:
-            checkpoint = torch.load(pretrain_model_pth, map_location=device)
+            checkpoint = torch.load(config.pretrain_model_path, map_location=device)
             # Handle both full checkpoint and state_dict cases
             if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
                 model.load_state_dict(checkpoint['state_dict'])
@@ -504,6 +530,11 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                 model.load_state_dict(checkpoint)
             if verbose:
                 print('Successfully loaded pretrained model')
+            # Save the loaded model to the new pretrain_model_pth location
+            os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
+            torch.save(model.state_dict(), pretrain_model_pth)
+            if verbose:
+                print(f'Successfully saved loaded pretrained model to {pretrain_model_pth}')
             return model
         except Exception as e:
             if verbose:
@@ -647,9 +678,9 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         # Validation
         model.eval()
         val_loss = 0.0
+        val_targets = []
+        val_outputs = []
         if verbose:
-            val_targets = []
-            val_outputs = []
             val_pos_logits_sum = 0.0
             val_neg_logits_sum = 0.0
             val_pos_probs_sum = 0.0
@@ -740,8 +771,9 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                 print(f"Early stopping: Valid AUPRC not improved for {early_stop_patience} epochs")
                 break
 
-        del train_targets, train_outputs, val_targets, val_outputs
-        torch.cuda.empty_cache()
+        # del train_targets, train_outputs, val_targets, val_outputs
+        # torch.cuda.empty_cache()
+        # gc.collect()
 
     # Save final model
     os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
@@ -769,7 +801,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         autocast: Autocast context manager
         kf: StratifiedKFold instance
     """
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
     
     # Save initial model state
     initial_state = copy.deepcopy(model.state_dict())
@@ -994,8 +1026,9 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                         print(f"Early stopping: Valid AUPRC not improved for {config.early_stop_patience} epochs")
                     break
 
-            del train_targets, train_outputs, val_targets, val_outputs
-            torch.cuda.empty_cache()
+            # del train_targets, train_outputs, val_targets, val_outputs
+            # torch.cuda.empty_cache()
+            # gc.collect()
         
         end_time = time.time()
         if verbose:
@@ -1055,8 +1088,9 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
             print(f"Positive Logit: {avg_positive_logit:.4f}")
             print(f"Negative Logit: {avg_negative_logit:.4f}")
 
-        del outputs, targets, all_logits
-        torch.cuda.empty_cache()
+        # del outputs, targets, all_logits
+        # torch.cuda.empty_cache()
+        # gc.collect()
     
     # Evaluate on pretrain dataset
     evaluate_dataset(pretrain_dataset, "Pretrain")
@@ -1113,6 +1147,8 @@ def load_model(model_folder, verbose):
 # Run your trained model. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function.
 def run_model(record, model, verbose):
+    # Initialize filters once
+    # filters = initialize_filters()
     data_preprocess(record, config)
 
     base_name = os.path.splitext(os.path.basename(record))[0]

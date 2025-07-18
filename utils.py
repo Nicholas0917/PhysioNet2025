@@ -10,11 +10,15 @@ def print_memory_usage(extra_info=""):
     mem_info = process.memory_info()
     vm = psutil.virtual_memory()
     print(f"\n====== Memory Usage {extra_info} ======")
-    print(f"Process RSS: {mem_info.rss / 1024 ** 3:.2f} GB")
-    print(f"Process VMS: {mem_info.vms / 1024 ** 3:.2f} GB")
-    print(f"System Available: {vm.available / 1024 ** 3:.2f} GB / {vm.total / 1024 ** 3:.2f} GB")
-    print(f"Memory Used %: {vm.percent}%")
-    print("===================================\n")
+    print(f"Process RSS (Resident Set Size, actual physical memory used by process): {mem_info.rss / 1024 ** 3:.2f} GB")
+    print(f"Process VMS (Virtual Memory Size, total virtual memory used by process): {mem_info.vms / 1024 ** 3:.2f} GB")
+    print(f"System Used (Total RAM used by the system): {vm.used / 1024 ** 3:.2f} GB")
+    print(f"System Available (RAM available for new processes): {vm.available / 1024 ** 3:.2f} GB / {vm.total / 1024 ** 3:.2f} GB (Total System RAM)")
+    print(f"Memory Used % (Percentage of System RAM used): {vm.percent}%")
+    if torch.cuda.is_available():
+        print(f"GPU Memory Allocated (GPU memory currently allocated): {torch.cuda.memory_allocated() / 1024 ** 3:.2f} GB")
+        print(f"GPU Memory Cached (GPU memory currently cached): {torch.cuda.memory_cached() / 1024 ** 3:.2f} GB")
+    print("==========================================\n")
 
 def print_model_parameters(model, verbose=True):
     total_params = sum(p.numel() for p in model.parameters())
@@ -36,34 +40,21 @@ def data_preprocess(record, config=None):
         return
 
     header = load_header(record)
-    source = get_source(header)
-    age = get_age(header) if config.use_age else 0
-    sex = get_sex(header) if config.use_sex else 'Unknown'
-    
-    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-    if sex == 'Female':
-        one_hot_encoding_sex[0] = True
-    elif sex == 'Male':
-        one_hot_encoding_sex[1] = True
-    else:
-        one_hot_encoding_sex[2] = True
-
     signal, fields = load_signals(record)
     channels = fields['sig_name']
     reference_channels = ['I', 'II', 'III', 'AVR', 'AVL', 'AVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
     signal = reorder_signal(signal, channels, reference_channels)
     signal = signal.astype(np.float32)
     
-    if np.isnan(signal).any() or np.isinf(signal).any():
-        print("WARNING: Raw signal contains NaN/Inf values")
+    # if np.isnan(signal).any() or np.isinf(signal).any():
+    #     print("WARNING: Raw signal contains NaN/Inf values")
 
     original_fs = get_sampling_frequency(header)
     target_fs = 500
     if original_fs != target_fs:
         target_length = int(signal.shape[0] * target_fs / original_fs)
         try:
-            resampled_signal = resample(signal, target_length, axis=0).astype(np.float32)
-            signal = resampled_signal
+            signal = resample(signal, target_length, axis=0).astype(np.float32)
         except Exception as e:
             print(f"Error in resampling: {str(e)}")
             signal = np.zeros((target_length, signal.shape[1]), dtype=np.float32)
@@ -105,29 +96,12 @@ def data_preprocess(record, config=None):
         print("WARNING: Signal contains NaN values")
 
     signal = np.ascontiguousarray(signal.T)
+
     signal_mean = np.mean(signal, axis=0)
     signal_std = np.std(signal, axis=0)
     signal_std[signal_std < 1e-8] = 1.0
-    signal = (signal - signal_mean) / signal_std
-    
-    if np.isnan(signal).any() or np.isinf(signal).any():
-        print("WARNING: Signal contains NaN/Inf after normalization")
-        signal = np.nan_to_num(signal, nan=0.0, posinf=1e4, neginf=-1e4)
-
-    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-    ptr = 0
-    
-    if config.use_age:
-        meta_features[ptr] = age
-        ptr += 1
-    if config.use_sex:
-        meta_features[ptr:ptr+3] = one_hot_encoding_sex
-        ptr += 3
-    if config.use_signal_stats:
-        valid_samples = np.isfinite(signal).sum()
-        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-        ptr += 2
+    signal -= signal_mean
+    signal /= signal_std
 
     np.save(signal_path, signal.astype(np.float32))
 
