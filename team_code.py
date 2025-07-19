@@ -61,7 +61,7 @@ class Config:
         self.net1d_dropout_rate = 0.3
         self.batch_size = 32
         self.early_stop_patience = 8
-        self.num_preprocess_workers = 1
+        self.num_preprocess_workers = 4
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
@@ -268,8 +268,13 @@ def train_model(data_folder, model_folder, verbose):
     start_time = time.time()
     # filters = initialize_filters()
     num_cpus = os.cpu_count()
-    with ThreadPoolExecutor(max_workers=num_cpus) as executor:
-        list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
+    gc_counter = 0
+    for i, r in enumerate(records):
+        data_preprocess(os.path.join(data_folder, r), config)
+        gc_counter += 1
+        if gc_counter % 1000 == 0:
+            gc.collect()
+            # print(f"gc.collect() called after {gc_counter} data_preprocess calls.") # Optional: for debugging
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Data preprocessing took {elapsed_time:.2f} seconds.")
@@ -432,12 +437,12 @@ def train_model(data_folder, model_folder, verbose):
     ############################################################################
     # Stage 3: Finetune on target datasets
     ############################################################################
-    # Freeze all layers except classifier in the pretrained model
-    for name, param in model.named_parameters():
-        if 'classifier' in name:
-            param.requires_grad = True
-        else:
-            param.requires_grad = False
+    # # Freeze all layers except classifier in the pretrained model
+    # for name, param in model.named_parameters():
+    #     if 'classifier' in name:
+    #         param.requires_grad = True
+    #     else:
+    #         param.requires_grad = False
     
     # Print model parameters after freezing layers for finetuning
     print_model_parameters(model, verbose)
@@ -477,19 +482,64 @@ def train_model(data_folder, model_folder, verbose):
     optimizers = []
     schedulers = []
     for _ in range(5):
+        base_model_params = []
+        classifier_params = []
+        meta_net_params = []
+        
+        for name, param in model.named_parameters():
+            if param.requires_grad:
+                if 'classifier' in name:
+                    classifier_params.append(param)
+                elif 'meta_net' in name:
+                    meta_net_params.append(param)
+                else:
+                    base_model_params.append(param)
+        
+        param_groups = []
+        
+        if base_model_params:
+            param_groups.append({
+                'params': base_model_params,
+                'lr': config.learning_rate,
+                'name': 'base_model'
+            })
+        
+        if classifier_params:
+            param_groups.append({
+                'params': classifier_params,
+                'lr': config.learning_rate * 20,
+                'name': 'classifier'
+            })
+        
+        if meta_net_params:
+            param_groups.append({
+                'params': meta_net_params,
+                'lr': config.learning_rate * 20,
+                'name': 'meta_net'
+            })
+        
         optimizer = torch.optim.AdamW(
-            filter(lambda p: p.requires_grad, model.parameters()),
-            lr=config.learning_rate,
+            param_groups,
             weight_decay=1e-5
         )
+        
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, 
             T_max=config.num_epochs
         )
+        
         optimizers.append(optimizer)
         schedulers.append(scheduler)
     # print_memory_usage("After initializing finetune criterion, optimizers, and schedulers")
     
+    # if verbose:
+    #     print("Optimizer parameter groups:")
+    #     for i, optimizer in enumerate(optimizers):
+    #         print(f"Fold {i+1}:")
+    #         for j, group in enumerate(optimizer.param_groups):
+    #             print(f"  Group {j}: {group['name']}, LR: {group['lr']:.6f}, Params: {len(group['params'])}")
+    #         print()
+
     # scaler = torch.amp.GradScaler('cuda')  # Disabled mixed precision training
     # autocast = torch.amp.autocast(device_type='cuda', dtype=torch.float16)  # Disabled mixed precision training
     kf = StratifiedKFold(n_splits=5)
@@ -544,6 +594,25 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
     if verbose:
         print(f'Starting pretraining on {len(pretrain_dataset)} records...')
     
+    # Freeze base_model layers and unfreeze meta_net and classifier
+    if hasattr(model, 'base_model'):
+        if verbose:
+            print("Freezing base_model parameters...")
+        for param in model.base_model.parameters():
+            param.requires_grad = False
+    
+    if hasattr(model, 'meta_net'):
+        if verbose:
+            print("Unfreezing meta_net parameters...")
+        for param in model.meta_net.parameters():
+            param.requires_grad = True
+            
+    if hasattr(model, 'classifier'):
+        if verbose:
+            print("Unfreezing classifier parameters...")
+        for param in model.classifier.parameters():
+            param.requires_grad = True
+
     # scaler = torch.amp.GradScaler('cuda')  # Disabled mixed precision training
     # autocast = torch.amp.autocast(device_type='cuda', dtype=torch.float16)  # Disabled mixed precision training
 
@@ -570,8 +639,47 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
     best_epoch = 0
     epochs_no_improve = 0
     
+    # Define the initial learning rate for the first 5 epochs
+    initial_lr_for_unfrozen = 2e-4
+    
     for epoch in range(num_epochs):
         epoch_start_time = time.time()
+        
+        # Adjust learning rate for the first 5 epochs
+        if epoch < 5:
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = initial_lr_for_unfrozen
+            if verbose:
+                print(f"Epoch {epoch + 1}: Using initial learning rate {initial_lr_for_unfrozen:.1e} for unfrozen layers.")
+        elif epoch == 5: # Re-initialize optimizer and scheduler for full training
+            if hasattr(model, 'base_model'):
+                if verbose:
+                    print("Unfreezing base_model parameters for full training...")
+                for param in model.base_model.parameters():
+                    param.requires_grad = True
+            
+            # Re-initialize optimizer to include all now trainable parameters
+            optimizer = torch.optim.AdamW(
+                filter(lambda p: p.requires_grad, model.parameters()),
+                lr=config.pretrain_learning_rate, # Reset to initial pretrain LR or a suitable value
+                weight_decay=2e-4
+            )
+            # Ensure the learning rate is explicitly set for all parameter groups
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = config.pretrain_learning_rate
+            
+            # Re-initialize schedulers with the new optimizer.
+            
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=num_epochs - 5, # Cosine annealing for remaining epochs (from epoch 5 to num_epochs-1)
+                eta_min=config.pretrain_learning_rate * 0.01
+            )
+            
+            if verbose:
+                print(f"Epoch {epoch + 1}: Unfrozen basemodel and re-initialized optimizer/schedulers.")
+                print(f"Current learning rate: {optimizer.param_groups[0]['lr']:.1e}.")
+
         model.train()
         train_loss = 0.0
         train_targets = []
@@ -747,9 +855,9 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         val_f1 = f1_score(val_targets_arr, np.round(val_outputs_arr))
             
         # Learning rate scheduling
-        if epoch < warmup_epochs:
-            warmup_scheduler.step()
-        else:
+        if epoch < 5: # For the first 5 epochs, learning rate is fixed by initial_lr_for_unfrozen
+            pass # Do not step any scheduler
+        else: # From epoch 5 onwards, directly use CosineAnnealingLR
             scheduler.step()
 
         epoch_duration = time.time() - epoch_start_time
