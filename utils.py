@@ -29,7 +29,31 @@ def print_model_parameters(model, verbose=True):
         print(f"Trainable parameters: {trainable_params:,}")
         print(f"Non-trainable parameters: {total_params - trainable_params:,}")
 
-def data_preprocess(record, config=None):
+def initialize_filters():
+    target_fs = 500
+    nyquist = 0.5 * target_fs
+
+    highpass_cutoff = 1 / nyquist
+    b_high, a_high = butter(2, highpass_cutoff, btype='high')
+
+    lowpass_cutoff = 30 / nyquist
+    b_low, a_low = butter(2, lowpass_cutoff, btype='low')
+
+    notch_freq_50 = 50
+    bandwidth_50 = 5
+    freq_50 = notch_freq_50 / nyquist
+    bw_50 = bandwidth_50 / nyquist
+    b_notch50, a_notch50 = butter(2, [freq_50 - bw_50/2, freq_50 + bw_50/2], btype='bandstop')
+
+    notch_freq_60 = 60
+    bandwidth_60 = 5
+    freq_60 = notch_freq_60 / nyquist
+    bw_60 = bandwidth_60 / nyquist
+    b_notch60, a_notch60 = butter(2, [freq_60 - bw_60/2, freq_60 + bw_60/2], btype='bandstop')
+
+    return (b_high, a_high), (b_low, a_low), (b_notch50, a_notch50), (b_notch60, a_notch60)
+
+def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_filter_params=None, notch50_filter_params=None, notch60_filter_params=None):
     if config is None:
         config = globals().get('config')
     os.makedirs(config.cache_folder, exist_ok=True)
@@ -69,28 +93,21 @@ def data_preprocess(record, config=None):
             standardized_signal[:] = signal[:5000]
         signal = standardized_signal
         
-    nyquist = 0.5 * 500
-    highpass_cutoff = 1 / nyquist
-    b, a = butter(2, highpass_cutoff, btype='high')
-    signal = filtfilt(b, a, signal, axis=0)
+    if highpass_filter_params is not None:
+        b_high, a_high = highpass_filter_params
+        signal = filtfilt(b_high, a_high, signal, axis=0)
     
-    lowpass_cutoff = 30 / nyquist
-    b, a = butter(2, lowpass_cutoff, btype='low')
-    signal = filtfilt(b, a, signal, axis=0)
+    if lowpass_filter_params is not None:
+        b_low, a_low = lowpass_filter_params
+        signal = filtfilt(b_low, a_low, signal, axis=0)
     
-    notch_freq = 50
-    bandwidth = 5
-    freq = notch_freq / nyquist
-    bw = bandwidth / nyquist
-    b, a = butter(2, [freq - bw/2, freq + bw/2], btype='bandstop')
-    signal = filtfilt(b, a, signal, axis=0)
+    if notch50_filter_params is not None:
+        b_notch50, a_notch50 = notch50_filter_params
+        signal = filtfilt(b_notch50, a_notch50, signal, axis=0)
     
-    notch_freq = 60
-    bandwidth = 5
-    freq = notch_freq / nyquist
-    bw = bandwidth / nyquist
-    b, a = butter(2, [freq - bw/2, freq + bw/2], btype='bandstop')
-    signal = filtfilt(b, a, signal, axis=0)
+    if notch60_filter_params is not None:
+        b_notch60, a_notch60 = notch60_filter_params
+        signal = filtfilt(b_notch60, a_notch60, signal, axis=0)
         
     if np.isnan(signal).any():
         print("WARNING: Signal contains NaN values")
