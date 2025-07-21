@@ -18,6 +18,8 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import gc
 import psutil
+import tarfile
+import re
 
 import joblib
 import numpy as np
@@ -51,7 +53,7 @@ class Config:
         self.model_name = 'ecgfounder'
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
-        self.pretrain_learning_rate = 2e-5
+        self.pretrain_learning_rate = 3e-5
         self.pretrain_batch_size = 64
         self.gradient_accumulation_steps = 4
         self.pretrain_early_stop_patience = 5
@@ -259,22 +261,25 @@ def train_model(data_folder, model_folder, verbose):
     #     with ThreadPoolExecutor(max_workers=num_cpus) as executor:
     #         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
     
-    # Check if cache folder is not empty, if so, skip preprocessing
-    # if os.path.exists(config.cache_folder) and os.listdir(config.cache_folder):
-    #     print(f"Cache folder '{config.cache_folder}' is not empty. Skipping data preprocessing.")
-    # else:
-    # print(f"Cache folder '{config.cache_folder}' is empty or does not exist. Starting data preprocessing...")
-    # Initialize filters once
+    records = find_records(data_folder)
     start_time = time.time()
-    # filters = initialize_filters()
+    # Initialize filters once outside the loop
+    highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
+    
     num_cpus = os.cpu_count()
     gc_counter = 0
     for i, r in enumerate(records):
-        data_preprocess(os.path.join(data_folder, r), config)
+        data_preprocess(
+            os.path.join(data_folder, r),
+            config,
+            highpass_filter_params,
+            lowpass_filter_params,
+            notch50_filter_params,
+            notch60_filter_params
+        )
         gc_counter += 1
         if gc_counter % 1000 == 0:
             gc.collect()
-            # print(f"gc.collect() called after {gc_counter} data_preprocess calls.") # Optional: for debugging
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Data preprocessing took {elapsed_time:.2f} seconds.")
@@ -293,9 +298,9 @@ def train_model(data_folder, model_folder, verbose):
     code15_records = [os.path.join(data_folder, r) for r, src in results if src == 'CODE-15%']
     finetune_records = [os.path.join(data_folder, r) for r, src in results if src != 'CODE-15%']
     
-    # del records, results
-    # torch.cuda.empty_cache()
-    # gc.collect()
+    del records, results
+    torch.cuda.empty_cache()
+    gc.collect()
     # print_memory_usage("After splitting records and cleaning up")
 
     # Create datasets
@@ -1255,12 +1260,23 @@ def load_model(model_folder, verbose):
 # Run your trained model. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function.
 def run_model(record, model, verbose):
-    # Initialize filters once
-    # filters = initialize_filters()
-    data_preprocess(record, config)
-
     base_name = os.path.splitext(os.path.basename(record))[0]
     signal_path = os.path.join(config.cache_folder, f"{base_name}_signal.npy")
+    
+    # Check if the preprocessed signal file exists in the cache folder
+    if not os.path.exists(signal_path):
+        # If not, perform data preprocessing
+        # Initialize filters once
+        highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
+        data_preprocess(
+            record,
+            config,
+            highpass_filter_params,
+            lowpass_filter_params,
+            notch50_filter_params,
+            notch60_filter_params
+        )
+    
     signal = np.load(signal_path).astype(np.float32)
 
     # Load meta data from original record
