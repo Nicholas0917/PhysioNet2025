@@ -4,6 +4,7 @@ import torch
 import psutil
 from helper_code import *
 from scipy.signal import butter, filtfilt, resample
+from memory_profiler import profile
 
 def print_memory_usage(extra_info=""):
     process = psutil.Process(os.getpid())
@@ -53,6 +54,7 @@ def initialize_filters():
 
     return (b_high, a_high), (b_low, a_low), (b_notch50, a_notch50), (b_notch60, a_notch60)
 
+@profile 
 def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_filter_params=None, notch50_filter_params=None, notch60_filter_params=None):
     if config is None:
         config = globals().get('config')
@@ -68,7 +70,7 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     channels = fields['sig_name']
     reference_channels = ['I', 'II', 'III', 'AVR', 'AVL', 'AVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
     signal = reorder_signal(signal, channels, reference_channels)
-    signal = signal.astype(np.float32)
+    signal = signal.astype(np.float32, copy=False)
     
     # if np.isnan(signal).any() or np.isinf(signal).any():
     #     print("WARNING: Raw signal contains NaN/Inf values")
@@ -78,7 +80,7 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     if original_fs != target_fs:
         target_length = int(signal.shape[0] * target_fs / original_fs)
         try:
-            signal = resample(signal, target_length, axis=0).astype(np.float32)
+            signal = resample(signal, target_length, axis=0).astype(np.float32, copy=False)
         except Exception as e:
             print(f"Error in resampling: {str(e)}")
             signal = np.zeros((target_length, signal.shape[1]), dtype=np.float32)
@@ -101,13 +103,13 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
         b_low, a_low = lowpass_filter_params
         signal = filtfilt(b_low, a_low, signal, axis=0)
     
-    if notch50_filter_params is not None:
-        b_notch50, a_notch50 = notch50_filter_params
-        signal = filtfilt(b_notch50, a_notch50, signal, axis=0)
+    # if notch50_filter_params is not None:
+    #     b_notch50, a_notch50 = notch50_filter_params
+    #     signal = filtfilt(b_notch50, a_notch50, signal, axis=0)
     
-    if notch60_filter_params is not None:
-        b_notch60, a_notch60 = notch60_filter_params
-        signal = filtfilt(b_notch60, a_notch60, signal, axis=0)
+    # if notch60_filter_params is not None:
+    #     b_notch60, a_notch60 = notch60_filter_params
+    #     signal = filtfilt(b_notch60, a_notch60, signal, axis=0)
         
     if np.isnan(signal).any():
         print("WARNING: Signal contains NaN values")
@@ -120,7 +122,7 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     signal -= signal_mean
     signal /= signal_std
 
-    np.save(signal_path, signal.astype(np.float32))
+    np.save(signal_path, signal.astype(np.float32, copy=False))
 
 def delete_record_files(record, config=None):
     if config is None:

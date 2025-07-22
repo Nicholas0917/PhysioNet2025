@@ -278,7 +278,7 @@ def train_model(data_folder, model_folder, verbose):
             notch60_filter_params
         )
         gc_counter += 1
-        if gc_counter % 1000 == 0:
+        if gc_counter % 5000 == 0:
             gc.collect()
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -308,7 +308,7 @@ def train_model(data_folder, model_folder, verbose):
     finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
     # print_memory_usage("After initializing pretrain and finetune datasets")
 
-    # return None
+    return None
 
     ############################################################################
     # Stage 1: Pretrain Model
