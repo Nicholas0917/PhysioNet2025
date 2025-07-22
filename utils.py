@@ -4,7 +4,7 @@ import torch
 import psutil
 from helper_code import *
 from scipy.signal import butter, filtfilt, resample
-from memory_profiler import profile
+# from memory_profiler import profile
 
 def print_memory_usage(extra_info=""):
     process = psutil.Process(os.getpid())
@@ -54,7 +54,7 @@ def initialize_filters():
 
     return (b_high, a_high), (b_low, a_low), (b_notch50, a_notch50), (b_notch60, a_notch60)
 
-@profile 
+# @profile
 def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_filter_params=None, notch50_filter_params=None, notch60_filter_params=None):
     if config is None:
         config = globals().get('config')
@@ -103,13 +103,13 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
         b_low, a_low = lowpass_filter_params
         signal = filtfilt(b_low, a_low, signal, axis=0)
     
-    # if notch50_filter_params is not None:
-    #     b_notch50, a_notch50 = notch50_filter_params
-    #     signal = filtfilt(b_notch50, a_notch50, signal, axis=0)
+    if notch50_filter_params is not None:
+        b_notch50, a_notch50 = notch50_filter_params
+        signal = filtfilt(b_notch50, a_notch50, signal, axis=0)
     
-    # if notch60_filter_params is not None:
-    #     b_notch60, a_notch60 = notch60_filter_params
-    #     signal = filtfilt(b_notch60, a_notch60, signal, axis=0)
+    if notch60_filter_params is not None:
+        b_notch60, a_notch60 = notch60_filter_params
+        signal = filtfilt(b_notch60, a_notch60, signal, axis=0)
         
     if np.isnan(signal).any():
         print("WARNING: Signal contains NaN values")

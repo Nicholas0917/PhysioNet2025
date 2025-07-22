@@ -14,7 +14,7 @@ import math
 import os
 import sys
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from functools import partial
 import gc
 import psutil
@@ -34,6 +34,7 @@ from sklearn.metrics import accuracy_score, average_precision_score, f1_score, r
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 from torch.optim.lr_scheduler import OneCycleLR
+# from memory_profiler import profile
 
 # Import from our modules
 from dataset import *
@@ -240,6 +241,7 @@ if torch.cuda.is_available():
 # of this function. If you do not train one of the models, then you can return None for the model.
 
 # Train your model.
+# @profile
 def train_model(data_folder, model_folder, verbose):
     """Train the model using the three-stage process"""
     # torch.autograd.set_detect_anomaly(True)
@@ -267,33 +269,32 @@ def train_model(data_folder, model_folder, verbose):
     highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
     
     num_cpus = os.cpu_count()
-    gc_counter = 0
-    for i, r in enumerate(records):
-        data_preprocess(
-            os.path.join(data_folder, r),
-            config,
-            highpass_filter_params,
-            lowpass_filter_params,
-            notch50_filter_params,
-            notch60_filter_params
-        )
-        gc_counter += 1
-        if gc_counter % 5000 == 0:
-            gc.collect()
+
+    # Use functools.partial to bind the fixed arguments
+    preprocess_func = partial(
+        _preprocess_single_record_global,
+        config=config,
+        highpass_filter_params=highpass_filter_params,
+        lowpass_filter_params=lowpass_filter_params,
+        notch50_filter_params=notch50_filter_params,
+        notch60_filter_params=notch60_filter_params
+    )
+
+    with ProcessPoolExecutor(max_workers=num_cpus) as executor:
+        list(executor.map(preprocess_func, [os.path.join(data_folder, r) for r in records]))
+
     end_time = time.time()
     elapsed_time = end_time - start_time
     print(f"Data preprocessing took {elapsed_time:.2f} seconds.")
     print_memory_usage("After data preprocessing")
 
     # Split into CODE-15% and other records (parallel processing)
-    def classify_record(record):
-        header = load_header(os.path.join(data_folder, record))
-        source = get_source(header)
-        return (record, source)
-    
     num_cpus = os.cpu_count()
-    with ThreadPoolExecutor(max_workers=num_cpus) as executor:
-        results = list(executor.map(classify_record, records))
+    
+    classify_func = partial(_classify_record_global, data_folder=data_folder)
+
+    with ProcessPoolExecutor(max_workers=num_cpus) as executor:
+        results = list(executor.map(classify_func, records))
     
     code15_records = [os.path.join(data_folder, r) for r, src in results if src == 'CODE-15%']
     finetune_records = [os.path.join(data_folder, r) for r, src in results if src != 'CODE-15%']
@@ -1371,3 +1372,20 @@ def make_weights_for_balanced_classes(dataset):
     weights[np.isclose(targets, 0.0)] = 1.0    # Negative class weight
     weights[np.isclose(targets, 1.0)] = config.pos_sample_weight_multiplier   # Positive class weight (configurable ratio)
     return weights
+
+# Define a helper function for multiprocessing (moved to global scope)
+def _preprocess_single_record_global(record_path, config, highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params):
+    data_preprocess(
+        record_path,
+        config,
+        highpass_filter_params,
+        lowpass_filter_params,
+        notch50_filter_params,
+        notch60_filter_params
+    )
+
+# Define a helper function for multiprocessing (moved to global scope)
+def _classify_record_global(record, data_folder):
+    header = load_header(os.path.join(data_folder, record))
+    source = get_source(header)
+    return (record, source)
