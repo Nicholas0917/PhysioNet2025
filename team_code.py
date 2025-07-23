@@ -309,7 +309,7 @@ def train_model(data_folder, model_folder, verbose):
     finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
     # print_memory_usage("After initializing pretrain and finetune datasets")
 
-    return None
+    # return None
 
     ############################################################################
     # Stage 1: Pretrain Model
