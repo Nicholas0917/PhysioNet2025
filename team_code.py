@@ -846,9 +846,9 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
             print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
             print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
             
-            # Calculate validation metrics
-            val_outputs_arr = np.array(val_outputs)
-            val_targets_arr = np.array(val_targets)
+        # Calculate validation metrics
+        val_outputs_arr = np.array(val_outputs)
+        val_targets_arr = np.array(val_targets)
 
         if len(np.unique(val_targets_arr)) < 2:
             print("WARNING: Only one class present in validation targets")
@@ -1051,7 +1051,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
                 print(f"  Positive Probability: {epoch_pos_prob:.4f}")
 
-                schedulers[fold].step()
+            schedulers[fold].step()
 
             # Calculate training metrics
             train_auroc = roc_auc_score(train_targets, train_outputs)
@@ -1115,7 +1115,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
                 print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
 
-            val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
+            val_auroc = roc_auc_score(val_targets, val_outputs)
             val_auprc = average_precision_score(val_targets, val_outputs)
             val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
             val_f1 = f1_score(val_targets, np.round(val_outputs))
