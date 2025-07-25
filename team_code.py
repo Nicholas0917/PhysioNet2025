@@ -852,9 +852,9 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
             print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
             print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
             
-            # Calculate validation metrics
-            val_outputs_arr = np.array(val_outputs)
-            val_targets_arr = np.array(val_targets)
+        # Calculate validation metrics
+        val_outputs_arr = np.array(val_outputs)
+        val_targets_arr = np.array(val_targets)
 
         if len(np.unique(val_targets_arr)) < 2:
             print("WARNING: Only one class present in validation targets")
@@ -1056,7 +1056,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f"  Positive Logit: {epoch_pos_logit:.4f}")
                 print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
                 print(f"  Positive Probability: {epoch_pos_prob:.4f}")
-            
+
             schedulers[fold].step()
 
             # Calculate training metrics
