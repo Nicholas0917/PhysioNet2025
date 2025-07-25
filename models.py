@@ -112,7 +112,14 @@ class HybridModel(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x, meta_features=None):
-        _, signal_features = self.base_model(x)
+        
+        # Handle different return patterns for different model types
+        if self.base_model_name in ['ResNet18', 'ResNet34', 'ResNet50']:
+            # ResNet models return only features
+            signal_features = self.base_model(x)
+        else:
+            # Net1D and ECGFeatureExtractor return (logits, features)
+            _, signal_features = self.base_model(x)
         
         if meta_features is not None:
             if meta_features.dim() == 1:
