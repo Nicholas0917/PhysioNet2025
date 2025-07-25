@@ -1,33 +1,81 @@
 import torch
 import torch.nn as nn
 import torch.hub
+import torch.nn.functional as F
 from net1d import Net1D, Swish
+from ECGFeatureExtractor import ECGFeatureExtractor, GELU
 
 class HybridModel(nn.Module):
     def __init__(self, device, pth_path, config=None):
         super().__init__()
         self.config = config
-        self.base_model = Net1D(
-            in_channels=12,
-            base_filters=64,
-            ratio=1,
-            filter_list=[64,160,160,400,400,1024,1024],
-            m_blocks_list=[2,2,2,3,3,4,4],
-            kernel_size=16,
-            stride=2,
-            groups_width=16,
-            verbose=False,
-            use_bn=True,
-            use_do=True,
-            n_classes=1,
-            return_features=True,
-            dropout_rate=self.config.net1d_dropout_rate
-        )
-        
-        checkpoint = torch.load(pth_path, map_location=device)
-        state_dict = {k: v for k, v in checkpoint['state_dict'].items() 
-                     if not k.startswith('dense.')}
-        self.base_model.load_state_dict(state_dict, strict=False)
+        self.base_model_name = self.config.model_name
+
+        if self.base_model_name == 'ecgfounder':
+            self.base_model = Net1D(
+                in_channels=12,
+                base_filters=64,
+                ratio=1,
+                filter_list=[64,160,160,400,400,1024,1024],
+                m_blocks_list=[2,2,2,3,3,4,4],
+                kernel_size=16,
+                stride=2,
+                groups_width=16,
+                verbose=False,
+                use_bn=True,
+                use_do=True,
+                n_classes=1,
+                return_features=True,
+                dropout_rate=self.config.net1d_dropout_rate
+            )
+            base_model_output_dim = 1024 # Output feature dimension for Net1D
+        elif self.base_model_name == 'ECGFeatureExtractor': # New branch for ECGFeatureExtractor
+            self.base_model = ECGFeatureExtractor(
+                in_channels=12, 
+                base_filters=96, # ConvNeXt base filters
+                expansion_ratio=4, # Inverted bottleneck expansion ratio
+                filter_list=[128,256,512,1024],    # ConvNeXt channels
+                m_blocks_list=[3,3,9,3],   # ConvNeXt depths
+                kernel_size=16, 
+                stride=2, 
+                groups_width=1, # This parameter is not directly used for groups in BasicBlock due to depthwise conv
+                verbose=False, # Set to False for deployment
+                drop_path_rate=0.0, # Example drop path rate, set to 0 to disable
+                n_classes=1, # For feature extraction, output 1 class for compatibility, but we only use features
+                return_features=True # Ensure features are returned
+            )
+            base_model_output_dim = 1024 # Output feature dimension for ECGFeatureExtractor (last filter in filter_list)
+        elif self.base_model_name == 'ResNet18':
+            # ResNet as feature extractor, removing its classification head
+            self.base_model = ResNetFeatureExtractor(BasicBlock, [2, 2, 2, 2], in_channel=12, config=self.config)
+            base_model_output_dim = 512 * BasicBlock.expansion # Output feature dimension for ResNet18
+        elif self.base_model_name == 'ResNet34':
+            self.base_model = ResNetFeatureExtractor(BasicBlock, [3, 4, 6, 3], in_channel=12, config=self.config)
+            base_model_output_dim = 512 * BasicBlock.expansion
+        elif self.base_model_name == 'ResNet50':
+            self.base_model = ResNetFeatureExtractor(Bottleneck, [3, 4, 6, 3], in_channel=12, config=self.config)
+            base_model_output_dim = 512 * Bottleneck.expansion
+        else:
+            raise ValueError(f"Unsupported base_model_name: {self.base_model_name}. Please check config.model_name.")
+
+        if pth_path is not None:
+            try:
+                checkpoint = torch.load(pth_path, map_location=device)
+                # Handle both full checkpoint and state_dict cases
+                if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
+                    state_dict = {k: v for k, v in checkpoint['state_dict'].items() 
+                                if not k.startswith('dense.') and not k.startswith('fc.') and not k.startswith('fc1.')} # Exclude classifier layers
+                else:
+                    state_dict = {k: v for k, v in checkpoint.items() 
+                                if not k.startswith('dense.') and not k.startswith('fc.') and not k.startswith('fc1.')}
+                self.base_model.load_state_dict(state_dict, strict=False)
+                print(f"Successfully loaded pretrained weights from {pth_path} for {self.base_model_name}.")
+            except Exception as e:
+                print(f"Warning: Could not load pretrained weights from {pth_path} for {self.base_model_name}. Error: {e}. Initializing with Kaiming normal.")
+                self._initialize_weights(self.base_model)
+        else:
+            print(f"pth_path is None. Initializing {self.base_model_name} with Kaiming normal.")
+            self._initialize_weights(self.base_model)
         
         meta_dim = self.config.get_meta_feature_dim()
         self.meta_net = nn.Sequential(
@@ -41,43 +89,41 @@ class HybridModel(nn.Module):
         )
         
         self.classifier = nn.Sequential(
-            nn.Linear(1024 + 256, 512),
+            nn.Linear(base_model_output_dim + 256, 512), # Use dynamic output dim
             nn.BatchNorm1d(512, eps=1e-4),
             Swish(),
             nn.Dropout(self.config.dropout_rate),
             nn.Linear(512, 1)
         )
         
-        for m in list(self.meta_net.modules()) + list(self.classifier.modules()):
-            if isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='linear')
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
+        self._initialize_weights(self.meta_net)
+        self._initialize_weights(self.classifier)
         
         self.to(device)
 
+    def _initialize_weights(self, model):
+        for m in model.modules():
+            if isinstance(m, (nn.Conv1d, nn.Linear)):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.BatchNorm1d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
     def forward(self, x, meta_features=None):
         _, signal_features = self.base_model(x)
-        
-        if torch.isnan(signal_features).any() or torch.isinf(signal_features).any():
-            print("WARNING: BaseModel output contains NaN/Inf values")
         
         if meta_features is not None:
             if meta_features.dim() == 1:
                 meta_features = meta_features.unsqueeze(0)
             meta_features = self.meta_net(meta_features)
             
-            if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
-                print("WARNING: MetaNet output contains NaN/Inf values")
-            
             features = torch.cat([signal_features, meta_features], dim=1)
         else:
             features = signal_features
             
         output = self.classifier(features)
-        
-        if torch.isnan(output).any() or torch.isinf(output).any():
-            print("WARNING: Classifier output contains NaN/Inf values")
             
         return output
 
@@ -189,10 +235,9 @@ class Bottleneck(nn.Module):
 
         return out
 
-class ResNet(nn.Module):
-
-    def __init__(self, block, layers, in_channel=12, out_channel=1, zero_init_residual=False, config=None):
-        super(ResNet, self).__init__()
+class ResNetFeatureExtractor(nn.Module):
+    def __init__(self, block, layers, in_channel=12, config=None):
+        super(ResNetFeatureExtractor, self).__init__()
         self.config = config
         self.inplanes = 64
         self.conv1 = nn.Conv1d(in_channel, 64, kernel_size=15, stride=2, padding=7,
@@ -205,26 +250,14 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool1d(1)
-        self.fc1 = nn.Linear(config.get_meta_feature_dim(), 32)
-        self.fc = nn.Linear(512 * block.expansion + 32, out_channel)
-        self.dropout = nn.Dropout(config.dropout_rate)
 
-        for m in self.modules():
-            if isinstance(m, nn.Conv1d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-            elif isinstance(m, nn.BatchNorm1d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-
-        # Zero-initialize the last BN in each residual branch,
-        # so that the residual branch starts with zeros, and each residual block behaves like an identity.
-        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
-        if zero_init_residual:
-            for m in self.modules():
-                if isinstance(m, Bottleneck):
-                    nn.init.constant_(m.bn3.weight, 0)
-                elif isinstance(m, BasicBlock):
-                    nn.init.constant_(m.bn2.weight, 0)
+        # Removed fc1 and fc layers as this is a feature extractor
+        # for m in self.modules():
+        #     if isinstance(m, nn.Conv1d):
+        #         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+        #     elif isinstance(m, nn.BatchNorm1d):
+        #         nn.init.constant_(m.weight, 1)
+        #         nn.init.constant_(m.bias, 0)
 
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
@@ -242,8 +275,8 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def forward(self, x, ag):
-        # x.shape = [batch_size, 12, 4096], ag.shape = [batch_size, n]
+    def forward(self, x):
+        # x.shape = [batch_size, 12, 4096]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -255,11 +288,7 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        ag = self.fc1(ag)
-        x = torch.cat((ag, x), dim=1)
-        x = self.dropout(x)
-        x = self.fc(x).squeeze(1)
+        x = x.view(x.size(0), -1) # Flatten the features
         return x
     
 def resnet18(pretrained=False, **kwargs):
@@ -268,9 +297,14 @@ def resnet18(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
+    model = ResNetFeatureExtractor(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
-        model.load_state_dict(torch.hub.load_state_dict_from_url(model_urls['resnet18']))
+        # This part might need adjustment if pre-trained weights are for full ResNet
+        # and not just feature extractor. For now, keep as is.
+        state_dict = torch.hub.load_state_dict_from_url(model_urls['resnet18'])
+        # Filter out classifier weights if loading full ResNet pretrained model
+        state_dict = {k: v for k, v in state_dict.items() if not k.startswith('fc.')}
+        model.load_state_dict(state_dict, strict=False)
     return model
 
 def resnet34(pretrained=False, **kwargs):
@@ -279,9 +313,11 @@ def resnet34(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
+    model = ResNetFeatureExtractor(BasicBlock, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(torch.hub.load_state_dict_from_url(model_urls['resnet34']))
+        state_dict = torch.hub.load_state_dict_from_url(model_urls['resnet34'])
+        state_dict = {k: v for k, v in state_dict.items() if not k.startswith('fc.')}
+        model.load_state_dict(state_dict, strict=False)
     return model
 
 def resnet50(pretrained=False, **kwargs):
@@ -290,9 +326,11 @@ def resnet50(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
+    model = ResNetFeatureExtractor(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(torch.hub.load_state_dict_from_url(model_urls['resnet50']))
+        state_dict = torch.hub.load_state_dict_from_url(model_urls['resnet50'])
+        state_dict = {k: v for k, v in state_dict.items() if not k.startswith('fc.')}
+        model.load_state_dict(state_dict, strict=False)
     return model
 
 def resnet101(pretrained=False, **kwargs):
@@ -301,9 +339,11 @@ def resnet101(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
+    model = ResNetFeatureExtractor(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(torch.hub.load_state_dict_from_url(model_urls['resnet101']))
+        state_dict = torch.hub.load_state_dict_from_url(model_urls['resnet101'])
+        state_dict = {k: v for k, v in state_dict.items() if not k.startswith('fc.')}
+        model.load_state_dict(state_dict, strict=False)
     return model
 
 def resnet152(pretrained=False, **kwargs):
@@ -312,7 +352,9 @@ def resnet152(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
+    model = ResNetFeatureExtractor(Bottleneck, [3, 8, 36, 3], **kwargs)
     if pretrained:
-        model.load_state_dict(torch.hub.load_state_dict_from_url(model_urls['resnet152']))
+        state_dict = torch.hub.load_state_dict_from_url(model_urls['resnet152'])
+        state_dict = {k: v for k, v in state_dict.items() if not k.startswith('fc.')}
+        model.load_state_dict(state_dict, strict=False)
     return model

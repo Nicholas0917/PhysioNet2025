@@ -51,7 +51,7 @@ from utils import *
 
 class Config:
     def __init__(self):
-        self.model_name = 'ecgfounder'
+        self.model_name = 'ResNet18' # [ECGFeatureExtractor, ecgfounder]
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 3e-5
@@ -145,6 +145,8 @@ class Config:
         self.baseline_wander_max_freq = 0.2   # Hz
         self.baseline_wander_amp_ratio = 0.2  # Amplitude ratio to signal std
         self.baseline_wander_prob = 0.3       # Probability of applying
+        
+        self.is_pretrain = False
 
     def get_meta_feature_dim(self):
         dim = 0
@@ -309,31 +311,34 @@ def train_model(data_folder, model_folder, verbose):
     finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
     # print_memory_usage("After initializing pretrain and finetune datasets")
 
-    return None
+    # return None
 
     ############################################################################
     # Stage 1: Pretrain Model
     ############################################################################
     # Initialize model and training components
-
-    pretrained_weight_path = './12_lead_ECGFounder.pth'
-    if not os.path.exists(pretrained_weight_path):
-        print(f"Pretrained model not found at {pretrained_weight_path}. Downloading from Hugging Face...")
-        download_url = "https://huggingface.co/PKUDigitalHealth/ECGFounder/resolve/main/12_lead_ECGFounder.pth?download=true"
-        try:
-            import requests
-            response = requests.get(download_url, stream=True)
-            response.raise_for_status() # Raise an exception for HTTP errors
-            with open(pretrained_weight_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            print(f"Successfully downloaded {pretrained_weight_path}")
-        except ImportError:
-            print("Error: 'requests' module not found. Please install it using 'pip install requests' to enable model download.")
-            sys.exit(1)
-        except Exception as e:
-            print(f"Error downloading pretrained model: {e}")
-            sys.exit(1)
+    
+    # Determine pretrained_weight_path based on is_pretrain config
+    pretrained_weight_path = None
+    if config.is_pretrain:
+        pretrained_weight_path = './12_lead_ECGFounder.pth'
+        if not os.path.exists(pretrained_weight_path):
+            print(f"Pretrained model not found at {pretrained_weight_path}. Downloading from Hugging Face...")
+            download_url = "https://huggingface.co/PKUDigitalHealth/ECGFounder/resolve/main/12_lead_ECGFounder.pth?download=true"
+            try:
+                import requests
+                response = requests.get(download_url, stream=True)
+                response.raise_for_status() # Raise an exception for HTTP errors
+                with open(pretrained_weight_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                print(f"Successfully downloaded {pretrained_weight_path}")
+            except ImportError:
+                print("Error: 'requests' module not found. Please install it using 'pip install requests' to enable model download.")
+                sys.exit(1)
+            except Exception as e:
+                print(f"Error downloading pretrained model: {e}")
+                sys.exit(1)
 
     model = HybridModel(
         device=config.device,
@@ -601,11 +606,12 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         print(f'Starting pretraining on {len(pretrain_dataset)} records...')
     
     # Freeze base_model layers and unfreeze meta_net and classifier
-    if hasattr(model, 'base_model'):
-        if verbose:
-            print("Freezing base_model parameters...")
-        for param in model.base_model.parameters():
-            param.requires_grad = False
+    if config.is_pretrain:
+        if hasattr(model, 'base_model'):
+            if verbose:
+                print("Freezing base_model parameters...")
+            for param in model.base_model.parameters():
+                param.requires_grad = False
     
     if hasattr(model, 'meta_net'):
         if verbose:
@@ -1050,8 +1056,8 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f"  Positive Logit: {epoch_pos_logit:.4f}")
                 print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
                 print(f"  Positive Probability: {epoch_pos_prob:.4f}")
-
-                schedulers[fold].step()
+            
+            schedulers[fold].step()
 
             # Calculate training metrics
             train_auroc = roc_auc_score(train_targets, train_outputs)
@@ -1115,7 +1121,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
                 print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
 
-            val_auroc = roc_auc_score(val_targets, np.round(val_outputs))
+            val_auroc = roc_auc_score(val_targets, val_outputs)
             val_auprc = average_precision_score(val_targets, val_outputs)
             val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
             val_f1 = f1_score(val_targets, np.round(val_outputs))

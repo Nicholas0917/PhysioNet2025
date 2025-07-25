@@ -11,15 +11,15 @@ class FocalLoss(nn.Module):
         self.reduce = reduce
 
     def forward(self, inputs, targets):
-        # Check for NaN/Inf in inputs
-        if torch.isnan(inputs).any() or torch.isinf(inputs).any():
-            print(f"WARNING: FocalLoss inputs contains NaN/Inf values")
-            print(f"Inputs stats - min: {inputs.min().item():.4f}, max: {inputs.max().item():.4f}, mean: {inputs.mean().item():.4f}")
+        # # Check for NaN/Inf in inputs
+        # if torch.isnan(inputs).any() or torch.isinf(inputs).any():
+        #     print(f"WARNING: FocalLoss inputs contains NaN/Inf values")
+        #     print(f"Inputs stats - min: {inputs.min().item():.4f}, max: {inputs.max().item():.4f}, mean: {inputs.mean().item():.4f}")
         
-        # Check for NaN/Inf in targets
-        if torch.isnan(targets).any() or torch.isinf(targets).any():
-            print(f"WARNING: FocalLoss targets contains NaN/Inf values")
-            print(f"Targets stats - min: {targets.min().item():.4f}, max: {targets.max().item():.4f}, mean: {targets.mean().item():.4f}")
+        # # Check for NaN/Inf in targets
+        # if torch.isnan(targets).any() or torch.isinf(targets).any():
+        #     print(f"WARNING: FocalLoss targets contains NaN/Inf values")
+        #     print(f"Targets stats - min: {targets.min().item():.4f}, max: {targets.max().item():.4f}, mean: {targets.mean().item():.4f}")
 
         targets = targets.view(-1, 1).float()
         
@@ -42,15 +42,15 @@ class SampleWeightedLoss(nn.Module):
         self.beta = beta
     
     def forward(self, logits, targets):
-        # Check for NaN/Inf in logits
-        if torch.isnan(logits).any() or torch.isinf(logits).any():
-            print(f"WARNING: SampleWeightedLoss logits contains NaN/Inf values")
-            print(f"Logits stats - min: {logits.min().item():.4f}, max: {logits.max().item():.4f}, mean: {logits.mean().item():.4f}")
+        # # Check for NaN/Inf in logits
+        # if torch.isnan(logits).any() or torch.isinf(logits).any():
+        #     print(f"WARNING: SampleWeightedLoss logits contains NaN/Inf values")
+        #     print(f"Logits stats - min: {logits.min().item():.4f}, max: {logits.max().item():.4f}, mean: {logits.mean().item():.4f}")
         
-        # Check for NaN/Inf in targets
-        if torch.isnan(targets).any() or torch.isinf(targets).any():
-            print(f"WARNING: SampleWeightedLoss targets contains NaN/Inf values")
-            print(f"Targets stats - min: {targets.min().item():.4f}, max: {targets.max().item():.4f}, mean: {targets.mean().item():.4f}")
+        # # Check for NaN/Inf in targets
+        # if torch.isnan(targets).any() or torch.isinf(targets).any():
+        #     print(f"WARNING: SampleWeightedLoss targets contains NaN/Inf values")
+        #     print(f"Targets stats - min: {targets.min().item():.4f}, max: {targets.max().item():.4f}, mean: {targets.mean().item():.4f}")
 
         if len(targets.shape) < len(logits.shape):
             targets = targets.view(-1, 1)
@@ -74,14 +74,14 @@ class BinaryFocalLoss(nn.Module):
     def forward(self, inputs, targets):
         BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
         pt = torch.exp(-BCE_loss)
-        # Check for invalid values in focal loss components
-        if torch.isnan(pt).any() or torch.isinf(pt).any():
-            print("WARNING: Invalid values in pt (exp(-BCE_loss))")
-            print(f"BCE_loss stats - min: {BCE_loss.min().item():.4f}, max: {BCE_loss.max().item():.4f}")
+        # # Check for invalid values in focal loss components
+        # if torch.isnan(pt).any() or torch.isinf(pt).any():
+        #     print("WARNING: Invalid values in pt (exp(-BCE_loss))")
+        #     print(f"BCE_loss stats - min: {BCE_loss.min().item():.4f}, max: {BCE_loss.max().item():.4f}")
         
         one_minus_pt = 1-pt
-        if torch.isnan(one_minus_pt).any() or torch.isinf(one_minus_pt).any():
-            print("WARNING: Invalid values in (1-pt)")
+        # if torch.isnan(one_minus_pt).any() or torch.isinf(one_minus_pt).any():
+        #     print("WARNING: Invalid values in (1-pt)")
         
         F_loss = self.alpha * one_minus_pt**self.gamma * BCE_loss
         return torch.mean(F_loss)
@@ -107,14 +107,14 @@ class BinaryLDAMLoss(nn.Module):
 
     def forward(self, x, target):
         # Check for NaN/Inf in inputs
-        if torch.isnan(x).any() or torch.isinf(x).any():
-            print(f"WARNING: BinaryLDAMLoss inputs contains NaN/Inf values")
-            print(f"Inputs stats - min: {x.min().item():.4f}, max: {x.max().item():.4f}, mean: {x.mean().item():.4f}")
+        # if torch.isnan(x).any() or torch.isinf(x).any():
+        #     print(f"WARNING: BinaryLDAMLoss inputs contains NaN/Inf values")
+        #     print(f"Inputs stats - min: {x.min().item():.4f}, max: {x.max().item():.4f}, mean: {x.mean().item():.4f}")
         
-        # Check for NaN/Inf in targets
-        if torch.isnan(target).any() or torch.isinf(target).any():
-            print(f"WARNING: BinaryLDAMLoss targets contains NaN/Inf values")
-            print(f"Targets stats - min: {target.min().item():.4f}, max: {target.max().item():.4f}, mean: {target.mean().item():.4f}")
+        # # Check for NaN/Inf in targets
+        # if torch.isnan(target).any() or torch.isinf(target).any():
+        #     print(f"WARNING: BinaryLDAMLoss targets contains NaN/Inf values")
+            # print(f"Targets stats - min: {target.min().item():.4f}, max: {target.max().item():.4f}, mean: {target.mean().item():.4f}")
 
         # The shape of target is usually (batch_size, 1) or (batch_size,)
         # We need to select the margin from m_list based on the target value (0 or 1).
@@ -136,15 +136,15 @@ class BinaryLDAMLoss(nn.Module):
             batch_m = batch_m.view(-1, 1)
         
         # Check margin value
-        if torch.isnan(batch_m).any() or torch.isinf(batch_m).any():
-            print(f"WARNING: Invalid batch_m value: {batch_m}")
+        # if torch.isnan(batch_m).any() or torch.isinf(batch_m).any():
+        #     print(f"WARNING: Invalid batch_m value: {batch_m}")
             
         # Apply margin
         x_m = x - batch_m
         
         # Check output values
-        if torch.isnan(x_m).any() or torch.isinf(x_m).any():
-            print("WARNING: Invalid values in x_m (x - margin)")
+        # if torch.isnan(x_m).any() or torch.isinf(x_m).any():
+        #     print("WARNING: Invalid values in x_m (x - margin)")
         
         # Calculate loss using binary_cross_entropy_with_logits
         return F.binary_cross_entropy_with_logits(self.s * x_m, target.float())
@@ -182,14 +182,14 @@ class BinaryLMFLoss(nn.Module):
 
     def forward(self, output, target):
         # Check for NaN/Inf in output
-        if torch.isnan(output).any() or torch.isinf(output).any():
-            print(f"WARNING: BinaryLMFLoss output contains NaN/Inf values")
-            print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
+        # if torch.isnan(output).any() or torch.isinf(output).any():
+        #     print(f"WARNING: BinaryLMFLoss output contains NaN/Inf values")
+        #     print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
         
         # Check for NaN/Inf in target
-        if torch.isnan(target).any() or torch.isinf(target).any():
-            print(f"WARNING: BinaryLMFLoss target contains NaN/Inf values")
-            print(f"Target stats - min: {target.min().item():.4f}, max: {target.max().item():.4f}, mean: {target.mean().item():.4f}")
+        # if torch.isnan(target).any() or torch.isinf(target).any():
+        #     print(f"WARNING: BinaryLMFLoss target contains NaN/Inf values")
+        #     print(f"Target stats - min: {target.min().item():.4f}, max: {target.max().item():.4f}, mean: {target.mean().item():.4f}")
 
         focal_loss_output = self.focal_loss(output, target)
         ldam_loss_output = self.ldam_loss(output, target)
