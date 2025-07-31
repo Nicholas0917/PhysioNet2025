@@ -3,8 +3,9 @@ import numpy as np
 import torch
 import psutil
 from helper_code import *
-from scipy.signal import butter, filtfilt, resample
-# from memory_profiler import profile
+from scipy.signal import butter, filtfilt, resample, iirnotch
+import h5py
+import gc
 
 def print_memory_usage(extra_info=""):
     process = psutil.Process(os.getpid())
@@ -54,26 +55,34 @@ def initialize_filters():
 
     return (b_high, a_high), (b_low, a_low), (b_notch50, a_notch50), (b_notch60, a_notch60)
 
-# @profile 
-def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_filter_params=None, notch50_filter_params=None, notch60_filter_params=None):
+def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_filter_params=None, notch50_filter_params=None, notch60_filter_params=None, record_idx=None):
     if config is None:
         config = globals().get('config')
     os.makedirs(config.cache_folder, exist_ok=True)
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    
-    signal_path = os.path.join(config.cache_folder, f'{base_name}_signal.npy')
-    if os.path.exists(signal_path):
-        return
 
     header = load_header(record)
+    age = get_age(header) if config.use_age else 0
+    sex = get_sex(header) if config.use_sex else 'Unknown'
+    label = get_label(header, allow_missing=True) # Allow missing labels for inference
+    
+    # Handle missing label: if label is None or False (from sanitize_boolean_value), set to -1
+    if label is None or (isinstance(label, bool) and not label):
+        label = -1
+    
+    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
+    if sex == 'Female':
+        one_hot_encoding_sex[0] = True
+    elif sex == 'Male':
+        one_hot_encoding_sex[1] = True
+    else:
+        one_hot_encoding_sex[2] = True
+
     signal, fields = load_signals(record)
     channels = fields['sig_name']
     reference_channels = ['I', 'II', 'III', 'AVR', 'AVL', 'AVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
     signal = reorder_signal(signal, channels, reference_channels)
     signal = signal.astype(np.float32, copy=False)
     
-    # if np.isnan(signal).any() or np.isinf(signal).any():
-    #     print("WARNING: Raw signal contains NaN/Inf values")
 
     original_fs = get_sampling_frequency(header)
     target_fs = 500
@@ -111,8 +120,6 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
         b_notch60, a_notch60 = notch60_filter_params
         signal = filtfilt(b_notch60, a_notch60, signal, axis=0)
         
-    if np.isnan(signal).any():
-        print("WARNING: Signal contains NaN values")
 
     signal = np.ascontiguousarray(signal.T)
 
@@ -122,16 +129,23 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     signal -= signal_mean
     signal /= signal_std
 
-    np.save(signal_path, signal.astype(np.float32, copy=False))
+    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
+    ptr = 0
+    
+    if config.use_age:
+        meta_features[ptr] = age
+        ptr += 1
+    if config.use_sex:
+        meta_features[ptr:ptr+3] = one_hot_encoding_sex
+        ptr += 3
+    if config.use_signal_stats:
+        valid_samples = np.isfinite(signal).sum()
+        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
+        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
+        ptr += 2
 
-def delete_record_files(record, config=None):
-    if config is None:
-        config = globals().get('config')
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join(config.cache_folder, f'{base_name}_signal.npy')
-
-    if os.path.exists(signal_path):
-        os.remove(signal_path)
+    # Return the processed signal, meta_features, and label
+    return record_idx, signal.T.astype(np.float32), meta_features.astype(np.float32), np.array(label).astype(np.float32)
 
 def save_model(model_folder, state_dict, config=None, fold=None):
     if config is None:
