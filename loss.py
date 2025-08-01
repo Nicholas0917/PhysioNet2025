@@ -66,25 +66,21 @@ class SampleWeightedLoss(nn.Module):
         )
 
 class BinaryFocalLoss(nn.Module):
-    def __init__(self, alpha=0.8, gamma=2):
+    def __init__(self, alpha=0.8, gamma=2, label_smoothing=0.0):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
-    
+        self.label_smoothing = label_smoothing
+
     def forward(self, inputs, targets):
+        # Apply label smoothing: convert 1 -> 1 - eps, and 0 -> eps
+        if self.label_smoothing > 0:
+            targets = targets * (1 - self.label_smoothing) + 0.5 * self.label_smoothing
+        
         BCE_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction='none')
         pt = torch.exp(-BCE_loss)
-        # # Check for invalid values in focal loss components
-        # if torch.isnan(pt).any() or torch.isinf(pt).any():
-        #     print("WARNING: Invalid values in pt (exp(-BCE_loss))")
-        #     print(f"BCE_loss stats - min: {BCE_loss.min().item():.4f}, max: {BCE_loss.max().item():.4f}")
-        
-        one_minus_pt = 1-pt
-        # if torch.isnan(one_minus_pt).any() or torch.isinf(one_minus_pt).any():
-        #     print("WARNING: Invalid values in (1-pt)")
-        
-        F_loss = self.alpha * one_minus_pt**self.gamma * BCE_loss
-        return torch.mean(F_loss)
+        F_loss = self.alpha * (1 - pt) ** self.gamma * BCE_loss
+        return F_loss.mean()
 
 class BinaryLDAMLoss(nn.Module):
     def __init__(self, cls_num_list, device, margin=0.1, s=30):
@@ -150,10 +146,10 @@ class BinaryLDAMLoss(nn.Module):
         return F.binary_cross_entropy_with_logits(self.s * x_m, target.float())
 
 class BinaryLMFLoss(nn.Module):
-    def __init__(self, cls_num_list, device, alpha=0.5, beta=0.5, focal_gamma=2, 
-                 ldam_margin=0.1, ldam_s=30): 
+    def __init__(self, cls_num_list, device, alpha=0.5, beta=0.5, focal_gamma=2,
+                 ldam_margin=0.1, ldam_s=30, label_smoothing=0.0):  # Add label_smoothing
         super().__init__()
-        
+
         # Ensure cls_num_list is in tensor format
         if not isinstance(cls_num_list, torch.Tensor):
             cls_num_list = torch.tensor(cls_num_list, dtype=torch.float32)
@@ -164,19 +160,13 @@ class BinaryLMFLoss(nn.Module):
         # Here, we calculate alpha based on the sample ratio.
         neg_samples = cls_num_list[0].item()
         pos_samples = cls_num_list[1].item()
-        
         total_samples = neg_samples + pos_samples
-        if total_samples > 0:
-            # According to the Focal Loss paper, alpha is usually set to the proportion of negative samples to increase the weight of positive samples.
-            focal_alpha = neg_samples / total_samples 
-        else:
-            focal_alpha = 0.5 # Default to 0.5 if no samples
-        
+        focal_alpha = neg_samples / total_samples if total_samples > 0 else 0.5
+
         # Focal Loss component, using the calculated weight
-        self.focal_loss = BinaryFocalLoss(alpha=focal_alpha, gamma=focal_gamma)
-        
+        self.focal_loss = BinaryFocalLoss(alpha=focal_alpha, gamma=focal_gamma, label_smoothing=label_smoothing)
         self.ldam_loss = BinaryLDAMLoss(cls_num_list, device, margin=ldam_margin, s=ldam_s)
-        
+
         self.alpha = alpha
         self.beta = beta
 
@@ -200,7 +190,7 @@ class BinaryLMFLoss(nn.Module):
 # Helper function to create BinaryLMFLoss
 def create_binary_lmf_loss(pos_samples, neg_samples, device, 
                            alpha=None, beta=None, focal_gamma=None, 
-                           ldam_margin=None, ldam_s=None):
+                           ldam_margin=None, ldam_s=None, label_smoothing=0.0):
     """
     Creates a binary LMF loss function.
     
@@ -213,6 +203,7 @@ def create_binary_lmf_loss(pos_samples, neg_samples, device,
         focal_gamma: Gamma parameter for Focal Loss.
         ldam_margin: Margin for LDAM.
         ldam_s: Scale parameter for LDAM.
+        label_smoothing: Label smoothing parameter for Focal Loss.
     """
     cls_num_list = [neg_samples, pos_samples]
     
@@ -223,5 +214,50 @@ def create_binary_lmf_loss(pos_samples, neg_samples, device,
         beta=beta, 
         focal_gamma=focal_gamma,
         ldam_margin=ldam_margin, 
-        ldam_s=ldam_s
+        ldam_s=ldam_s,
+        label_smoothing=label_smoothing
     )
+
+class ConfusionLoss(nn.Module):
+    def __init__(self, task=0):
+        super(ConfusionLoss, self).__init__()
+        self.task = task
+
+    def forward(self, x, target):
+        # We only care about x
+        # Apply sigmoid to x to ensure values are between 0 and 1 before taking log
+        # This assumes x are logits.
+        x = torch.sigmoid(x)
+
+        # Add a small epsilon to x to prevent log(0) which results in NaN
+        epsilon = 1e-12
+        log = torch.log(x + epsilon)
+        
+        # Check for NaN/Inf in log
+        if torch.isnan(log).any() or torch.isinf(log).any():
+            print(f"WARNING: ConfusionLoss log contains NaN/Inf values")
+            print(f"x stats - min: {x.min().item():.4f}, max: {x.max().item():.4f}, mean: {x.mean().item():.4f}")
+            print(f"log stats - min: {log.min().item():.4f}, max: {log.max().item():.4f}, mean: {log.mean().item():.4f}")
+
+        log_sum = torch.sum(log, dim=1)
+        
+        # Check for NaN/Inf in log_sum
+        if torch.isnan(log_sum).any() or torch.isinf(log_sum).any():
+            print(f"WARNING: ConfusionLoss log_sum contains NaN/Inf values")
+            print(f"log_sum stats - min: {log_sum.min().item():.4f}, max: {log_sum.max().item():.4f}, mean: {log_sum.mean().item():.4f}")
+
+        normalised_log_sum = torch.div(log_sum,  x.size()[1])
+        
+        # Check for NaN/Inf in normalised_log_sum
+        if torch.isnan(normalised_log_sum).any() or torch.isinf(normalised_log_sum).any():
+            print(f"WARNING: ConfusionLoss normalised_log_sum contains NaN/Inf values")
+            print(f"normalised_log_sum stats - min: {normalised_log_sum.min().item():.4f}, max: {normalised_log_sum.max().item():.4f}, mean: {normalised_log_sum.mean().item():.4f}")
+
+        loss = torch.mul(torch.sum(normalised_log_sum, dim=0), -1)
+        
+        # Check for NaN/Inf in final loss
+        if torch.isnan(loss).any() or torch.isinf(loss).any():
+            print(f"WARNING: ConfusionLoss final loss contains NaN/Inf values")
+            print(f"Loss value: {loss.item():.4f}")
+
+        return loss

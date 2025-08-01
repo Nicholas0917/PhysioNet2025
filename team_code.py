@@ -14,18 +14,18 @@ import math
 import os
 import sys
 import time
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed, wait, FIRST_COMPLETED
 from functools import partial
 import gc
 import psutil
-import tarfile
-import re
+import requests
 
 import joblib
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.profiler
 import torch.utils.model_zoo as model_zoo
 from scipy.interpolate import interp1d
 from scipy.signal import butter, filtfilt, resample
@@ -34,7 +34,7 @@ from sklearn.metrics import accuracy_score, average_precision_score, f1_score, r
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 from torch.optim.lr_scheduler import OneCycleLR
-# from memory_profiler import profile
+import h5py
 
 # Import from our modules
 from dataset import *
@@ -51,20 +51,20 @@ from utils import *
 
 class Config:
     def __init__(self):
-        self.model_name = 'ResNet18' # [ECGFeatureExtractor, ecgfounder]
+        self.model_name = 'ECGFeatureExtractor' # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 3e-5
-        self.pretrain_batch_size = 64
-        self.gradient_accumulation_steps = 4
-        self.pretrain_early_stop_patience = 5
+        self.pretrain_batch_size = 128
+        self.gradient_accumulation_steps = 1 # not used in this code
+        self.pretrain_early_stop_patience = 8
         self.num_epochs = 100
         self.learning_rate = 1e-6
         self.dropout_rate = 0.3
         self.net1d_dropout_rate = 0.3
         self.batch_size = 32
         self.early_stop_patience = 8
-        self.num_preprocess_workers = 4
+        self.num_preprocess_workers = 6
         self.use_age = True
         self.use_sex = True
         self.use_signal_stats = False
@@ -72,19 +72,26 @@ class Config:
         self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
         self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', './tmp'), 'pretrain_model.pth')
 
+        # DANN parameters
+        self.num_domains = 8 # code15, CSPC, CSPC_extra, Chapman_Shaoxing, Georgia, Ningbo, PTB, ST_Petersburg
+        self.external_datasets = ['CODE15','CSPC', 'CSPC_extra', 'Chapman_Shaoxing', 'Georgia', 'Ningbo', 'PTB', 'ST_Petersburg']
+        self.dann_lambda = 0.3 # Weight for domain classification loss
+        self.dann_alpha = 10.0 # Alpha for dynamic DANN lambda calculation
+
         # Loss parameters
-        # self.pretrain_focal_alpha = 0.6
         self.pretrain_focal_gamma = 2
         self.pretrain_margin = 0.1
         self.pretrain_s = 30
         self.pretrain_lmf_alpha = 0.98
         self.pretrain_lmf_beta = 0.02
-        # self.finetune_focal_alpha = 0.8
+        self.pretrain_label_smoothing = 0.0
+
         self.finetune_focal_gamma = 2
-        self.finetune_margin = 0.35
-        self.finetune_s = 30
+        self.finetune_margin = 0.8
+        self.finetune_s = 1
         self.finetune_lmf_alpha = 0.98
         self.finetune_lmf_beta = 0.02
+        self.finetune_label_smoothing = 0.2
         
         # WeightedRandomSampler parameters
         self.pos_sample_weight_multiplier = 1.0
@@ -92,23 +99,23 @@ class Config:
         # Data augmentation parameters with probabilities
         self.use_noise_aug = True
         self.noise_std = 0.03
-        self.noise_aug_prob = 0.5
+        self.noise_aug_prob = 0.8
         
         self.use_scaling_aug = True
         self.scaling_min = 0.5
         self.scaling_max = 2.0
-        self.scaling_aug_prob = 0.5
+        self.scaling_aug_prob = 0.8
         
         self.use_flip_aug = False
         self.flip_aug_prob = 0.2
         
         self.use_shift_aug = True
         self.shift_max_ratio = 0.8
-        self.shift_aug_prob = 0.3
+        self.shift_aug_prob = 0.8
         
         self.use_drop_aug = True
         self.drop_max_prob = 0.02
-        self.drop_aug_prob = 0.3
+        self.drop_aug_prob = 0.8
         
         self.add_power_noise = False
         self.power_noise_amplitude = 0.03
@@ -128,16 +135,16 @@ class Config:
         
         self.use_cutout_aug = True
         self.cutout_max_ratio = 0.2    # Max cutout ratio of signal length
-        self.cutout_aug_prob = 0.3
+        self.cutout_aug_prob = 0.5
         
         self.use_lead_mixing_aug = True
         self.lead_mixing_lambda = 0.2  # Mixing coefficient
-        self.lead_mixing_prob = 0.3    # Probability of applying
+        self.lead_mixing_prob = 0.8    # Probability of applying
         
         self.use_time_warp_aug = True
         self.time_wrap_min_hz = 450
         self.time_wrap_max_hz = 550
-        self.time_wrap_prob = 0.3       # Probability of applying
+        self.time_wrap_prob = 0.5       # Probability of applying
 
         # Baseline wander augmentation parameters
         self.use_baseline_wander = True
@@ -181,6 +188,10 @@ class Config:
         print(f"Use Signal Stats: {self.use_signal_stats}")
         print(f"Meta Feature Dimension: {self.get_meta_feature_dim()}")
         
+        print(">>>>>>>>>DANN Parameters:<<<<<<<<<<")
+        print(f"DANN Lambda: {self.dann_lambda}")
+        print(f"DANN Alpha: {self.dann_alpha}")
+
         print(">>>>>>>>>Data Augmentation:<<<<<<<<<<")
         print(f"Use Noise Augmentation: {self.use_noise_aug}, Probability: {self.noise_aug_prob}")
         print(f"Use Scaling Augmentation: {self.use_scaling_aug}, Probability: {self.scaling_aug_prob}")
@@ -195,18 +206,18 @@ class Config:
         print(f"Use Time Warping Augmentation: {self.use_time_warp_aug}, Freq Range: [{self.time_wrap_min_hz}, {self.time_wrap_max_hz}], Probability: {self.time_wrap_prob}")
 
         print(">>>>>>>>>Loss Parameters:<<<<<<<<<<")
-        # print(f"Pretrain Focal Alpha: {self.pretrain_focal_alpha}")
         print(f"Pretrain Focal Gamma: {self.pretrain_focal_gamma}")
         print(f"Pretrain Margin: {self.pretrain_margin}")
         print(f"Pretrain S: {self.pretrain_s}")
         print(f"Pretrain LMF Alpha: {self.pretrain_lmf_alpha}")
         print(f"Pretrain LMF Beta: {self.pretrain_lmf_beta}")
-        # print(f"Finetune Focal Alpha: {self.finetune_focal_alpha}")
+        print(f"Pretrain Label Smoothing: {self.pretrain_label_smoothing}")
         print(f"Finetune Focal Gamma: {self.finetune_focal_gamma}")
         print(f"Finetune Margin: {self.finetune_margin}")
         print(f"Finetune S: {self.finetune_s}")
         print(f"Finetune LMF Alpha: {self.finetune_lmf_alpha}")
         print(f"Finetune LMF Beta: {self.finetune_lmf_beta}")
+        print(f"Finetune Label Smoothing: {self.finetune_label_smoothing}")
         print(f"Positive Sample Weight Multiplier: {self.pos_sample_weight_multiplier}")
         
         print(">>>>>>>>>Device:<<<<<<<<<<")
@@ -243,106 +254,139 @@ if torch.cuda.is_available():
 # of this function. If you do not train one of the models, then you can return None for the model.
 
 # Train your model.
-# @profile
 def train_model(data_folder, model_folder, verbose):
     """Train the model using the three-stage process"""
     # torch.autograd.set_detect_anomaly(True)
-    print_memory_usage("Initial Memory State in train_model")
+    # print_memory_usage("Initial Memory State in train_model")
     
     ############################################################################
     # Stage 0: Data Loading and Preprocessing
     ############################################################################
-    records = find_records(data_folder)
+    records_relative = find_records(data_folder)
+    records_full_path = [os.path.join(data_folder, r) for r in records_relative]
     # print_memory_usage("After finding records and getting full paths")
     
-    # # Check if cache folder is not empty, if so, skip preprocessing
-    # if os.path.exists(config.cache_folder) and os.listdir(config.cache_folder):
-    #     print(f"Cache folder '{config.cache_folder}' is not empty. Skipping data preprocessing.")
-    # else:
-    #     print(f"Cache folder '{config.cache_folder}' is empty or does not exist. Starting data preprocessing...")
-    #     num_cpus = os.cpu_count()
-        
-    #     with ThreadPoolExecutor(max_workers=num_cpus) as executor:
-    #         list(executor.map(lambda r: data_preprocess(os.path.join(data_folder, r), config), records))
+    # Define HDF5 file paths
+    code15_hdf5_path = os.path.join(config.cache_folder, 'CODE15_data.hdf5')
+    finetune_hdf5_path = os.path.join(config.cache_folder, 'finetune_data.hdf5')
     
-    records = find_records(data_folder)
-    start_time = time.time()
-    # Initialize filters once outside the loop
+    # Initialize filters once
     highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
+
+    cpu_num = os.cpu_count()
+    with ProcessPoolExecutor(max_workers=cpu_num) as executor:
+        results = list(executor.map(classify_record, records_full_path))
     
-    num_cpus = os.cpu_count()
-
-    # Use functools.partial to bind the fixed arguments
-    preprocess_func = partial(
-        _preprocess_single_record_global,
-        config=config,
-        highpass_filter_params=highpass_filter_params,
-        lowpass_filter_params=lowpass_filter_params,
-        notch50_filter_params=notch50_filter_params,
-        notch60_filter_params=notch60_filter_params
-    )
-
-    with ProcessPoolExecutor(max_workers=num_cpus) as executor:
-        list(executor.map(preprocess_func, [os.path.join(data_folder, r) for r in records]))
-
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Data preprocessing took {elapsed_time:.2f} seconds.")
-    print_memory_usage("After data preprocessing")
-
-    # Split into CODE-15% and other records (parallel processing)
-    num_cpus = os.cpu_count()
+    code15_records_full_path = [r for r, src in results if src == 'CODE-15%']
+    finetune_records_full_path = [r for r, src in results if src != 'CODE-15%']
     
-    classify_func = partial(_classify_record_global, data_folder=data_folder)
-
-    with ProcessPoolExecutor(max_workers=num_cpus) as executor:
-        results = list(executor.map(classify_func, records))
-    
-    code15_records = [os.path.join(data_folder, r) for r, src in results if src == 'CODE-15%']
-    finetune_records = [os.path.join(data_folder, r) for r, src in results if src != 'CODE-15%']
-    
-    del records, results
+    del records_relative, results
     torch.cuda.empty_cache()
     gc.collect()
-    # print_memory_usage("After splitting records and cleaning up")
 
-    # Create datasets
-    pretrain_dataset = ECGDataset(code15_records, is_training=True, config=config)
-    finetune_dataset = ECGDataset(finetune_records, is_training=True, config=config)
-    # print_memory_usage("After initializing pretrain and finetune datasets")
+    # Function to preprocess and write to HDF5
+    def preprocess_and_write_to_hdf5(records_list, hdf5_path, dataset_name):
+        if not os.path.exists(hdf5_path):
+            start_time = time.time()
+            print(f"Starting data preprocessing for {dataset_name} (creating HDF5)")
 
-    # return None
+            if not records_list:
+                print(f"No records for {dataset_name}. Skipping HDF5 creation.")
+                return
+
+            n_records = len(records_list)
+            n_channels = 12
+            n_samples = 5000
+            meta_dim = config.get_meta_feature_dim()
+            label_dim = 1
+            chunk_n = os.cpu_count()
+
+            with h5py.File(hdf5_path, 'w') as hdf5_file:
+                with ProcessPoolExecutor(max_workers=cpu_num) as executor:
+                    signal_chunks = (chunk_n, n_samples, n_channels)
+                    hdf5_file.create_dataset(
+                        'signals',
+                        shape=(n_records, n_samples, n_channels),
+                        dtype='float32',
+                        chunks=signal_chunks,
+                        compression=None
+                    )
+
+                    hdf5_file.create_dataset(
+                        'meta_features',
+                        shape=(n_records, meta_dim),
+                        dtype='float32',
+                        compression=None
+                    )
+
+                    hdf5_file.create_dataset(
+                        'labels',
+                        shape=(n_records, label_dim),
+                        dtype='float32',
+                        compression=None
+                    )
+                    
+                    pending = set()
+                    for idx, record_path in enumerate(records_list):
+                        fut = executor.submit(
+                            data_preprocess,
+                            record_path,
+                            config,
+                            highpass_filter_params,
+                            lowpass_filter_params,
+                            notch50_filter_params,
+                            notch60_filter_params,
+                            idx
+                        )
+                        pending.add(fut)
+
+                        if len(pending) >= cpu_num:
+                            done, pending = wait(pending, return_when=FIRST_COMPLETED)
+                            for fut in done:
+                                idx, signal, meta_features, label = fut.result()
+                                hdf5_file['signals'][idx] = signal
+                                hdf5_file['meta_features'][idx] = meta_features
+                                hdf5_file['labels'][idx] = label
+                                del signal, meta_features, label
+
+                    for fut in as_completed(pending):
+                        idx, signal, meta_features, label = fut.result()
+                        hdf5_file['signals'][idx] = signal
+                        hdf5_file['meta_features'][idx] = meta_features
+                        hdf5_file['labels'][idx] = label
+                        del signal, meta_features, label
+
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+            print(f"Created new {dataset_name} data file at {hdf5_path}")
+            print(f"Data preprocessing and HDF5 creation for {dataset_name} took {elapsed_time:.2f} seconds.")
+        else:
+            print(f"Using existing {dataset_name} data file at {hdf5_path}")
+
+    # Preprocess and write CODE-15% data
+    preprocess_and_write_to_hdf5(code15_records_full_path, code15_hdf5_path, 'CODE15_data')
+
+    # Preprocess and write finetune data
+    preprocess_and_write_to_hdf5(finetune_records_full_path, finetune_hdf5_path, 'finetune_data')
+
+    del code15_records_full_path, finetune_records_full_path
+
+    # Create datasets using the new HDF5 files
+    pretrain_dataset = ECGDataset(code15_hdf5_path, is_training=True, config=config)
+    finetune_dataset = ECGDataset(finetune_hdf5_path, is_training=True, config=config)
+    
+    # Initialize external datasets (if needed for pretraining)
+    external_datasets = []
+    for dataset_name in config.external_datasets:
+        external_dataset = ExternalDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=True, config=config)
+        external_datasets.append(external_dataset)
 
     ############################################################################
     # Stage 1: Pretrain Model
     ############################################################################
     # Initialize model and training components
-    
-    # Determine pretrained_weight_path based on is_pretrain config
-    pretrained_weight_path = None
-    if config.is_pretrain:
-        pretrained_weight_path = './12_lead_ECGFounder.pth'
-        if not os.path.exists(pretrained_weight_path):
-            print(f"Pretrained model not found at {pretrained_weight_path}. Downloading from Hugging Face...")
-            download_url = "https://huggingface.co/PKUDigitalHealth/ECGFounder/resolve/main/12_lead_ECGFounder.pth?download=true"
-            try:
-                import requests
-                response = requests.get(download_url, stream=True)
-                response.raise_for_status() # Raise an exception for HTTP errors
-                with open(pretrained_weight_path, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
-                print(f"Successfully downloaded {pretrained_weight_path}")
-            except ImportError:
-                print("Error: 'requests' module not found. Please install it using 'pip install requests' to enable model download.")
-                sys.exit(1)
-            except Exception as e:
-                print(f"Error downloading pretrained model: {e}")
-                sys.exit(1)
-
     model = HybridModel(
         device=config.device,
-        pth_path=pretrained_weight_path,
         config=config
     )
     # print_memory_usage("After initializing HybridModel")
@@ -357,23 +401,7 @@ def train_model(data_folder, model_folder, verbose):
     # Use create_binary_lmf_loss for pretraining
     pretrain_labels = [pretrain_dataset[i][1] for i in range(len(pretrain_dataset))]
     pretrain_neg_samples = pretrain_labels.count(0)
-    pretrain_pos_samples = pretrain_labels.count(1)
-    
-    # # Use WeightBCE as loss function
-    # # Calculate pos_weight based on initial probability and multiplier
-    # total_samples = pretrain_pos_samples + pretrain_neg_samples
-    # initial_pos_ratio = pretrain_pos_samples / total_samples if total_samples > 0 else 0.0
-    
-    # # Ensure initial_pos_ratio is not zero to avoid division by zero
-    # if initial_pos_ratio == 0:
-    #     pos_weight_value = config.pos_sample_weight_multiplier # Fallback if no positive samples
-    # else:
-    #     pos_weight_value = (1.0 - initial_pos_ratio) / initial_pos_ratio * config.pos_sample_weight_multiplier
-    
-    # pos_weight_tensor = torch.tensor([pos_weight_value], device=config.device)
-    # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight_tensor)
-
-    
+    pretrain_pos_samples = pretrain_labels.count(1)    
     pretrain_pos_samples_weighted = pretrain_pos_samples * config.pos_sample_weight_multiplier
     criterion = create_binary_lmf_loss(
         pos_samples=pretrain_pos_samples_weighted,
@@ -383,57 +411,22 @@ def train_model(data_folder, model_folder, verbose):
         beta=config.pretrain_lmf_beta,
         focal_gamma=config.pretrain_focal_gamma,
         ldam_margin=config.pretrain_margin,
-        ldam_s=config.pretrain_s
+        ldam_s=config.pretrain_s,
+        label_smoothing=config.pretrain_label_smoothing
     )
-
-    optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=config.pretrain_learning_rate,
-        weight_decay=2e-4
-    )
-    # print_memory_usage("After initializing pretrain criterion and optimizer")
     
-    warmup_epochs = int(config.pretrain_num_epochs * 0.1)
-    def lr_lambda(epoch):
-        if epoch < warmup_epochs:
-            return 0.1 + (epoch / warmup_epochs) * 0.9
-        return 0.5 * (1 + math.cos(math.pi * (epoch - warmup_epochs) / (config.pretrain_num_epochs - warmup_epochs)))
-    
-    warmup_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    
-    # Create cosine annealing scheduler
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=config.pretrain_num_epochs - warmup_epochs,
-        eta_min=config.pretrain_learning_rate * 0.01
-    )
-
-    # # Calculate steps_per_epoch for OneCycleLR
-    # steps_per_epoch = math.ceil(len(pretrain_dataset) * 0.8 / config.pretrain_batch_size) # 0.8 for train_size split
-
-    # # Create OneCycleLR scheduler
-    # scheduler = OneCycleLR(
-    #     optimizer,
-    #     max_lr=config.pretrain_learning_rate,
-    #     epochs=num_epochs, # Use num_epochs from function parameter (pretrain_num_epochs)
-    #     steps_per_epoch=steps_per_epoch,
-    #     pct_start=0.3
-    # )
     print_memory_usage("Before pretrain_model function call")
     model = pretrain_model(
         pretrain_dataset=pretrain_dataset,
+        external_datasets=external_datasets,
         model=model,
         criterion=criterion,
-        optimizer=optimizer,
-        warmup_epochs=warmup_epochs,
-        warmup_scheduler=warmup_scheduler,
-        scheduler=scheduler,  # Pass the initialized scheduler
         num_epochs=config.pretrain_num_epochs,
         batch_size=config.pretrain_batch_size,
         early_stop_patience=config.pretrain_early_stop_patience,
         device=config.device,
         pretrain_model_pth=os.path.join(model_folder, 'pretrain_model.pth'),
-        verbose=verbose,
+        verbose=verbose
     )
     print_memory_usage("After pretrain_model function call")
     
@@ -441,19 +434,13 @@ def train_model(data_folder, model_folder, verbose):
     # Stage 2: Evaluate pretrained model
     ############################################################################
     if verbose:
-        pretrain_eval_dataset = ECGDataset(code15_records, is_training=False, config=config)
-        finetune_eval_dataset = ECGDataset(finetune_records, is_training=False, config=config)
+        pretrain_eval_dataset = ECGDataset(code15_hdf5_path, is_training=False, config=config)
+        finetune_eval_dataset = ECGDataset(finetune_hdf5_path, is_training=False, config=config)
         evaluate_model(model, pretrain_eval_dataset, finetune_eval_dataset, verbose)
     
     ############################################################################
     # Stage 3: Finetune on target datasets
     ############################################################################
-    # # Freeze all layers except classifier in the pretrained model
-    # for name, param in model.named_parameters():
-    #     if 'classifier' in name:
-    #         param.requires_grad = True
-    #     else:
-    #         param.requires_grad = False
     
     # Print model parameters after freezing layers for finetuning
     print_model_parameters(model, verbose)
@@ -464,19 +451,6 @@ def train_model(data_folder, model_folder, verbose):
     finetune_neg_samples = finetune_labels.count(0)
     finetune_pos_samples = finetune_labels.count(1)
 
-    # # Use WeightBCE as loss function for finetuning
-    # # Calculate pos_weight based on initial probability and multiplier for finetuning
-    # total_finetune_samples = finetune_pos_samples + finetune_neg_samples
-    # initial_finetune_pos_ratio = finetune_pos_samples / total_finetune_samples if total_finetune_samples > 0 else 0.0
-
-    # if initial_finetune_pos_ratio == 0:
-    #     finetune_pos_weight_value = config.pos_sample_weight_multiplier # Fallback if no positive samples
-    # else:
-    #     finetune_pos_weight_value = (1.0 - initial_finetune_pos_ratio) / initial_finetune_pos_ratio * config.pos_sample_weight_multiplier
-    
-    # pos_weight_tensor = torch.tensor([finetune_pos_weight_value], device=config.device)
-    # criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight_tensor)
-
     finetune_pos_samples_weighted = finetune_pos_samples * config.pos_sample_weight_multiplier
     criterion = create_binary_lmf_loss(
         pos_samples=finetune_pos_samples_weighted,
@@ -486,7 +460,8 @@ def train_model(data_folder, model_folder, verbose):
         beta=config.finetune_lmf_beta,
         focal_gamma=config.finetune_focal_gamma,
         ldam_margin=config.finetune_margin,
-        ldam_s=config.finetune_s
+        ldam_s=config.finetune_s,
+        label_smoothing=config.finetune_label_smoothing
     )
     
     # Create optimizers and schedulers for each fold
@@ -543,16 +518,6 @@ def train_model(data_folder, model_folder, verbose):
         schedulers.append(scheduler)
     # print_memory_usage("After initializing finetune criterion, optimizers, and schedulers")
     
-    # if verbose:
-    #     print("Optimizer parameter groups:")
-    #     for i, optimizer in enumerate(optimizers):
-    #         print(f"Fold {i+1}:")
-    #         for j, group in enumerate(optimizer.param_groups):
-    #             print(f"  Group {j}: {group['name']}, LR: {group['lr']:.6f}, Params: {len(group['params'])}")
-    #         print()
-
-    # scaler = torch.amp.GradScaler('cuda')  # Disabled mixed precision training
-    # autocast = torch.amp.autocast(device_type='cuda', dtype=torch.float16)  # Disabled mixed precision training
     kf = StratifiedKFold(n_splits=5)
     
     print_memory_usage("Before finetune_model function call")
@@ -572,290 +537,306 @@ def train_model(data_folder, model_folder, verbose):
         print('Done.')
         print()
 
-def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs, warmup_scheduler, scheduler,
+def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
                   num_epochs, batch_size, early_stop_patience, device,
                   pretrain_model_pth, verbose):
-    """Core pretraining logic with training loop and model saving"""
+    """Core pretraining logic with training loop and model saving, incorporating DANN"""
     # torch.autograd.set_detect_anomaly(True)
-    
-    # Check if pretrained model exists at the configured path to skip pretraining
-    if os.path.exists(config.pretrain_model_path):
-        if verbose:
-            print(f'Loading pretrained model from {config.pretrain_model_path} to skip pretraining.')
-        try:
-            checkpoint = torch.load(config.pretrain_model_path, map_location=device)
-            # Handle both full checkpoint and state_dict cases
-            if isinstance(checkpoint, dict) and 'state_dict' in checkpoint:
-                model.load_state_dict(checkpoint['state_dict'])
-            else:
-                model.load_state_dict(checkpoint)
-            if verbose:
-                print('Successfully loaded pretrained model')
-            # Save the loaded model to the new pretrain_model_pth location
-            os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
-            torch.save(model.state_dict(), pretrain_model_pth)
-            if verbose:
-                print(f'Successfully saved loaded pretrained model to {pretrain_model_pth}')
-            return model
-        except Exception as e:
-            if verbose:
-                print(f'Failed to load pretrained model: {str(e)}')
-            print('Proceeding with training from scratch')
-    
+
     if verbose:
-        print(f'Starting pretraining on {len(pretrain_dataset)} records...')
+        print(f'Starting pretraining on CODE-15% ({len(pretrain_dataset)} records) and External ({sum(len(ds) for ds in external_datasets)} records) for domain adaptation.')
+
+    # Create data loaders for all datasets
+    # CODE-15% dataset (source domain for DANN and task classification)
+    code15_train_size = int(0.8 * len(pretrain_dataset))
+    code15_val_size = len(pretrain_dataset) - code15_train_size
+    code15_train_dataset, code15_val_dataset = torch.utils.data.random_split(pretrain_dataset, [code15_train_size, code15_val_size])
+
+    code15_train_weights = make_weights_for_balanced_classes(code15_train_dataset)
+    code15_train_sampler = WeightedRandomSampler(code15_train_weights, len(code15_train_weights))
     
-    # Freeze base_model layers and unfreeze meta_net and classifier
-    if config.is_pretrain:
-        if hasattr(model, 'base_model'):
-            if verbose:
-                print("Freezing base_model parameters...")
-            for param in model.base_model.parameters():
-                param.requires_grad = False
+    # DataLoader for Chagas classification (full batch_size)
+    code15_chagas_loader = DataLoader(code15_train_dataset,
+                                      batch_size=batch_size,
+                                      sampler=code15_train_sampler,
+                                      num_workers=config.num_preprocess_workers)
+    code15_val_loader = DataLoader(code15_val_dataset,
+                                   batch_size=batch_size,
+                                   shuffle=False,
+                                   num_workers=config.num_preprocess_workers)
+
+    # External datasets (source domains for DANN)
+    external_train_loaders = []
+    external_val_loaders = []
+    for ext_ds in external_datasets:
+        ext_train_size = int(0.8 * len(ext_ds))
+        ext_val_size = len(ext_ds) - ext_train_size
+        ext_train_dataset, ext_val_dataset = torch.utils.data.random_split(ext_ds, [ext_train_size, ext_val_size])
+        
+        ext_train_loader = DataLoader(ext_train_dataset,
+                                      batch_size=batch_size // config.num_domains,
+                                      shuffle=True,
+                                      num_workers=config.num_preprocess_workers)
+        ext_val_loader = DataLoader(ext_val_dataset,
+                                    batch_size=batch_size,
+                                    shuffle=False,
+                                    num_workers=config.num_preprocess_workers)
+        external_train_loaders.append(ext_train_loader)
+        external_val_loaders.append(ext_val_loader)
+
+    # Define optimizers for different parts of the model
+    # Optimizer for feature extractor (model.encoder) and task classifier (model.classifier)
+    optimizer_task = torch.optim.AdamW(
+        list(model.encoder.parameters()) + list(model.classifier.parameters()),
+        lr=config.pretrain_learning_rate,
+        weight_decay=2e-4
+    )
     
-    if hasattr(model, 'meta_net'):
-        if verbose:
-            print("Unfreezing meta_net parameters...")
-        for param in model.meta_net.parameters():
-            param.requires_grad = True
-            
-    if hasattr(model, 'classifier'):
-        if verbose:
-            print("Unfreezing classifier parameters...")
-        for param in model.classifier.parameters():
-            param.requires_grad = True
+    # Optimizer for domain classifier (model.domain_classifier)
+    optimizer_domain_classifier = torch.optim.AdamW(
+        model.domain_classifier.parameters(),
+        lr=config.pretrain_learning_rate * 0.1, # Can be different from task optimizer LR
+        weight_decay=2e-4
+    )
 
-    # scaler = torch.amp.GradScaler('cuda')  # Disabled mixed precision training
-    # autocast = torch.amp.autocast(device_type='cuda', dtype=torch.float16)  # Disabled mixed precision training
+    # Optimizer for encoder (model.encoder) for confusion
+    optimizer_encoder_confusion = torch.optim.AdamW(
+        model.encoder.parameters(), # Only encoder parameters
+        lr=config.pretrain_learning_rate,
+        weight_decay=2e-4
+    )
 
-    # Split into train and validation sets (80/20)
-    train_size = int(0.8 * len(pretrain_dataset))
-    val_size = len(pretrain_dataset) - train_size
-    train_dataset, val_dataset = torch.utils.data.random_split(pretrain_dataset, [train_size, val_size])
+    # Schedulers for all optimizers
+    warmup_epochs = int(num_epochs * 0.1)
+    def lr_lambda(epoch):
+        if epoch < warmup_epochs:
+            return 0.1 + (epoch / warmup_epochs) * 0.9
+        return 0.5 * (1 + math.cos(math.pi * (epoch - warmup_epochs) / (num_epochs - warmup_epochs)))
+    
+    scheduler_task = torch.optim.lr_scheduler.LambdaLR(optimizer_task, lr_lambda)
+    scheduler_domain_classifier = torch.optim.lr_scheduler.LambdaLR(optimizer_domain_classifier, lr_lambda)
+    scheduler_encoder_confusion = torch.optim.lr_scheduler.LambdaLR(optimizer_encoder_confusion, lr_lambda)
 
-    # Create weighted sampler for imbalanced data (commented out as requested)
-    train_weights = make_weights_for_balanced_classes(train_dataset)
-    train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
+    # Loss for domain classification
+    domain_criterion = nn.CrossEntropyLoss()
+    # Loss for confusion (same as domain criterion, but we will maximize it)
+    confusion_criterion = ConfusionLoss()
 
-    train_loader = DataLoader(train_dataset,
-                            batch_size=batch_size,
-                            sampler=train_sampler,
-                            num_workers=config.num_preprocess_workers)
-    val_loader = DataLoader(val_dataset,
-                          batch_size=batch_size,
-                          shuffle=False,
-                          num_workers=config.num_preprocess_workers)
+    # Define domain labels mapping based on config.external_datasets
+    domain_labels = {name: i for i, name in enumerate(config.external_datasets)}
 
-    best_auprc = 0.0
-    best_loss = float('inf')
+    best_auprc = 0.0 # This will track AUPRC for Chagas classification on CODE-15% validation set
     best_epoch = 0
     epochs_no_improve = 0
-    
-    # Define the initial learning rate for the first 5 epochs
-    initial_lr_for_unfrozen = 2e-4
+    best_model_state = None
+
+    def calculate_lambda(epoch, num_epochs, high=1.0, low=0.0, alpha=config.dann_alpha):
+        progress = epoch / num_epochs
+        return high - (high - low) * (2.0 / (1.0 + math.exp(-alpha * progress)) - 1.0)
     
     for epoch in range(num_epochs):
         epoch_start_time = time.time()
         
-        # Adjust learning rate for the first 5 epochs
-        if epoch < 5:
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = initial_lr_for_unfrozen
-            if verbose:
-                print(f"Epoch {epoch + 1}: Using initial learning rate {initial_lr_for_unfrozen:.1e} for unfrozen layers.")
-        elif epoch == 5: # Re-initialize optimizer and scheduler for full training
-            if hasattr(model, 'base_model'):
-                if verbose:
-                    print("Unfreezing base_model parameters for full training...")
-                for param in model.base_model.parameters():
-                    param.requires_grad = True
-            
-            # Re-initialize optimizer to include all now trainable parameters
-            optimizer = torch.optim.AdamW(
-                filter(lambda p: p.requires_grad, model.parameters()),
-                lr=config.pretrain_learning_rate, # Reset to initial pretrain LR or a suitable value
-                weight_decay=2e-4
-            )
-            # Ensure the learning rate is explicitly set for all parameter groups
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = config.pretrain_learning_rate
-            
-            # Re-initialize schedulers with the new optimizer.
-            
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer,
-                T_max=num_epochs - 5, # Cosine annealing for remaining epochs (from epoch 5 to num_epochs-1)
-                eta_min=config.pretrain_learning_rate * 0.01
-            )
-            
-            if verbose:
-                print(f"Epoch {epoch + 1}: Unfrozen basemodel and re-initialized optimizer/schedulers.")
-                print(f"Current learning rate: {optimizer.param_groups[0]['lr']:.1e}.")
-
         model.train()
-        train_loss = 0.0
+        total_chagas_loss = 0.0
+        total_domain_loss = 0.0
+        total_confusion_loss = 0.0
         train_targets = []
         train_outputs = []
-        if verbose:
-            pos_logits_sum = 0.0
-            neg_logits_sum = 0.0
-            pos_probs_sum = 0.0
-            pos_count = 0
-            neg_count = 0
-        
-        for i, (features, label) in enumerate(train_loader):
-            signal, meta_features = features
-            
-            signal = signal.to(device)
-            meta_features = meta_features.to(device)
-            label = label.to(device)
+        train_domain_targets = []
+        train_domain_outputs = []
 
-            optimizer.zero_grad()
-            # with autocast:
-            # Check input data
-            # if torch.isnan(signal).any() or torch.isinf(signal).any():
-            #     print(f"WARNING: Input signal contains NaN/Inf values at batch {i}")
-            # if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
-            #     print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
+        # For Chagas logit printing (training)
+        train_pos_logits_sum = 0.0
+        train_neg_logits_sum = 0.0
+        train_pos_count = 0
+        train_neg_count = 0
+
+        # Iterators for all data loaders
+        code15_chagas_iter = iter(code15_chagas_loader)
+        external_iters = [iter(loader) for loader in external_train_loaders] # Use external_train_loaders directly
+
+        # Determine the maximum number of batches to iterate over for domain adaptation
+        max_batches = len(code15_chagas_loader)
+        
+        for i in range(max_batches):
+            # ------------------------------------------------------------------
+            # --- Phase 1: Task Training (Update Encoder and Label Predictor) ---
+            # ------------------------------------------------------------------
+            model.train()
+            # Set requires_grad for task-related parameters
+            for param in model.encoder.parameters():
+                param.requires_grad = True
+            for param in model.classifier.parameters():
+                param.requires_grad = True
+            for param in model.domain_classifier.parameters():
+                param.requires_grad = False # Fix domain predictor
+
+            optimizer_task.zero_grad()
+            try:
+                code15_features_chagas, code15_label_chagas = next(code15_chagas_iter)
+            except StopIteration:
+                code15_chagas_iter = iter(code15_chagas_loader)
+                code15_features_chagas, code15_label_chagas = next(code15_chagas_iter)
             
-            output = model(signal, meta_features)
+            signal_chagas, meta_chagas = code15_features_chagas
+            signal_chagas = signal_chagas.to(device)
+            meta_chagas = meta_chagas.to(device)
+            code15_label_chagas = code15_label_chagas.to(device).view(-1, 1)
+
+            task_output_chagas, _, _ = model(signal_chagas, meta_chagas) 
+            chagas_loss = criterion(task_output_chagas, code15_label_chagas)
             
-            # Check model output
-            # if torch.isnan(output).any() or torch.isinf(output).any():
-            #     print(f"WARNING: Model output contains NaN/Inf values at batch {i}")
-            #     print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
-            
-            # Reshape label to match output shape [batch_size, 1]
-            label_reshaped = label.view(-1, 1)
-            loss = criterion(output, label_reshaped)
-            
-            # Check loss value
-            # if torch.isnan(loss).any() or torch.isinf(loss).any():
-            #     print(f"WARNING: Loss contains NaN/Inf values at batch {i}")
-            
-            # Gradient accumulation
-            loss = loss / config.gradient_accumulation_steps
-            # scaler.scale(loss).backward()
-            loss.backward()
-            # check_gradients(model)
-            
-            if (i + 1) % config.gradient_accumulation_steps == 0:
-                # Gradient clipping
-                # scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-                # scaler.step(optimizer)
-                optimizer.step()
-                # scaler.update()
-                optimizer.zero_grad()
-            
-                train_loss += loss.item() * config.gradient_accumulation_steps
-                train_targets.extend(label.cpu().numpy())
-                train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
+            chagas_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer_task.step()
+            total_chagas_loss += chagas_loss.item()
+            train_targets.extend(code15_label_chagas.cpu().numpy())
+            train_outputs.extend(torch.sigmoid(task_output_chagas).detach().cpu().numpy())
+
+            # Accumulate positive/negative logit stats for training
+            if verbose:
+                pos_mask_train = code15_label_chagas == 1
+                neg_mask_train = ~pos_mask_train
                 
-                if verbose:
-                    # Calculate positive/negative logit stats
-                    pos_mask = label == 1
-                    neg_mask = ~pos_mask
-                    if pos_mask.any():
-                        pos_logits = output[pos_mask].mean().item()
-                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                    else:
-                        pos_logits = 0.0
-                        pos_probs = 0.0
-                    if neg_mask.any():
-                        neg_logits = output[neg_mask].mean().item()
-                    else:
-                        neg_logits = 0.0
-                    
-                    # Accumulate stats for epoch average
-                    if pos_mask.any():
-                        pos_logits_sum += pos_logits * pos_mask.sum().item()
-                        pos_probs_sum += pos_probs * pos_mask.sum().item()
-                        pos_count += pos_mask.sum().item()
-                    if neg_mask.any():
-                        neg_logits_sum += neg_logits * neg_mask.sum().item()
-                        neg_count += neg_mask.sum().item()
+                if pos_mask_train.any():
+                    train_pos_logits_sum += task_output_chagas[pos_mask_train].sum().item()
+                    train_pos_count += pos_mask_train.sum().item()
+                if neg_mask_train.any():
+                    train_neg_logits_sum += task_output_chagas[neg_mask_train].sum().item()
+                    train_neg_count += neg_mask_train.sum().item()
 
-        train_loss /= len(train_loader)
+            # ------------------------------------------------------------------
+            # --- Phase 2: Domain Classifier Training (Update Domain Classifier) ---
+            # ------------------------------------------------------------------
+            model.train()
+            # Set requires_grad for domain classifier parameters
+            for param in model.encoder.parameters():
+                param.requires_grad = False # Fix encoder
+            for param in model.classifier.parameters():
+                param.requires_grad = False # Fix label predictor
+            for param in model.domain_classifier.parameters():
+                param.requires_grad = True
 
-        if verbose:
-            # Calculate epoch averages
-            epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
-            epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
-            epoch_pos_prob = pos_probs_sum / pos_count if pos_count > 0 else 0.0
+            optimizer_domain_classifier.zero_grad()
+            # Prepare combined data for Domain Adversarial and Confusion Training
+            all_signals_domain = []
+            all_metas_domain = []
+            all_domain_labels_combined = []
+
+            # Add all DANN datasets for domain tasks
+            for j, ext_iter in enumerate(external_iters): # Iterate over external_iters
+                try:
+                    ext_features, ext_label = next(ext_iter)
+                except StopIteration:
+                    external_iters[j] = iter(external_train_loaders[j]) # Use external_train_loaders here
+                    ext_features, ext_label = next(external_iters[j])
+                
+                signal_ext, meta_ext = ext_features
+                all_signals_domain.append(signal_ext)
+                all_metas_domain.append(meta_ext)
+                all_domain_labels_combined.append(ext_label.to(device))
             
-            print(f"Epoch {epoch + 1} Averages:")
-            print(f"  Positive Logit: {epoch_pos_logit:.4f}")
-            print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
-            print(f"  Positive Probability: {epoch_pos_prob:.4f}")
-        
-        # Calculate training metrics
-        train_auroc = roc_auc_score(train_targets, train_outputs)
-        train_auprc = average_precision_score(train_targets, train_outputs)
-        train_accuracy = accuracy_score(train_targets, np.round(train_outputs))
-        train_f1 = f1_score(train_targets, np.round(train_outputs))
+            combined_domain_signal = torch.cat(all_signals_domain, 0).to(device)
+            combined_domain_meta = torch.cat(all_metas_domain, 0).to(device)
+            combined_domain_target = torch.cat(all_domain_labels_combined, 0).to(device)
 
-        # Validation
+            # Use detached features to prevent gradient flow back to encoder
+            _, domain_output_combined, _ = model(combined_domain_signal, combined_domain_meta)
+            domain_loss = domain_criterion(domain_output_combined, combined_domain_target)
+            
+            domain_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer_domain_classifier.step()
+            total_domain_loss += domain_loss.item()
+            train_domain_targets.extend(combined_domain_target.cpu().numpy())
+            train_domain_outputs.extend(torch.argmax(domain_output_combined, dim=1).detach().cpu().numpy())
+
+            # ------------------------------------------------------------------
+            # --- Phase 3: Confusion Training (Update Encoder) ---
+            # ------------------------------------------------------------------
+            model.train()
+            # Set requires_grad for encoder parameters
+            for param in model.domain_classifier.parameters():
+                param.requires_grad = False # Fix domain predictor
+            for param in model.encoder.parameters():
+                param.requires_grad = True
+            for param in model.classifier.parameters():
+                param.requires_grad = False # Fix label predictor
+
+            optimizer_encoder_confusion.zero_grad()
+            # Re-run forward pass to get features with gradients enabled for encoder
+            _, domain_output_confusion, _ = model(combined_domain_signal, combined_domain_meta)
+            
+            # Maximize domain classifier error: use negative of domain loss
+            # Dynamically calculate dann_lambda
+            dann_lambda = calculate_lambda(epoch, num_epochs, config.dann_lambda)
+            confusion_loss = dann_lambda * confusion_criterion(domain_output_confusion, combined_domain_target)
+            
+            confusion_loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            optimizer_encoder_confusion.step()
+            total_confusion_loss += confusion_loss.item()
+        
+        total_chagas_loss /= len(code15_chagas_loader) # Average over code15 batches
+        total_domain_loss /= max_batches # Average over DANN batches
+        total_confusion_loss /= max_batches # Average over DANN batches
+
+        # Calculate epoch averages for training Chagas logits
+        if verbose:
+            epoch_train_pos_logit = train_pos_logits_sum / train_pos_count if train_pos_count > 0 else 0.0
+            epoch_train_neg_logit = train_neg_logits_sum / train_neg_count if train_neg_count > 0 else 0.0
+
+        # ------------------------------------------------------------------
+        # --- Validation on CODE-15% for Chagas classification ---
+        # ------------------------------------------------------------------
         model.eval()
         val_loss = 0.0
         val_targets = []
         val_outputs = []
-        if verbose:
-            val_pos_logits_sum = 0.0
-            val_neg_logits_sum = 0.0
-            val_pos_probs_sum = 0.0
-            val_pos_count = 0
-            val_neg_count = 0
+        
+        # For Chagas logit printing (validation)
+        val_pos_logits_sum = 0.0
+        val_neg_logits_sum = 0.0
+        val_pos_count = 0
+        val_neg_count = 0
         
         with torch.no_grad():
-            for features, label in val_loader:
+            for features, label in code15_val_loader:
                 signal, meta_features = features
                 signal = signal.to(device)
                 meta_features = meta_features.to(device)
                 label = label.to(device)
 
-                # with autocast:
-                output = model(signal, meta_features)
-                # Reshape label to match output shape [batch_size, 1]
+                task_output, _, _ = model(signal, meta_features)
                 label_reshaped = label.view(-1, 1)
-                loss = criterion(output, label_reshaped)
+                loss = criterion(task_output, label_reshaped)
                 
                 val_loss += loss.item()
                 val_targets.extend(label.cpu().numpy())
-                val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
-                
-                if verbose:
-                    # Calculate positive/negative logit stats for validation
-                    pos_mask = label == 1
-                    neg_mask = ~pos_mask
-                    if pos_mask.any():
-                        pos_logits = output[pos_mask].mean().item()
-                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                        val_pos_logits_sum += pos_logits * pos_mask.sum().item()
-                        val_pos_probs_sum += pos_probs * pos_mask.sum().item()
-                        val_pos_count += pos_mask.sum().item()
-                    if neg_mask.any():
-                        neg_logits = output[neg_mask].mean().item()
-                        val_neg_logits_sum += neg_logits * neg_mask.sum().item()
-                        val_neg_count += neg_mask.sum().item()
+                val_outputs.extend(torch.sigmoid(task_output).detach().cpu().numpy())
 
-        val_loss /= len(val_loader)
+                # Accumulate positive/negative logit stats for validation
+                if verbose:
+                    pos_mask_val = label == 1
+                    neg_mask_val = ~pos_mask_val
+                    if pos_mask_val.any():
+                        val_pos_logits_sum += task_output[pos_mask_val].sum().item()
+                        val_pos_count += pos_mask_val.sum().item()
+                    if neg_mask_val.any():
+                        val_neg_logits_sum += task_output[neg_mask_val].sum().item()
+                        val_neg_count += neg_mask_val.sum().item()
+
+        val_loss /= len(code15_val_loader)
         
+        val_outputs_arr = np.array(val_outputs)
+        val_targets_arr = np.array(val_targets)
+
         if verbose:
             # Calculate validation epoch averages
             val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
             val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
-            val_epoch_pos_prob = val_pos_probs_sum / val_pos_count if val_pos_count > 0 else 0.0
             
-            print(f"Validation Averages:")
-            print(f"  Positive Logit: {val_epoch_pos_logit:.4f}")
-            print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
-            print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
-            
-        # Calculate validation metrics
-        val_outputs_arr = np.array(val_outputs)
-        val_targets_arr = np.array(val_targets)
-
         if len(np.unique(val_targets_arr)) < 2:
             print("WARNING: Only one class present in validation targets")
             val_auroc = 0.5
@@ -865,25 +846,50 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
         val_auprc = average_precision_score(val_targets_arr, val_outputs_arr)
         val_accuracy = accuracy_score(val_targets_arr, np.round(val_outputs_arr))
         val_f1 = f1_score(val_targets_arr, np.round(val_outputs_arr))
-            
-        # Learning rate scheduling
-        if epoch < 5: # For the first 5 epochs, learning rate is fixed by initial_lr_for_unfrozen
-            pass # Do not step any scheduler
-        else: # From epoch 5 onwards, directly use CosineAnnealingLR
-            scheduler.step()
 
         epoch_duration = time.time() - epoch_start_time
 
-        # Print training progress
-        print(f'Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}, Valid Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
-        print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
-        print(f'Valid AUROC: {val_auroc:.4f}, Valid AUPRC: {val_auprc:.4f}, Valid Accuracy: {val_accuracy:.4f}, Valid F1: {val_f1:.4f}\n')
+        print(f'Epoch {epoch + 1}/{num_epochs}, Chagas Loss: {total_chagas_loss:.4f}, Domain Loss: {total_domain_loss:.4f}, Confusion Loss: {total_confusion_loss:.4f}, Valid Loss (Chagas): {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
+        print(f'Valid AUROC (Chagas): {val_auroc:.4f}, Valid AUPRC (Chagas): {val_auprc:.4f}, Valid Accuracy (Chagas): {val_accuracy:.4f}, Valid F1 (Chagas): {val_f1:.4f}')
+        
+        if verbose:
+            print(f"Train Averages (Chagas) - Positive Logit: {epoch_train_pos_logit:.4f}, Negative Logit: {epoch_train_neg_logit:.4f}")
+            # Calculate validation epoch averages
+            val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
+            val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
+            
+            print(f"Valid Averages (Chagas) - Positive Logit: {val_epoch_pos_logit:.4f}, Negative Logit: {val_epoch_neg_logit:.4f}")
 
-        # Early stopping based on AUPRC
+        # ------------------------------------------------------------------
+        # --- Domain Accuracy on CODE-15% ---
+        # ------------------------------------------------------------------
+        for j, ext_val_loader in enumerate(external_val_loaders):
+            ext_val_domain_targets = []
+            ext_val_domain_outputs = []
+            with torch.no_grad():
+                for features, label in ext_val_loader: # label is not used for external datasets in this context
+                    signal, meta_features = features
+                    signal = signal.to(device)
+                    meta_features = meta_features.to(device)
+                    
+                    _, domain_output, _ = model(signal, meta_features)
+                    
+                    domain_label_ext_val = label.to(device) # Directly use label from loader
+                    ext_val_domain_targets.extend(domain_label_ext_val.cpu().numpy())
+                    ext_val_domain_outputs.extend(torch.argmax(domain_output, dim=1).detach().cpu().numpy())
+            
+            ext_domain_accuracy = accuracy_score(ext_val_domain_targets, ext_val_domain_outputs)
+            print(f'Valid Domain Accuracy ({config.external_datasets[j]}): {ext_domain_accuracy:.4f}')
+        print('\n')
+
+        scheduler_task.step()
+        scheduler_domain_classifier.step()
+        scheduler_encoder_confusion.step()
+
         if val_auprc > best_auprc:
             best_auprc = val_auprc
             best_epoch = epoch
-            best_model = model.state_dict()
+            best_model_state = model.state_dict()
             epochs_no_improve = 0
         else:
             epochs_no_improve += 1
@@ -891,18 +897,17 @@ def pretrain_model(pretrain_dataset, model, criterion, optimizer, warmup_epochs,
                 print(f"Early stopping: Valid AUPRC not improved for {early_stop_patience} epochs")
                 break
 
-        # del train_targets, train_outputs, val_targets, val_outputs
-        # torch.cuda.empty_cache()
-        # gc.collect()
-
-    # Save final model
     os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
-    torch.save(best_model, pretrain_model_pth)
-    if verbose:
-        print('Pretraining completed and model saved')
+    if best_model_state:
+        torch.save(best_model_state, pretrain_model_pth)
+        model.load_state_dict(best_model_state)
+        if verbose:
+            print(f'Pretraining completed and best model from epoch {best_epoch + 1} saved to {pretrain_model_pth}')
+    else:
+        torch.save(model.state_dict(), pretrain_model_pth)
+        if verbose:
+            print(f'Pretraining completed and current model saved to {pretrain_model_pth} (no improvement).')
     
-    # Return the trained model
-    model.load_state_dict(best_model)
     return model
 
 def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, optimizers,
@@ -973,7 +978,6 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             if verbose:
                 pos_logits_sum = 0.0
                 neg_logits_sum = 0.0
-                pos_probs_sum = 0.0
                 pos_count = 0
                 neg_count = 0
             
@@ -991,7 +995,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 # if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
                 #     print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
                 
-                output = model(signal, meta_features)
+                task_output, _, _ = model(signal, meta_features)
                 
                 # # Check model output
                 # if torch.isnan(output).any() or torch.isinf(output).any():
@@ -1000,7 +1004,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 
                 # Reshape label to match output shape [batch_size, 1]
                 label_reshaped = label.view(-1, 1)
-                loss = criterion(output, label_reshaped)
+                loss = criterion(task_output, label_reshaped)
                 
                 # # Check loss value
                 # if torch.isnan(loss).any() or torch.isinf(loss).any():
@@ -1018,44 +1022,30 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 
                 train_loss += loss.item()
                 train_targets.extend(label.cpu().numpy())
-                train_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
+                train_outputs.extend(torch.sigmoid(task_output).detach().cpu().numpy())
 
                 if verbose:
                     # Calculate positive/negative logit stats
                     pos_mask = label == 1
                     neg_mask = ~pos_mask
                     if pos_mask.any():
-                        pos_logits = output[pos_mask].mean().item()
-                        pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
+                        pos_logits = task_output[pos_mask].sum().item()
                     else:
                         pos_logits = 0.0
-                        pos_probs = 0.0
                     if neg_mask.any():
-                        neg_logits = output[neg_mask].mean().item()
+                        neg_logits = task_output[neg_mask].sum().item()
                     else:
                         neg_logits = 0.0
                     
                     # Accumulate stats for epoch average
                     if pos_mask.any():
-                        pos_logits_sum += pos_logits * pos_mask.sum().item()
-                        pos_probs_sum += pos_probs * pos_mask.sum().item()
+                        pos_logits_sum += pos_logits
                         pos_count += pos_mask.sum().item()
                     if neg_mask.any():
-                        neg_logits_sum += neg_logits * neg_mask.sum().item()
+                        neg_logits_sum += neg_logits
                         neg_count += neg_mask.sum().item()
 
             train_loss /= len(train_loader)
-
-            if verbose:
-                # Calculate epoch averages
-                epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
-                epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
-                epoch_pos_prob = pos_probs_sum / pos_count if pos_count > 0 else 0.0
-                
-                print(f"Epoch {epoch + 1} Averages:")
-                print(f"  Positive Logit: {epoch_pos_logit:.4f}")
-                print(f"  Negative Logit: {epoch_neg_logit:.4f}") 
-                print(f"  Positive Probability: {epoch_pos_prob:.4f}")
 
             schedulers[fold].step()
 
@@ -1073,7 +1063,6 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             if verbose:
                 val_pos_logits_sum = 0.0
                 val_neg_logits_sum = 0.0
-                val_pos_probs_sum = 0.0
                 val_pos_count = 0
                 val_neg_count = 0
 
@@ -1085,42 +1074,29 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                     label = label.to(config.device)
 
                     # with autocast:
-                    output = model(signal, meta_features)
+                    task_output, _, _ = model(signal, meta_features)
                     # Reshape label to match output shape [batch_size, 1]
                     label_reshaped = label.view(-1, 1)
-                    loss = criterion(output, label_reshaped)
+                    loss = criterion(task_output, label_reshaped)
                     
                     val_loss += loss.item()
                     val_targets.extend(label.cpu().numpy())
-                    val_outputs.extend(torch.sigmoid(output).detach().cpu().numpy())
+                    val_outputs.extend(torch.sigmoid(task_output).detach().cpu().numpy())
                     if verbose:
                         # Calculate positive/negative logit stats for validation
                         pos_mask = label == 1
                         neg_mask = ~pos_mask
                         if pos_mask.any():
-                            pos_logits = output[pos_mask].mean().item()
-                            pos_probs = torch.sigmoid(output[pos_mask]).mean().item()
-                            val_pos_logits_sum += pos_logits * pos_mask.sum().item()
-                            val_pos_probs_sum += pos_probs * pos_mask.sum().item()
+                            pos_logits = task_output[pos_mask].sum().item()
+                            val_pos_logits_sum += pos_logits
                             val_pos_count += pos_mask.sum().item()
                         if neg_mask.any():
-                            neg_logits = output[neg_mask].mean().item()
-                            val_neg_logits_sum += neg_logits * neg_mask.sum().item()
+                            neg_logits = task_output[neg_mask].sum().item()
+                            val_neg_logits_sum += neg_logits
                             val_neg_count += neg_mask.sum().item()
 
             val_loss /= len(val_loader)
             
-            if verbose:
-                # Calculate validation epoch averages
-                val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
-                val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
-                val_epoch_pos_prob = val_pos_probs_sum / val_pos_count if val_pos_count > 0 else 0.0
-                
-                print(f"Validation Averages:")
-                print(f"  Positive Logit: {val_epoch_pos_logit:.4f}")
-                print(f"  Negative Logit: {val_epoch_neg_logit:.4f}")
-                print(f"  Positive Probability: {val_epoch_pos_prob:.4f}")
-
             val_auroc = roc_auc_score(val_targets, val_outputs)
             val_auprc = average_precision_score(val_targets, val_outputs)
             val_accuracy = accuracy_score(val_targets, np.round(val_outputs))
@@ -1132,6 +1108,16 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f'Epoch {epoch + 1}/{config.num_epochs}, Train Loss: {train_loss:.4f}, Valid Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
                 print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
                 print(f'Valid AUROC: {val_auroc:.4f}, Valid AUPRC: {val_auprc:.4f}, Valid Accuracy: {val_accuracy:.4f}, Valid F1: {val_f1:.4f}\n')
+                # Calculate epoch averages
+                epoch_pos_logit = pos_logits_sum / pos_count if pos_count > 0 else 0.0
+                epoch_neg_logit = neg_logits_sum / neg_count if neg_count > 0 else 0.0
+                
+                print(f"Epoch {epoch + 1} Averages (Train) - Positive Logit: {epoch_pos_logit:.4f}, Negative Logit: {epoch_neg_logit:.4f}")
+                # Calculate validation epoch averages
+                val_epoch_pos_logit = val_pos_logits_sum / val_pos_count if val_pos_count > 0 else 0.0
+                val_epoch_neg_logit = val_neg_logits_sum / val_neg_count if val_neg_count > 0 else 0.0
+                
+                print(f"Valid Averages (Valid) - Positive Logit: {val_epoch_pos_logit:.4f}, Negative Logit: {val_epoch_neg_logit:.4f}")
 
             # Early stopping based on AUPRC
             if val_auprc > best_auprc:
@@ -1181,10 +1167,10 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
                 meta_features = meta_features.to(config.device)
                 label = label.to(config.device)
 
-                output = model(signal, meta_features)
-                outputs.extend(torch.sigmoid(output).cpu().numpy())
+                task_output, _, _ = model(signal, meta_features)
+                outputs.extend(torch.sigmoid(task_output).cpu().numpy())
                 targets.extend(label.cpu().numpy())
-                all_logits.extend(output.cpu().numpy())
+                all_logits.extend(task_output.cpu().numpy())
         
         # Calculate metrics
         auroc = roc_auc_score(targets, outputs)
@@ -1267,61 +1253,26 @@ def load_model(model_folder, verbose):
 # Run your trained model. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function.
 def run_model(record, model, verbose):
-    base_name = os.path.splitext(os.path.basename(record))[0]
-    signal_path = os.path.join(config.cache_folder, f"{base_name}_signal.npy")
-    
-    # Check if the preprocessed signal file exists in the cache folder
-    if not os.path.exists(signal_path):
-        # If not, perform data preprocessing
-        # Initialize filters once
-        highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
-        data_preprocess(
-            record,
-            config,
-            highpass_filter_params,
-            lowpass_filter_params,
-            notch50_filter_params,
-            notch60_filter_params
-        )
-    
-    signal = np.load(signal_path).astype(np.float32)
-
-    # Load meta data from original record
-    header = load_header(record)
-    age = get_age(header) if config.use_age else 0
-    sex = get_sex(header) if config.use_sex else 'Unknown'
-    
-    one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)
-    if sex == 'Female':
-        one_hot_encoding_sex[0] = True
-    elif sex == 'Male':
-        one_hot_encoding_sex[1] = True
-    else:
-        one_hot_encoding_sex[2] = True
-
-    # get meta features
-    meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
-    ptr = 0
-    
-    if config.use_age:
-        meta_features[ptr] = age
-        ptr += 1
-    if config.use_sex:
-        meta_features[ptr:ptr+3] = one_hot_encoding_sex
-        ptr += 3
-    if config.use_signal_stats:
-        valid_samples = np.isfinite(signal).sum()
-        meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
-        meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0
-        ptr += 2
+    # Initialize filters once
+    highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
+    # Call data_preprocess to get the processed signal, meta_features, and label directly
+    _, signal, meta_features, _ = data_preprocess(
+        record,
+        config,
+        highpass_filter_params,
+        lowpass_filter_params,
+        notch50_filter_params,
+        notch60_filter_params
+    )
 
     # extend batch dimension
     signal = np.expand_dims(signal, axis=0)
     meta_features = np.expand_dims(meta_features, axis=0)
     
     # transfer to device
-    signal = torch.from_numpy(signal).to(config.device)
-    meta_features = torch.from_numpy(meta_features).to(config.device)    
+    signal = torch.from_numpy(signal).float().to(config.device)
+    signal = signal.permute(0, 2, 1)  # Change to (batch_size, channels, length)
+    meta_features = torch.from_numpy(meta_features).float().to(config.device)    
 
     # Handle single model or model list
     if isinstance(model, list):
@@ -1330,16 +1281,16 @@ def run_model(record, model, verbose):
         for m in model:
             m.eval()
             with torch.no_grad():
-                output = m(signal, meta_features)
-                prob = torch.sigmoid(output.view(-1)[0]).item()
+                task_output, _, _ = m(signal, meta_features)
+                prob = torch.sigmoid(task_output.view(-1)[0]).item()
                 probabilities.append(prob)
         probability_output = sum(probabilities) / len(probabilities)
     else:
         # Single model prediction
         model.eval()
         with torch.no_grad():
-            output = model(signal, meta_features)
-            probability_output = torch.sigmoid(output.view(-1)[0]).item()
+            task_output, _, _ = model(signal, meta_features)
+            probability_output = torch.sigmoid(task_output.view(-1)[0]).item()
 
     binary_output = probability_output > 0.5
 
@@ -1377,21 +1328,10 @@ def make_weights_for_balanced_classes(dataset):
     weights = np.zeros_like(targets, dtype=np.float32)
     weights[np.isclose(targets, 0.0)] = 1.0    # Negative class weight
     weights[np.isclose(targets, 1.0)] = config.pos_sample_weight_multiplier   # Positive class weight (configurable ratio)
-    return weights
+    return weights.flatten()
 
-# Define a helper function for multiprocessing (moved to global scope)
-def _preprocess_single_record_global(record_path, config, highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params):
-    data_preprocess(
-        record_path,
-        config,
-        highpass_filter_params,
-        lowpass_filter_params,
-        notch50_filter_params,
-        notch60_filter_params
-    )
-
-# Define a helper function for multiprocessing (moved to global scope)
-def _classify_record_global(record, data_folder):
-    header = load_header(os.path.join(data_folder, record))
+# Split into CODE-15% and other records (parallel processing)
+def classify_record(record_full_path):
+    header = load_header(record_full_path)
     source = get_source(header)
-    return (record, source)
+    return (record_full_path, source)
