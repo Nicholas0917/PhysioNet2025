@@ -23,7 +23,7 @@ nhead = 8       # number of heads
 d_ff = 2048     # feed forward layer size
 num_layers = 12  # number of encoding layers, originally be 8
 class_token = True # adding classification token by Xiaoya
-if_attn_gated_module = True # adding attention gated module for channel by Xiaoya
+if_attn_gated_module = False # adding attention gated module for channel by Xiaoya
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -51,7 +51,7 @@ import torch.nn.functional as F
 
 # -------- Step 1: Simulate 12-lead ECG --------
 sampling_rate = 500
-duration = 15 # seconds
+duration = 10 # seconds
 n_samples = sampling_rate * duration
 
 # Generate 12 synthetic ECG signals (independent for demo purposes)
