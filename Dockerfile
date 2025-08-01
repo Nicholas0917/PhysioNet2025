@@ -13,6 +13,14 @@ RUN mkdir -p ./tmp \
     && tar -xzf ./tmp/ECG_signal.tar.gz -C ./tmp \
     && rm ./tmp/ECG_signal.tar.gz
 
+RUN wget -O ./tmp/CSPC_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CSPC_data.hdf5?download=true"
+RUN wget -O ./tmp/CSPC_extra.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CSPC_extra_data.hdf5?download=true"
+RUN wget -O ./tmp/Chapman_Shaoxing_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/Chapman_Shaoxing_data.hdf5?download=true"
+RUN wget -O ./tmp/Georgia_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/Georgia_data.hdf5?download=true"
+RUN wget -O ./tmp/Ningbo_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/Ningbo_data.hdf5?download=true"
+RUN wget -O ./tmp/PTB_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/PTB_data.hdf5?download=true"
+RUN wget -O ./tmp/ST_Petersburg_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/ST_Petersburg_data.hdf5?download=true"
+
 
 ## Include the following line if you have a requirements.txt file.
 RUN pip install -r requirements.txt
