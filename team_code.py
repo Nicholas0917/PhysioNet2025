@@ -35,6 +35,10 @@ from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
 from torch.optim.lr_scheduler import OneCycleLR
 import h5py
+from sklearn.manifold import TSNE
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 # Import from our modules
 from dataset import *
@@ -71,6 +75,7 @@ class Config:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
         self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', './tmp'), 'pretrain_model.pth')
+        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
 
         # DANN parameters
         self.num_domains = 8 # code15, CSPC, CSPC_extra, Chapman_Shaoxing, Georgia, Ningbo, PTB, ST_Petersburg
@@ -268,7 +273,8 @@ def train_model(data_folder, model_folder, verbose):
     
     # Define HDF5 file paths
     code15_hdf5_path = os.path.join(config.cache_folder, 'CODE15_data.hdf5')
-    finetune_hdf5_path = os.path.join(config.cache_folder, 'finetune_data.hdf5')
+    samitrop_hdf5_path = os.path.join(config.cache_folder, 'SaMiTrop_data.hdf5')
+    ptbxl_hdf5_path = os.path.join(config.cache_folder, 'PTBXL_data.hdf5')
     
     # Initialize filters once
     highpass_filter_params, lowpass_filter_params, notch50_filter_params, notch60_filter_params = initialize_filters()
@@ -277,8 +283,9 @@ def train_model(data_folder, model_folder, verbose):
     with ProcessPoolExecutor(max_workers=cpu_num) as executor:
         results = list(executor.map(classify_record, records_full_path))
     
-    code15_records_full_path = [r for r, src in results if src == 'CODE-15%']
-    finetune_records_full_path = [r for r, src in results if src != 'CODE-15%']
+    code15_records_full_path = [r for r, src in results if src == 'CODE15']
+    samitrop_records_full_path = [r for r, src in results if src == 'SaMiTrop']
+    ptbxl_records_full_path = [r for r, src in results if src == 'PTBXL']
     
     del records_relative, results
     torch.cuda.empty_cache()
@@ -364,16 +371,32 @@ def train_model(data_folder, model_folder, verbose):
             print(f"Using existing {dataset_name} data file at {hdf5_path}")
 
     # Preprocess and write CODE-15% data
-    preprocess_and_write_to_hdf5(code15_records_full_path, code15_hdf5_path, 'CODE15_data')
+    if not os.path.exists(code15_hdf5_path):
+        preprocess_and_write_to_hdf5(code15_records_full_path, code15_hdf5_path, 'CODE15_data')
+    else:
+        print(f"Skipping CODE15_data preprocessing as {code15_hdf5_path} already exists.")
 
-    # Preprocess and write finetune data
-    preprocess_and_write_to_hdf5(finetune_records_full_path, finetune_hdf5_path, 'finetune_data')
+    # Preprocess and write SaMiTrop data
+    if not os.path.exists(samitrop_hdf5_path):
+        preprocess_and_write_to_hdf5(samitrop_records_full_path, samitrop_hdf5_path, 'SaMiTrop_data')
+    else:
+        print(f"Skipping SaMiTrop_data preprocessing as {samitrop_hdf5_path} already exists.")
 
-    del code15_records_full_path, finetune_records_full_path
+    # Preprocess and write PTB-XL data
+    if not os.path.exists(ptbxl_hdf5_path):
+        preprocess_and_write_to_hdf5(ptbxl_records_full_path, ptbxl_hdf5_path, 'PTBXL_data')
+    else:
+        print(f"Skipping PTBXL_data preprocessing as {ptbxl_hdf5_path} already exists.")
 
+    del code15_records_full_path, samitrop_records_full_path, ptbxl_records_full_path
+    
     # Create datasets using the new HDF5 files
     pretrain_dataset = ECGDataset(code15_hdf5_path, is_training=True, config=config)
-    finetune_dataset = ECGDataset(finetune_hdf5_path, is_training=True, config=config)
+    
+    # Create finetune datasets from SaMiTrop and PTB-XL
+    samitrop_dataset = ECGDataset(samitrop_hdf5_path, is_training=True, config=config)
+    ptbxl_dataset = ECGDataset(ptbxl_hdf5_path, is_training=True, config=config)
+    finetune_dataset = torch.utils.data.ConcatDataset([samitrop_dataset, ptbxl_dataset])
     
     # Initialize external datasets (if needed for pretraining)
     external_datasets = []
@@ -435,8 +458,10 @@ def train_model(data_folder, model_folder, verbose):
     ############################################################################
     if verbose:
         pretrain_eval_dataset = ECGDataset(code15_hdf5_path, is_training=False, config=config)
-        finetune_eval_dataset = ECGDataset(finetune_hdf5_path, is_training=False, config=config)
-        evaluate_model(model, pretrain_eval_dataset, finetune_eval_dataset, verbose)
+        samitrop_eval_dataset = ECGDataset(samitrop_hdf5_path, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(ptbxl_hdf5_path, is_training=False, config=config)
+        finetune_eval_dataset = torch.utils.data.ConcatDataset([samitrop_eval_dataset, ptbxl_eval_dataset])
+        evaluate_model(model, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_datasets, verbose, 'pretrain')
     
     ############################################################################
     # Stage 3: Finetune on target datasets
@@ -493,14 +518,14 @@ def train_model(data_folder, model_folder, verbose):
         if classifier_params:
             param_groups.append({
                 'params': classifier_params,
-                'lr': config.learning_rate * 20,
+                'lr': config.learning_rate * 10,
                 'name': 'classifier'
             })
         
         if meta_net_params:
             param_groups.append({
                 'params': meta_net_params,
-                'lr': config.learning_rate * 20,
+                'lr': config.learning_rate * 10,
                 'name': 'meta_net'
             })
         
@@ -533,6 +558,16 @@ def train_model(data_folder, model_folder, verbose):
     )
     print_memory_usage("After finetune_model function call")
     
+    ############################################################################
+    # Stage 4: Evaluate finetuned model
+    ############################################################################
+    if verbose:
+        pretrain_eval_dataset = ECGDataset(code15_hdf5_path, is_training=False, config=config)
+        samitrop_eval_dataset = ECGDataset(samitrop_hdf5_path, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(ptbxl_hdf5_path, is_training=False, config=config)
+        finetune_eval_dataset = torch.utils.data.ConcatDataset([samitrop_eval_dataset, ptbxl_eval_dataset])
+        evaluate_model(model, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_datasets, verbose, 'finetune')
+
     if verbose:
         print('Done.')
         print()
@@ -542,6 +577,17 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
                   pretrain_model_pth, verbose):
     """Core pretraining logic with training loop and model saving, incorporating DANN"""
     # torch.autograd.set_detect_anomaly(True)
+    os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
+    
+    if os.path.exists(config.pretrain_model_path):
+        if verbose:
+            print(f"Found existing pretrained model at {config.pretrain_model_path}. Loading model and skipping pretraining.")
+        model.load_state_dict(torch.load(config.pretrain_model_path, map_location=device))
+        # Add the following lines to save the model after loading
+        torch.save(model.state_dict(), pretrain_model_pth)
+        if verbose:
+            print(f"Loaded pretrained model saved to {pretrain_model_pth}.")
+        return model
 
     if verbose:
         print(f'Starting pretraining on CODE-15% ({len(pretrain_dataset)} records) and External ({sum(len(ds) for ds in external_datasets)} records) for domain adaptation.')
@@ -861,7 +907,7 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
             print(f"Valid Averages (Chagas) - Positive Logit: {val_epoch_pos_logit:.4f}, Negative Logit: {val_epoch_neg_logit:.4f}")
 
         # ------------------------------------------------------------------
-        # --- Domain Accuracy on CODE-15% ---
+        # --- Domain Accuracy on all datasets ---
         # ------------------------------------------------------------------
         for j, ext_val_loader in enumerate(external_val_loaders):
             ext_val_domain_targets = []
@@ -897,7 +943,6 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
                 print(f"Early stopping: Valid AUPRC not improved for {early_stop_patience} epochs")
                 break
 
-    os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
     if best_model_state:
         torch.save(best_model_state, pretrain_model_pth)
         model.load_state_dict(best_model_state)
@@ -989,26 +1034,12 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
 
                 optimizers[fold].zero_grad()
                 # with autocast:  # Disabled mixed precision training
-                # Check input data
-                # if torch.isnan(signal).any() or torch.isinf(signal).any():
-                #     print(f"WARNING: Input signal contains NaN/Inf values at batch {i}")
-                # if torch.isnan(meta_features).any() or torch.isinf(meta_features).any():
-                #     print(f"WARNING: Meta features contain NaN/Inf values at batch {i}")
                 
                 task_output, _, _ = model(signal, meta_features)
-                
-                # # Check model output
-                # if torch.isnan(output).any() or torch.isinf(output).any():
-                #     print(f"WARNING: Model output contains NaN/Inf values at batch {i}")
-                #     print(f"Output stats - min: {output.min().item():.4f}, max: {output.max().item():.4f}, mean: {output.mean().item():.4f}")
                 
                 # Reshape label to match output shape [batch_size, 1]
                 label_reshaped = label.view(-1, 1)
                 loss = criterion(task_output, label_reshaped)
-                
-                # # Check loss value
-                # if torch.isnan(loss).any() or torch.isinf(loss).any():
-                #     print(f"WARNING: Loss contains NaN/Inf values at batch {i}")
                 
                 # Gradient clipping
                 # scaler.scale(loss).backward()
@@ -1146,10 +1177,39 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         if verbose:
             print(f'Finetuning completed for fold {fold+1}')
 
-def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
+def evaluate_model(model, code15_dataset, samitrop_dataset, ptbxl_dataset, external_datasets, verbose, stage_name):
     """Evaluate model performance on both pretrain and finetune datasets"""
     model.eval()
-    
+    # mkdir visualisation_folder
+    os.makedirs(config.visualisation_folder, exist_ok=True)
+
+    def collect_encoder_features_and_labels(dataset, num_samples_to_take=None):
+        features_list = []
+        labels_list = []
+        if dataset is None or len(dataset) == 0:
+            return np.array([]), np.array([])
+
+        if num_samples_to_take is not None:
+            indices = np.random.choice(len(dataset), min(len(dataset), num_samples_to_take), replace=False)
+            subset = Subset(dataset, indices)
+            loader = DataLoader(subset, batch_size=config.batch_size, shuffle=False, num_workers=config.num_preprocess_workers)
+        else:
+            loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=False, num_workers=config.num_preprocess_workers)
+
+        with torch.no_grad():
+            for features, label in loader:
+                signal, meta_features = features
+                signal = signal.to(config.device)
+                meta_features = meta_features.to(config.device)
+
+                encoder_output = model.encoder(signal, meta_features)
+                features_list.append(encoder_output.cpu().numpy())
+                labels_list.extend(label.cpu().numpy())
+
+        if not features_list:
+            return np.array([]), np.array([])
+        return np.vstack(features_list), np.array(labels_list)
+
     def evaluate_dataset(dataset, dataset_name):
         loader = DataLoader(dataset,
                           batch_size=config.batch_size,
@@ -1198,11 +1258,156 @@ def evaluate_model(model, pretrain_dataset, finetune_dataset, verbose):
         # torch.cuda.empty_cache()
         # gc.collect()
     
-    # Evaluate on pretrain dataset
-    evaluate_dataset(pretrain_dataset, "Pretrain")
+    # Evaluate on code15 dataset (formerly pretrain_dataset)
+    evaluate_dataset(code15_dataset, "Pretrain")
     
-    # Evaluate on finetune dataset
-    evaluate_dataset(finetune_dataset, "Finetune")
+    # Concatenate samitrop_dataset and ptbxl_dataset for finetune evaluation
+    finetune_combined_dataset = torch.utils.data.ConcatDataset([samitrop_dataset, ptbxl_dataset])
+    evaluate_dataset(finetune_combined_dataset, "Finetune")
+
+    if verbose:
+        print("\nStarting DANN visualization...")
+        
+        # Collect features and domain labels for t-SNE visualization
+        all_features = []
+        all_domain_labels = []
+        samples_per_domain = 1000 # User specified 1000 samples per domain
+
+        # Prepare a list of all datasets to sample from, with their corresponding domain names
+        datasets_for_tsne = []
+
+        # Add SaMiTrop dataset
+        if samitrop_dataset is not None and len(samitrop_dataset) > 0:
+            datasets_for_tsne.append({'name': 'SaMiTrop', 'dataset': samitrop_dataset})
+
+        # Add PTB-XL dataset
+        if ptbxl_dataset is not None and len(ptbxl_dataset) > 0:
+            datasets_for_tsne.append({'name': 'PTB-XL', 'dataset': ptbxl_dataset})
+
+        # Add external datasets
+        for i, ext_ds in enumerate(external_datasets):
+            if ext_ds is not None and len(ext_ds) > 0:
+                datasets_for_tsne.append({'name': config.external_datasets[i], 'dataset': ext_ds})
+
+        if not datasets_for_tsne:
+            print("No datasets available for DANN visualization. Skipping t-SNE.")
+            return
+
+        # Collect features and domain labels
+        for i, item in enumerate(datasets_for_tsne):
+            ds_name = item['name']
+            dataset = item['dataset']
+            num_samples_to_take = min(len(dataset), samples_per_domain)
+            
+            if num_samples_to_take > 0:
+                # Use the unified function to collect features and labels
+                features_from_dataset, labels_from_dataset = collect_encoder_features_and_labels(dataset, num_samples_to_take)
+                all_features.append(features_from_dataset)
+                # Convert numerical labels to domain names
+                domain_names_from_dataset = [ds_name] * len(labels_from_dataset) # Assign domain name directly
+                all_domain_labels.extend(domain_names_from_dataset)
+
+        if not all_features:
+            print("No features collected for DANN visualization. Skipping t-SNE.")
+            return
+
+        all_features = np.vstack(all_features)
+
+        # Perform t-SNE
+        print(f"Performing t-SNE on {len(all_features)} samples...")
+        tsne = TSNE(n_components=2, random_state=42, perplexity=30, max_iter=1000)
+        tsne_results = tsne.fit_transform(all_features)
+
+        # Create DataFrame for plotting
+        df_tsne = pd.DataFrame(tsne_results, columns=['TSNE1', 'TSNE2'])
+        df_tsne['Domain'] = all_domain_labels
+
+        # Plotting
+        plt.figure(figsize=(12, 10))
+        sns.scatterplot(
+            x="TSNE1", y="TSNE2",
+            hue="Domain",
+            palette=sns.color_palette("hsv", len(np.unique(all_domain_labels))),
+            data=df_tsne,
+            legend="full",
+            alpha=0.7
+        )
+        plt.title(f't-SNE Visualization of Encoder Features by Domain ({stage_name})')
+        plt.xlabel('t-SNE Dimension 1')
+        plt.ylabel('t-SNE Dimension 2')
+        plt.grid(True)
+
+        # Save the plot
+        output_folder = config.visualisation_folder
+        os.makedirs(output_folder, exist_ok=True)
+        plot_path = os.path.join(output_folder, f'dann_tsne_visualization_{stage_name}.png')
+        plt.savefig(plot_path)
+        plt.close()
+        print(f"t-SNE visualization saved to {plot_path}")
+
+        # Chagas visualization for Pretrain dataset
+        print("\nStarting Chagas task feature visualization for CODE15 dataset...")
+        code15_features, code15_labels = collect_encoder_features_and_labels(code15_dataset, num_samples_to_take=None)
+        
+        if code15_features.size > 0:
+            print(f"Performing t-SNE on {len(code15_features)} samples for CODE15 Chagas task visualization...")
+            tsne_results_code15_chagas = tsne.fit_transform(code15_features)
+
+            df_tsne_code15_chagas = pd.DataFrame(tsne_results_code15_chagas, columns=['TSNE1', 'TSNE2'])
+            df_tsne_code15_chagas['Chagas Label'] = code15_labels
+
+            plt.figure(figsize=(10, 8))
+            sns.scatterplot(
+                x="TSNE1", y="TSNE2",
+                hue="Chagas Label",
+                palette="coolwarm",
+                data=df_tsne_code15_chagas,
+                legend="full",
+                alpha=0.7
+            )
+            plt.title(f't-SNE Visualization of Encoder Features for Pretrain Chagas Task ({stage_name})')
+            plt.xlabel('t-SNE Dimension 1')
+            plt.ylabel('t-SNE Dimension 2')
+            plt.grid(True)
+
+            plot_path_code15_chagas = os.path.join(config.visualisation_folder, f'code15_chagas_tsne_visualization_{stage_name}.png')
+            plt.savefig(plot_path_code15_chagas)
+            plt.close()
+            print(f"Pretrain Chagas task t-SNE visualization saved to {plot_path_code15_chagas}")
+        else:
+            print("No features collected for Pretrain Chagas task visualization. Skipping t-SNE.")
+
+        # Chagas visualization for Finetune dataset
+        print("\nStarting Chagas task feature visualization for Finetune dataset...")
+        finetune_combined_features, finetune_combined_labels = collect_encoder_features_and_labels(finetune_combined_dataset)
+
+        if finetune_combined_features.size > 0:
+            print(f"Performing t-SNE on {len(finetune_combined_features)} samples for Finetune Chagas task visualization...")
+            tsne_results_finetune_combined_chagas = tsne.fit_transform(finetune_combined_features)
+
+            df_tsne_finetune_combined_chagas = pd.DataFrame(tsne_results_finetune_combined_chagas, columns=['TSNE1', 'TSNE2'])
+            df_tsne_finetune_combined_chagas['Chagas Label'] = finetune_combined_labels
+
+            plt.figure(figsize=(10, 8))
+            sns.scatterplot(
+                x="TSNE1", y="TSNE2",
+                hue="Chagas Label",
+                palette="coolwarm",
+                data=df_tsne_finetune_combined_chagas,
+                legend="full",
+                alpha=0.7
+            )
+            plt.title(f't-SNE Visualization of Encoder Features for Finetune Chagas Task ({stage_name})')
+            plt.xlabel('t-SNE Dimension 1')
+            plt.ylabel('t-SNE Dimension 2')
+            plt.grid(True)
+
+            plot_path_finetune_combined_chagas = os.path.join(config.visualisation_folder, f'finetune_combined_chagas_tsne_visualization_{stage_name}.png')
+            plt.savefig(plot_path_finetune_combined_chagas)
+            plt.close()
+            print(f"Finetune Chagas task t-SNE visualization saved to {plot_path_finetune_combined_chagas}")
+        else:
+            print("No features collected for Finetune Chagas task visualization. Skipping t-SNE.")
 
 # Load your trained models. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function. If you do not train one of the models, then you can return None for the model.
@@ -1334,4 +1539,12 @@ def make_weights_for_balanced_classes(dataset):
 def classify_record(record_full_path):
     header = load_header(record_full_path)
     source = get_source(header)
-    return (record_full_path, source)
+    
+    if source == 'CODE-15%':
+        return (record_full_path, 'CODE15')
+    elif source == 'SaMi-Trop':
+        return (record_full_path, 'SaMiTrop')
+    elif source == 'PTB-XL':
+        return (record_full_path, 'PTBXL')
+    else:
+        return (record_full_path, 'Other')
