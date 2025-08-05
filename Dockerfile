@@ -22,7 +22,7 @@ RUN wget -O ./tmp/CODE15_data_part_aa "https://huggingface.co/datasets/xiaoyuwan
     && wget -O ./tmp/CODE15_data_part_ad "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ad?download=true"
 
 # combine the CODE15 data parts into a single file
-cat ./tmp/CODE15_data_part_* > ./tmp/CODE15_data.hdf5
+RUN cat ./tmp/CODE15_data_part_* > ./tmp/CODE15_data.hdf5
 
 # Download the finetune data
 RUN wget -O ./tmp/finetune_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/finetune_data.hdf5?download=true"
