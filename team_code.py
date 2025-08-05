@@ -19,6 +19,7 @@ from functools import partial
 import gc
 import psutil
 import requests
+import json
 
 import joblib
 import numpy as np
@@ -44,7 +45,7 @@ import pandas as pd
 from dataset import *
 from helper_code import *
 from loss import *
-from models import *
+from model import *
 from utils import *
 
 ################################################################################
@@ -55,198 +56,153 @@ from utils import *
 
 class Config:
     def __init__(self):
-        self.model_name = 'ResNet18' # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
-        self.use_pretrained = True
-        self.pretrain_num_epochs = 50
-        self.pretrain_learning_rate = 3e-5
-        self.pretrain_batch_size = 128
-        self.gradient_accumulation_steps = 1 # not used in this code
-        self.pretrain_early_stop_patience = 8
-        self.num_epochs = 100
-        self.learning_rate = 1e-6
-        self.dropout_rate = 0.3
-        self.net1d_dropout_rate = 0.3
-        self.batch_size = 32
-        self.early_stop_patience = 8
-        self.num_preprocess_workers = os.cpu_count()
-        self.use_age = True
-        self.use_sex = True
-        self.use_signal_stats = False
+        # --- General & Path Settings ---
+        self.model_name = 'ResNet18'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
-        self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', './tmp'), 'pretrain_model.pth')
+        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp')
+        self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
         self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
+        self.num_preprocess_workers = os.cpu_count() // 4
 
-        # DANN parameters
-        self.num_domains = 8 # CODE15, CSPC, CSPC_extra, Chapman_Shaoxing, Georgia, Ningbo, PTB, ST_Petersburg, SaMiTrop, PTBXL
-        self.external_datasets = ['CODE15', 'CSPC', 'CSPC_extra', 'Chapman_Shaoxing', 'Georgia', 'Ningbo', 'PTB', 'ST_Petersburg']
-        self.dann_lambda = 0.5 # Weight for domain classification loss
-        self.dann_alpha = 10.0 # Alpha for dynamic DANN lambda calculation
+        # --- Model Architecture ---
+        self.model = {
+            "use_pretrained": True,
+            "dropout_rate": 0.3,
+            "net1d_dropout_rate": 0.3,
+            "meta_features": {
+                "use_age": True,
+                "use_sex": True,
+                "use_signal_stats": False,
+            }
+        }
+        
+        # --- Pre-training Settings ---
+        self.pretrain = {
+            "num_epochs": 50,
+            "learning_rate": 3e-5,
+            "batch_size": 128,
+            "early_stop_patience": 8,
+            "loss": {
+                "focal_gamma": 2,
+                "margin": 0.1,
+                "s": 30,
+                "lmf_alpha": 0.98,
+                "lmf_beta": 0.02,
+                "label_smoothing": 0.0
+            }
+        }
 
-        # Loss parameters
-        self.pretrain_focal_gamma = 2
-        self.pretrain_margin = 0.1
-        self.pretrain_s = 30
-        self.pretrain_lmf_alpha = 0.98
-        self.pretrain_lmf_beta = 0.02
-        self.pretrain_label_smoothing = 0.0
-
-        self.finetune_focal_gamma = 2
-        self.finetune_margin = 0.8
-        self.finetune_s = 1
-        self.finetune_lmf_alpha = 0.98
-        self.finetune_lmf_beta = 0.02
-        self.finetune_label_smoothing = 0.2
+        # --- Fine-tuning Settings ---
+        self.finetune = {
+            "num_epochs": 100,
+            "learning_rate": 1e-6,
+            "batch_size": 32,
+            "early_stop_patience": 8,
+            "loss": {
+                "focal_gamma": 2,
+                "margin": 0.8,
+                "s": 1,
+                "lmf_alpha": 0.98,
+                "lmf_beta": 0.02,
+                "label_smoothing": 0.2
+            }
+        }
         
-        # WeightedRandomSampler parameters
-        self.pos_sample_weight_multiplier = 1.0
+        # --- Domain-Adversarial Neural Network (DANN) Settings ---
+        self.dann = {
+            "num_domains": 8,
+            "external_datasets": ['CODE15', 'CSPC', 'CSPC_extra', 'Chapman_Shaoxing', 'Georgia', 'Ningbo', 'PTB', 'ST_Petersburg'],
+            "lambda": 0.3,  # Max weight for domain confusion loss
+            "alpha": 10.0  # Steepness of the lambda scheduler
+        }
         
-        # Data augmentation parameters with probabilities
-        self.use_noise_aug = True
-        self.noise_std = 0.03
-        self.noise_aug_prob = 0.8
-        
-        self.use_scaling_aug = True
-        self.scaling_min = 0.5
-        self.scaling_max = 2.0
-        self.scaling_aug_prob = 0.8
-        
-        self.use_flip_aug = False
-        self.flip_aug_prob = 0.2
-        
-        self.use_shift_aug = True
-        self.shift_max_ratio = 0.8
-        self.shift_aug_prob = 0.8
-        
-        self.use_drop_aug = True
-        self.drop_max_prob = 0.02
-        self.drop_aug_prob = 0.8
-        
-        self.add_power_noise = False
-        self.power_noise_amplitude = 0.03
-        self.power_noise_prob = 0.5
-        
-        self.use_sine_wave_aug = False
-        self.sine_min_freq = 0.001
-        self.sine_max_freq = 0.02
-        self.sine_max_amp = 0.08
-        self.sine_aug_prob = 0.3
-        
-        self.use_square_wave_aug = False
-        self.square_min_freq = 0.001
-        self.square_max_freq = 0.1
-        self.square_max_amp = 0.08
-        self.square_aug_prob = 0.3
-        
-        self.use_cutout_aug = True
-        self.cutout_max_ratio = 0.2    # Max cutout ratio of signal length
-        self.cutout_aug_prob = 0.5
-        
-        self.use_lead_mixing_aug = True
-        self.lead_mixing_lambda = 0.2  # Mixing coefficient
-        self.lead_mixing_prob = 0.8    # Probability of applying
-        
-        self.use_time_warp_aug = True
-        self.time_wrap_min_hz = 450
-        self.time_wrap_max_hz = 550
-        self.time_wrap_prob = 0.5       # Probability of applying
-
-        # Baseline wander augmentation parameters
-        self.use_baseline_wander = True
-        self.baseline_wander_min_freq = 0.05  # Hz
-        self.baseline_wander_max_freq = 0.2   # Hz
-        self.baseline_wander_amp_ratio = 0.2  # Amplitude ratio to signal std
-        self.baseline_wander_prob = 0.3       # Probability of applying
-        
-        self.is_pretrain = False
+        # --- Data Augmentation Settings ---
+        self.augmentation = {
+            "pos_sample_weight_multiplier": 1.0,
+            "noise": {"use": True, "std": 0.03, "prob": 0.8},
+            "scaling": {"use": True, "min": 0.5, "max": 2.0, "prob": 0.8},
+            "flip": {"use": False, "prob": 0.2},
+            "shift": {"use": True, "max_ratio": 0.8, "prob": 0.8},
+            "drop": {"use": True, "max_prob": 0.02, "prob": 0.8},
+            "power_noise": {"use": False, "amplitude": 0.03, "prob": 0.5},
+            "cutout": {"use": True, "max_ratio": 0.2, "prob": 0.5},
+            "lead_mixing": {"use": True, "lambda": 0.2, "prob": 0.8},
+            "time_warp": {"use": True, "min_hz": 450, "max_hz": 550, "prob": 0.5},
+            "baseline_wander": {"use": True, "min_freq": 0.05, "max_freq": 0.2, "amp_ratio": 0.2, "prob": 0.3}
+        }
 
     def get_meta_feature_dim(self):
         dim = 0
-        if self.use_age:
-            dim += 1
-        if self.use_sex:
-            dim += 3
-        if self.use_signal_stats:
-            dim += 2
+        if self.model['meta_features']['use_age']: dim += 1
+        if self.model['meta_features']['use_sex']: dim += 3
+        if self.model['meta_features']['use_signal_stats']: dim += 2
         return dim
-
+    
     def print_config(self):
         print(">>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print(f"Model Name: {self.model_name}")
         print(">>>>>>>>>Pretraining Parameters:<<<<<<<<<<")
-        print(f"Number of Epochs: {self.pretrain_num_epochs}")
-        print(f"Learning Rate: {self.pretrain_learning_rate}")
-        print(f"Batch Size: {self.pretrain_batch_size}")
-        print(f"Early Stop Patience: {self.pretrain_early_stop_patience}")
+        print(f"Number of Epochs: {self.pretrain['num_epochs']}")
+        print(f"Learning Rate: {self.pretrain['learning_rate']}")
+        print(f"Batch Size: {self.pretrain['batch_size']}")
+        print(f"Early Stop Patience: {self.pretrain['early_stop_patience']}")
 
         print(">>>>>>>>>Training Parameters:<<<<<<<<<<")
-        print(f"Number of Epochs: {self.num_epochs}")
-        print(f"Learning Rate: {self.learning_rate}")
-        print(f"Dropout Rate: {self.dropout_rate}")
-        print(f"Net1D Dropout Rate: {self.net1d_dropout_rate}")
-        print(f"Batch Size: {self.batch_size}")
-        print(f"Early Stop Patience: {self.early_stop_patience}")
+        print(f"Number of Epochs: {self.finetune['num_epochs']}")
+        print(f"Learning Rate: {self.finetune['learning_rate']}")
+        print(f"Dropout Rate: {self.model['dropout_rate']}")
+        print(f"Net1D Dropout Rate: {self.model['net1d_dropout_rate']}")
+        print(f"Batch Size: {self.finetune['batch_size']}")
+        print(f"Early Stop Patience: {self.finetune['early_stop_patience']}")
 
         print(">>>>>>>>>Meta Features:<<<<<<<<<<")
-        print(f"Use Age: {self.use_age}")
-        print(f"Use Sex: {self.use_sex}")
-        print(f"Use Signal Stats: {self.use_signal_stats}")
+        print(f"Use Age: {self.model['meta_features']['use_age']}")
+        print(f"Use Sex: {self.model['meta_features']['use_sex']}")
+        print(f"Use Signal Stats: {self.model['meta_features']['use_signal_stats']}")
         print(f"Meta Feature Dimension: {self.get_meta_feature_dim()}")
         
         print(">>>>>>>>>DANN Parameters:<<<<<<<<<<")
-        print(f"DANN Lambda: {self.dann_lambda}")
-        print(f"DANN Alpha: {self.dann_alpha}")
+        print(f"DANN Lambda: {self.dann['lambda']}")
+        print(f"DANN Alpha: {self.dann['alpha']}")
 
         print(">>>>>>>>>Data Augmentation:<<<<<<<<<<")
-        print(f"Use Noise Augmentation: {self.use_noise_aug}, Probability: {self.noise_aug_prob}")
-        print(f"Use Scaling Augmentation: {self.use_scaling_aug}, Probability: {self.scaling_aug_prob}")
-        print(f"Use Flip Augmentation: {self.use_flip_aug}, Probability: {self.flip_aug_prob}")
-        print(f"Use Shift Augmentation: {self.use_shift_aug}, Max Ratio: {self.shift_max_ratio}, Probability: {self.shift_aug_prob}")
-        print(f"Use Drop Augmentation: {self.use_drop_aug}, Max Probability: {self.drop_max_prob}, Probability: {self.drop_aug_prob}")
-        print(f"Use 50Hz Power Noise: {self.add_power_noise}, Probability: {self.power_noise_prob}")
-        print(f"Use Sine Wave Augmentation: {self.use_sine_wave_aug}, Freq Range: [{self.sine_min_freq}, {self.sine_max_freq}], Max Amp: {self.sine_max_amp}, Probability: {self.sine_aug_prob}")
-        print(f"Use Square Wave Augmentation: {self.use_square_wave_aug}, Freq Range: [{self.square_min_freq}, {self.square_max_freq}], Max Amp: {self.square_max_amp}, Probability: {self.square_aug_prob}")
-        print(f"Use Cutout Augmentation: {self.use_cutout_aug}, Max Ratio: {self.cutout_max_ratio}, Probability: {self.cutout_aug_prob}")
-        print(f"Use Lead Mixing Augmentation: {self.use_lead_mixing_aug}, Lambda: {self.lead_mixing_lambda}, Probability: {self.lead_mixing_prob}")
-        print(f"Use Time Warping Augmentation: {self.use_time_warp_aug}, Freq Range: [{self.time_wrap_min_hz}, {self.time_wrap_max_hz}], Probability: {self.time_wrap_prob}")
+        print(f"Use Noise Augmentation: {self.augmentation['noise']['use']}, Probability: {self.augmentation['noise']['prob']}")
+        print(f"Use Scaling Augmentation: {self.augmentation['scaling']['use']}, Probability: {self.augmentation['scaling']['prob']}")
+        print(f"Use Flip Augmentation: {self.augmentation['flip']['use']}, Probability: {self.augmentation['flip']['prob']}")
+        print(f"Use Shift Augmentation: {self.augmentation['shift']['use']}, Max Ratio: {self.augmentation['shift']['max_ratio']}, Probability: {self.augmentation['shift']['prob']}")
+        print(f"Use Drop Augmentation: {self.augmentation['drop']['use']}, Max Probability: {self.augmentation['drop']['max_prob']}, Probability: {self.augmentation['drop']['prob']}")
+        print(f"Use 50Hz Power Noise: {self.augmentation['power_noise']['use']}, Probability: {self.augmentation['power_noise']['prob']}")
+        print(f"Use Cutout Augmentation: {self.augmentation['cutout']['use']}, Max Ratio: {self.augmentation['cutout']['max_ratio']}, Probability: {self.augmentation['cutout']['prob']}")
+        print(f"Use Lead Mixing Augmentation: {self.augmentation['lead_mixing']['use']}, Lambda: {self.augmentation['lead_mixing']['lambda']}, Probability: {self.augmentation['lead_mixing']['prob']}")
+        print(f"Use Time Warping Augmentation: {self.augmentation['time_warp']['use']}, Freq Range: [{self.augmentation['time_warp']['min_hz']}, {self.augmentation['time_warp']['max_hz']}], Probability: {self.augmentation['time_warp']['prob']}")
+        print(f"Use Baseline Wander Augmentation: {self.augmentation['baseline_wander']['use']}, Min Freq: {self.augmentation['baseline_wander']['min_freq']}, Max Freq: {self.augmentation['baseline_wander']['max_freq']}, Amp Ratio: {self.augmentation['baseline_wander']['amp_ratio']}, Probability: {self.augmentation['baseline_wander']['prob']}")
 
         print(">>>>>>>>>Loss Parameters:<<<<<<<<<<")
-        print(f"Pretrain Focal Gamma: {self.pretrain_focal_gamma}")
-        print(f"Pretrain Margin: {self.pretrain_margin}")
-        print(f"Pretrain S: {self.pretrain_s}")
-        print(f"Pretrain LMF Alpha: {self.pretrain_lmf_alpha}")
-        print(f"Pretrain LMF Beta: {self.pretrain_lmf_beta}")
-        print(f"Pretrain Label Smoothing: {self.pretrain_label_smoothing}")
-        print(f"Finetune Focal Gamma: {self.finetune_focal_gamma}")
-        print(f"Finetune Margin: {self.finetune_margin}")
-        print(f"Finetune S: {self.finetune_s}")
-        print(f"Finetune LMF Alpha: {self.finetune_lmf_alpha}")
-        print(f"Finetune LMF Beta: {self.finetune_lmf_beta}")
-        print(f"Finetune Label Smoothing: {self.finetune_label_smoothing}")
-        print(f"Positive Sample Weight Multiplier: {self.pos_sample_weight_multiplier}")
+        print(f"Pretrain Focal Gamma: {self.pretrain['loss']['focal_gamma']}")
+        print(f"Pretrain Margin: {self.pretrain['loss']['margin']}")
+        print(f"Pretrain S: {self.pretrain['loss']['s']}")
+        print(f"Pretrain LMF Alpha: {self.pretrain['loss']['lmf_alpha']}")
+        print(f"Pretrain LMF Beta: {self.pretrain['loss']['lmf_beta']}")
+        print(f"Pretrain Label Smoothing: {self.pretrain['loss']['label_smoothing']}")
+        print(f"Finetune Focal Gamma: {self.finetune['loss']['focal_gamma']}")
+        print(f"Finetune Margin: {self.finetune['loss']['margin']}")
+        print(f"Finetune S: {self.finetune['loss']['s']}")
+        print(f"Finetune LMF Alpha: {self.finetune['loss']['lmf_alpha']}")
+        print(f"Finetune LMF Beta: {self.finetune['loss']['lmf_beta']}")
+        print(f"Finetune Label Smoothing: {self.finetune['loss']['label_smoothing']}")
+        print(f"Positive Sample Weight Multiplier: {self.augmentation['pos_sample_weight_multiplier']}")
         
         print(">>>>>>>>>Device:<<<<<<<<<<")
         print(f"Device: {self.device}")
 
 config = Config()
 config.print_config()
-print(config.cache_folder)
 
 # Configure CUDA/cuDNN for stability
 if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cuda.matmul.allow_tf32 = False
-    # torch.backends.cudnn.allow_tf32 = False
     torch.backends.cudnn.enabled = True
-
-# os.environ['CUDNN_V8_API_ENABLED'] = '0'
-
-# # if '/mnt/scratch/wmqn2362/PhysioNet25/tmp' exist
-# if os.path.exists('/mnt/scratch/wmqn2362/PhysioNet25/tmp'):
-#     config.cache_folder = '/mnt/scratch/wmqn2362/PhysioNet25/tmp'
-# else:
-#     config.cache_folder = './tmp'
 
 
 ################################################################################
@@ -433,7 +389,7 @@ def train_model(data_folder, model_folder, verbose):
     # Load datasets
     pretrain_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=True, config=config)
     external_datasets = []
-    for dataset_name in config.external_datasets:
+    for dataset_name in config.dann['external_datasets']:
         external_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=True, config=config))
 
     stage1_start_time = time.time()
@@ -455,17 +411,17 @@ def train_model(data_folder, model_folder, verbose):
     pretrain_labels = [pretrain_dataset[i][1] for i in range(len(pretrain_dataset))]
     pretrain_neg_samples = pretrain_labels.count(0)
     pretrain_pos_samples = pretrain_labels.count(1)    
-    pretrain_pos_samples_weighted = pretrain_pos_samples * config.pos_sample_weight_multiplier
+    pretrain_pos_samples_weighted = pretrain_pos_samples * config.augmentation['pos_sample_weight_multiplier']
     criterion = create_binary_lmf_loss(
         pos_samples=pretrain_pos_samples_weighted,
         neg_samples=pretrain_neg_samples,
         device=config.device,
-        alpha=config.pretrain_lmf_alpha,
-        beta=config.pretrain_lmf_beta,
-        focal_gamma=config.pretrain_focal_gamma,
-        ldam_margin=config.pretrain_margin,
-        ldam_s=config.pretrain_s,
-        label_smoothing=config.pretrain_label_smoothing
+        alpha=config.pretrain['loss']['lmf_alpha'],
+        beta=config.pretrain['loss']['lmf_beta'],
+        focal_gamma=config.pretrain['loss']['focal_gamma'],
+        ldam_margin=config.pretrain['loss']['margin'],
+        ldam_s=config.pretrain['loss']['s'],
+        label_smoothing=config.pretrain['loss']['label_smoothing']
     )
     
     print_memory_usage("Before pretrain_model function call")
@@ -474,15 +430,23 @@ def train_model(data_folder, model_folder, verbose):
         external_datasets=external_datasets,
         model=model,
         criterion=criterion,
-        num_epochs=config.pretrain_num_epochs,
-        batch_size=config.pretrain_batch_size,
-        early_stop_patience=config.pretrain_early_stop_patience,
+        num_epochs=config.pretrain['num_epochs'],
+        batch_size=config.pretrain['batch_size'],
+        early_stop_patience=config.pretrain['early_stop_patience'],
         device=config.device,
         pretrain_model_pth=os.path.join(model_folder, 'pretrain_model.pth'),
         verbose=verbose
     )
     print_memory_usage("After pretrain_model function call")
     
+    # Close pretrain datasets
+    pretrain_dataset.close()
+    for ds in external_datasets:
+        ds.close()
+    del pretrain_dataset, external_datasets
+    torch.cuda.empty_cache()
+    gc.collect()
+
     stage1_end_time = time.time()
     if verbose:
         print(f"Stage 1 completed in {stage1_end_time - stage1_start_time:.2f} seconds.")
@@ -498,10 +462,20 @@ def train_model(data_folder, model_folder, verbose):
         samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=False, config=config)
         ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=False, config=config)
         external_eval_datasets = []
-        for dataset_name in config.external_datasets:
+        for dataset_name in config.dann['external_datasets']:
             external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=False, config=config))
 
         evaluate_model(model, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'pretrain')
+        
+        # Close evaluation datasets
+        pretrain_eval_dataset.close()
+        samitrop_eval_dataset.close()
+        ptbxl_eval_dataset.close()
+        for ds in external_eval_datasets:
+            ds.close()
+        del pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets
+        torch.cuda.empty_cache()
+        gc.collect()
 
     stage2_end_time = time.time()
     if verbose:
@@ -522,16 +496,10 @@ def train_model(data_folder, model_folder, verbose):
     num_positive_samitrop = len(samitrop_dataset)
 
     # 2. Calculate total negative samples needed (positive samples are 2% of total)
-    # N_pos / (N_pos + N_neg) = 0.02
-    # N_pos = 0.02 * (N_pos + N_neg)
-    # N_pos = 0.02 * N_pos + 0.02 * N_neg
-    # N_pos * (1 - 0.02) = 0.02 * N_neg
-    # N_pos * 0.98 = 0.02 * N_neg
-    # N_neg = N_pos * 0.98 / 0.02 = N_pos * 49
     num_negative_needed = int(num_positive_samitrop * 49)
 
     # 3. Define negative sample datasets (all external except CODE15, plus PTBXL)
-    negative_dataset_names = [name for name in config.external_datasets if name != 'CODE15']
+    negative_dataset_names = [name for name in config.dann['external_datasets'] if name != 'CODE15']
     negative_dataset_names.append('PTBXL') # Explicitly add PTBXL
     
     # Calculate samples per negative dataset
@@ -545,12 +513,15 @@ def train_model(data_folder, model_folder, verbose):
 
     # 4. Sample negative examples from each negative dataset
     sampled_negative_datasets = []
+    # Keep track of the actual ECGDataset objects created for closing later
+    actual_negative_datasets = [] 
     for ds_name in negative_dataset_names:
         # PTBXL is already loaded, reuse it
         if ds_name == 'PTBXL':
             current_dataset = ptbxl_dataset
         else:
             current_dataset = ECGDataset(dataset_name=ds_name, data_folder=config.cache_folder, is_training=True, config=config)
+            actual_negative_datasets.append(current_dataset) # Store for closing
         
         # Filter for negative samples (assuming label 0 is negative)
         negative_indices = [i for i, (_, label, _) in enumerate(current_dataset) if label == 0]
@@ -585,17 +556,17 @@ def train_model(data_folder, model_folder, verbose):
     finetune_neg_samples = finetune_labels.count(0)
     finetune_pos_samples = finetune_labels.count(1)
 
-    finetune_pos_samples_weighted = finetune_pos_samples * config.pos_sample_weight_multiplier
+    finetune_pos_samples_weighted = finetune_pos_samples * config.augmentation['pos_sample_weight_multiplier']
     criterion = create_binary_lmf_loss(
         pos_samples=finetune_pos_samples_weighted,
         neg_samples=finetune_neg_samples,
         device=config.device,
-        alpha=config.finetune_lmf_alpha,
-        beta=config.finetune_lmf_beta,
-        focal_gamma=config.finetune_focal_gamma,
-        ldam_margin=config.finetune_margin,
-        ldam_s=config.finetune_s,
-        label_smoothing=config.finetune_label_smoothing
+        alpha=config.finetune['loss']['lmf_alpha'],
+        beta=config.finetune['loss']['lmf_beta'],
+        focal_gamma=config.finetune['loss']['focal_gamma'],
+        ldam_margin=config.finetune['loss']['margin'],
+        ldam_s=config.finetune['loss']['s'],
+        label_smoothing=config.finetune['loss']['label_smoothing']
     )
     
     # Create optimizers and schedulers for each fold
@@ -620,21 +591,21 @@ def train_model(data_folder, model_folder, verbose):
         if base_model_params:
             param_groups.append({
                 'params': base_model_params,
-                'lr': config.learning_rate,
+                'lr': config.finetune['learning_rate'],
                 'name': 'base_model'
             })
         
         if classifier_params:
             param_groups.append({
                 'params': classifier_params,
-                'lr': config.learning_rate * 10,
+                'lr': config.finetune['learning_rate'] * 10,
                 'name': 'classifier'
             })
         
         if meta_net_params:
             param_groups.append({
                 'params': meta_net_params,
-                'lr': config.learning_rate * 10,
+                'lr': config.finetune['learning_rate'] * 10,
                 'name': 'meta_net'
             })
         
@@ -645,7 +616,7 @@ def train_model(data_folder, model_folder, verbose):
         
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, 
-            T_max=config.num_epochs
+            T_max=config.finetune['num_epochs']
         )
         
         optimizers.append(optimizer)
@@ -667,6 +638,15 @@ def train_model(data_folder, model_folder, verbose):
     )
     print_memory_usage("After finetune_model function call")
     
+    # Close finetune datasets
+    samitrop_dataset.close()
+    ptbxl_dataset.close()
+    for ds in actual_negative_datasets:
+        ds.close()
+    del samitrop_dataset, ptbxl_dataset, actual_negative_datasets, finetune_dataset
+    torch.cuda.empty_cache()
+    gc.collect()
+
     stage3_end_time = time.time()
     if verbose:
         print(f"Stage 3 completed in {stage3_end_time - stage3_start_time:.2f} seconds.")
@@ -678,12 +658,12 @@ def train_model(data_folder, model_folder, verbose):
         print("Stage 4: Evaluate finetuned model...")
     stage4_start_time = time.time()
     if verbose:
-        # pretrain_eval_dataset = ECGDataset(code15_hdf5_path, is_training=False, config=config)
-        # samitrop_eval_dataset = ECGDataset(samitrop_hdf5_path, is_training=False, config=config)
-        # ptbxl_eval_dataset = ECGDataset(ptbxl_hdf5_path, is_training=False, config=config)
-        # external_eval_datasets = []
-        # for dataset_name in config.external_datasets:
-        #     external_eval_datasets.append(ExternalDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=False, config=config))
+        pretrain_eval_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=False, config=config)
+        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=False, config=config)
+        external_eval_datasets = []
+        for dataset_name in config.dann['external_datasets']:
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=False, config=config))
         evaluate_model(finetuned_models, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'finetune')
 
     stage4_end_time = time.time()
@@ -703,11 +683,13 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
     # torch.autograd.set_detect_anomaly(True)
     os.makedirs(os.path.dirname(pretrain_model_pth), exist_ok=True)
     
-    if os.path.exists(config.pretrain_model_path):
+    if os.path.exists(config.pretrain_model_path): # Now config.pretrain_model_path is the full file path
         if verbose:
             print(f"Found existing pretrained model at {config.pretrain_model_path}. Loading model and skipping pretraining.")
         model.load_state_dict(torch.load(config.pretrain_model_path, map_location=device))
-        # Add the following lines to save the model after loading
+        # The model is already loaded from config.pretrain_model_path,
+        # so saving it to pretrain_model_pth (which is the same path if pretrain_model_path is correctly set)
+        # is redundant but harmless. Keep it for consistency with original logic.
         torch.save(model.state_dict(), pretrain_model_pth)
         if verbose:
             print(f"Loaded pretrained model saved to {pretrain_model_pth}.")
@@ -745,7 +727,7 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
         ext_train_dataset, ext_val_dataset = torch.utils.data.random_split(ext_ds, [ext_train_size, ext_val_size])
         
         ext_train_loader = DataLoader(ext_train_dataset,
-                                      batch_size=batch_size // config.num_domains,
+                                      batch_size=batch_size // config.dann['num_domains'],
                                       shuffle=True,
                                       num_workers=config.num_preprocess_workers)
         ext_val_loader = DataLoader(ext_val_dataset,
@@ -759,21 +741,21 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
     # Optimizer for feature extractor (model.encoder) and task classifier (model.classifier)
     optimizer_task = torch.optim.AdamW(
         list(model.encoder.parameters()) + list(model.classifier.parameters()),
-        lr=config.pretrain_learning_rate,
+        lr=config.pretrain['learning_rate'],
         weight_decay=2e-4
     )
     
     # Optimizer for domain classifier (model.domain_classifier)
     optimizer_domain_classifier = torch.optim.AdamW(
         model.domain_classifier.parameters(),
-        lr=config.pretrain_learning_rate * 0.1, # Can be different from task optimizer LR
+        lr=config.pretrain['learning_rate'] * 0.1, # Can be different from task optimizer LR
         weight_decay=2e-4
     )
 
     # Optimizer for encoder (model.encoder) for confusion
     optimizer_encoder_confusion = torch.optim.AdamW(
         model.encoder.parameters(), # Only encoder parameters
-        lr=config.pretrain_learning_rate,
+        lr=config.pretrain['learning_rate'],
         weight_decay=2e-4
     )
 
@@ -798,7 +780,7 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
     epochs_no_improve = 0
     best_model_state = None
 
-    def calculate_lambda(epoch, num_epochs, high=1.0, low=0.0, alpha=config.dann_alpha):
+    def calculate_lambda(epoch, num_epochs, high=1.0, low=0.0, alpha=config.dann['alpha']):
         progress = epoch / num_epochs
         return high - (high - low) * (2.0 / (1.0 + math.exp(-alpha * progress)) - 1.0)
     
@@ -942,7 +924,7 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
             
             # Maximize domain classifier error: use negative of domain loss
             # Dynamically calculate dann_lambda
-            dann_lambda = calculate_lambda(epoch, num_epochs, config.dann_lambda)
+            dann_lambda = calculate_lambda(epoch, num_epochs, config.dann['lambda'])
             confusion_loss = dann_lambda * confusion_criterion(domain_output_confusion, combined_domain_target)
             
             confusion_loss.backward()
@@ -1051,7 +1033,7 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
                     ext_val_domain_outputs.extend(torch.argmax(domain_output, dim=1).detach().cpu().numpy())
             
             ext_domain_accuracy = accuracy_score(ext_val_domain_targets, ext_val_domain_outputs)
-            print(f'Valid Domain Accuracy ({config.external_datasets[j]}): {ext_domain_accuracy:.4f}')
+            print(f'Valid Domain Accuracy ({config.dann["external_datasets"][j]}): {ext_domain_accuracy:.4f}')
         print('\n')
 
         scheduler_task.step()
@@ -1140,12 +1122,12 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         train_sampler = WeightedRandomSampler(train_weights, len(train_weights))
 
         train_loader = DataLoader(train_subset, 
-                                batch_size=config.batch_size, 
+                                batch_size=config.finetune['batch_size'], 
                                 sampler=train_sampler,
                                 num_workers=config.num_preprocess_workers,
                                 drop_last=True)
         val_loader = DataLoader(val_subset, 
-                              batch_size=config.batch_size, 
+                              batch_size=config.finetune['batch_size'], 
                               shuffle=False,
                               num_workers=config.num_preprocess_workers,
                               drop_last=True)
@@ -1155,7 +1137,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         best_epoch = 0
         start_time = time.time()
 
-        for epoch in range(config.num_epochs):
+        for epoch in range(config.finetune['num_epochs']):
             epoch_start_time = time.time()
             model.train()
             train_loss = 0.0
@@ -1277,7 +1259,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             epoch_duration = time.time() - epoch_start_time
             
             if verbose:
-                print(f'Epoch {epoch + 1}/{config.num_epochs}, Train Loss: {train_loss:.4f}, Valid Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
+                print(f'Epoch {epoch + 1}/{config.finetune["num_epochs"]}, Train Loss: {train_loss:.4f}, Valid Loss: {val_loss:.4f}, Time: {epoch_duration:.2f} seconds')
                 print(f'Train AUROC: {train_auroc:.4f}, Train AUPRC: {train_auprc:.4f}, Train Accuracy: {train_accuracy:.4f}, Train F1: {train_f1:.4f}')
                 print(f'Valid AUROC: {val_auroc:.4f}, Valid AUPRC: {val_auprc:.4f}, Valid Accuracy: {val_accuracy:.4f}, Valid F1: {val_f1:.4f}\n')
                 # Calculate epoch averages
@@ -1299,9 +1281,9 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 epochs_no_improve = 0
             else:
                 epochs_no_improve += 1
-                if epochs_no_improve >= config.early_stop_patience:
+                if epochs_no_improve >= config.finetune['early_stop_patience']:
                     if verbose:
-                        print(f"Early stopping: Valid AUPRC not improved for {config.early_stop_patience} epochs")
+                        print(f"Early stopping: Valid AUPRC not improved for {config.finetune['early_stop_patience']} epochs")
                     break
 
             # del train_targets, train_outputs, val_targets, val_outputs
@@ -1349,10 +1331,10 @@ def evaluate_model(models, code15_dataset, samitrop_dataset, ptbxl_dataset, exte
         if num_samples is not None:
             indices = np.random.choice(len(dataset), min(len(dataset), num_samples), replace=False)
             subset = Subset(dataset, indices)
-            loader = DataLoader(subset, batch_size=config.batch_size, shuffle=False, 
+            loader = DataLoader(subset, batch_size=config.finetune['batch_size'], shuffle=False, 
                               num_workers=config.num_preprocess_workers)
         else:
-            loader = DataLoader(dataset, batch_size=config.batch_size, shuffle=False,
+            loader = DataLoader(dataset, batch_size=config.finetune['batch_size'], shuffle=False,
                               num_workers=config.num_preprocess_workers)
         
         # Initialize storage for each model
@@ -1459,7 +1441,7 @@ def evaluate_model(models, code15_dataset, samitrop_dataset, ptbxl_dataset, exte
         ext_features_list, _, ext_labels, _, _ = collect_features_and_predictions(ext_ds, samples_per_domain)
         for j, ext_features in enumerate(ext_features_list):
             external_features_list[j].append(ext_features)
-        external_labels.extend([config.external_datasets[i]] * len(ext_labels))
+        external_labels.extend([config.dann['external_datasets'][i]] * len(ext_labels))
     
     # Create visualizations for each model
     for model_idx in range(len(models)):
@@ -1681,7 +1663,7 @@ def make_weights_for_balanced_classes(dataset):
     targets = [dataset[i][1] for i in range(len(dataset))]
     weights = np.zeros_like(targets, dtype=np.float32)
     weights[np.isclose(targets, 0.0)] = 1.0    # Negative class weight
-    weights[np.isclose(targets, 1.0)] = config.pos_sample_weight_multiplier   # Positive class weight (configurable ratio)
+    weights[np.isclose(targets, 1.0)] = config.augmentation['pos_sample_weight_multiplier']   # Positive class weight (configurable ratio)
     return weights.flatten()
 
 # Split into CODE-15% and other records (parallel processing)

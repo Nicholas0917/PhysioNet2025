@@ -47,40 +47,34 @@ class ECGDataset(Dataset):
         domain_label = self.hdf5_file['domain_labels'][idx] # Read domain label for this record
         
         if self.is_training:            
-            if self.config.use_noise_aug and np.random.rand() < self.config.noise_aug_prob:
+            if self.config.augmentation['noise']['use'] and np.random.rand() < self.config.augmentation['noise']['prob']:
                 signal = self._add_noise(signal)
                 
-            if self.config.use_scaling_aug and np.random.rand() < self.config.scaling_aug_prob:
+            if self.config.augmentation['scaling']['use'] and np.random.rand() < self.config.augmentation['scaling']['prob']:
                 signal = self._scaling(signal)
                 
-            if self.config.use_flip_aug and np.random.rand() < self.config.flip_aug_prob:
+            if self.config.augmentation['flip']['use'] and np.random.rand() < self.config.augmentation['flip']['prob']:
                 signal = np.ascontiguousarray(self._flip(signal))
                 
-            if self.config.use_shift_aug and np.random.rand() < self.config.shift_aug_prob:
+            if self.config.augmentation['shift']['use'] and np.random.rand() < self.config.augmentation['shift']['prob']:
                 signal = self._shift(signal)
                 
-            if self.config.use_drop_aug and np.random.rand() < self.config.drop_aug_prob:
+            if self.config.augmentation['drop']['use'] and np.random.rand() < self.config.augmentation['drop']['prob']:
                 signal = self._drop(signal)
             
-            if self.config.add_power_noise and np.random.rand() < self.config.power_noise_prob:
+            if self.config.augmentation['power_noise']['use'] and np.random.rand() < self.config.augmentation['power_noise']['prob']:
                 signal = self._add_power_noise(signal)
                 
-            if self.config.use_sine_wave_aug and np.random.rand() < self.config.sine_aug_prob:
-                signal = self._sine_wave(signal)
-                
-            if self.config.use_square_wave_aug and np.random.rand() < self.config.square_aug_prob:
-                signal = self._square_wave(signal)
-                
-            if self.config.use_cutout_aug and np.random.rand() < self.config.cutout_aug_prob:
+            if self.config.augmentation['cutout']['use'] and np.random.rand() < self.config.augmentation['cutout']['prob']:
                 signal = self._cutout(signal)
                 
-            if self.config.use_time_warp_aug and np.random.rand() < self.config.time_wrap_prob:
+            if self.config.augmentation['time_warp']['use'] and np.random.rand() < self.config.augmentation['time_warp']['prob']:
                 signal = self._time_wrapping(signal)
                 
-            if self.config.use_lead_mixing_aug and np.random.rand() < self.config.lead_mixing_prob:
-                signal = self._lead_mixing_augmentation(signal, self.config.lead_mixing_lambda)
+            if self.config.augmentation['lead_mixing']['use'] and np.random.rand() < self.config.augmentation['lead_mixing']['prob']:
+                signal = self._lead_mixing_augmentation(signal, self.config.augmentation['lead_mixing']['lambda'])
                 
-            if self.config.use_baseline_wander and np.random.rand() < self.config.baseline_wander_prob:
+            if self.config.augmentation['baseline_wander']['use'] and np.random.rand() < self.config.augmentation['baseline_wander']['prob']:
                 signal = self._baseline_wander(signal)
 
             signal = np.ascontiguousarray(signal).astype(np.float32)
@@ -100,12 +94,12 @@ class ECGDataset(Dataset):
         self.close()
 
     def _add_noise(self, signal):
-        noise = np.random.normal(0, self.config.noise_std, signal.shape)
+        noise = np.random.normal(0, self.config.augmentation['noise']['std'], signal.shape)
         signal += noise
         return signal
         
     def _scaling(self, signal):
-        scaling_factors = np.random.uniform(self.config.scaling_min, self.config.scaling_max, signal.shape[0])
+        scaling_factors = np.random.uniform(self.config.augmentation['scaling']['min'], self.config.augmentation['scaling']['max'], signal.shape[0])
         signal *= scaling_factors[:, np.newaxis]
         signal = np.clip(signal, -1e4, 1e4)
         return signal
@@ -116,37 +110,19 @@ class ECGDataset(Dataset):
         
     def _shift(self, signal):
         length = signal.shape[1]
-        max_shift = int(length * self.config.shift_max_ratio)
+        max_shift = int(length * self.config.augmentation['shift']['max_ratio'])
         shift_amount = np.random.randint(-max_shift, max_shift + 1)
         shifted = np.roll(signal, shift_amount, axis=1)
         return shifted
         
     def _drop(self, signal):
-        mask = np.random.rand(*signal.shape) > self.config.drop_max_prob
+        mask = np.random.rand(*signal.shape) > self.config.augmentation['drop']['max_prob']
         signal *= mask
-        return signal
-        
-    def _sine_wave(self, signal):
-        length = signal.shape[1]
-        t = np.arange(length)
-        freq = np.random.uniform(self.config.sine_min_freq, self.config.sine_max_freq)
-        amp = np.random.uniform(0, self.config.sine_max_amp)
-        sine = amp * np.sin(2 * np.pi * freq * t)
-        signal += sine[np.newaxis, :]
-        return signal
-        
-    def _square_wave(self, signal):
-        length = signal.shape[1]
-        t = np.arange(length)
-        freq = np.random.uniform(self.config.square_min_freq, self.config.square_max_freq)
-        amp = np.random.uniform(0, self.config.square_max_amp)
-        square = amp * np.sign(np.sin(2 * np.pi * freq * t))
-        signal += square[np.newaxis, :]
         return signal
         
     def _cutout(self, signal):
         length = signal.shape[1]
-        max_cutout = int(length * self.config.cutout_max_ratio)
+        max_cutout = int(length * self.config.augmentation['cutout']['max_ratio'])
         if max_cutout == 0:
             return signal
             
@@ -164,7 +140,7 @@ class ECGDataset(Dataset):
     def _add_power_noise(self, signal):
         signal_std = np.std(signal)
         if signal_std > 0:
-            amplitude = min(self.config.power_noise_amplitude * signal_std, 0.1)
+            amplitude = min(self.config.augmentation['power_noise']['amplitude'] * signal_std, 0.1)
             length = signal.shape[1]
             t = np.arange(length) / 500.0
             phase = np.random.uniform(0, 2 * np.pi)
@@ -208,8 +184,8 @@ class ECGDataset(Dataset):
             
     def _baseline_wander(self, signal):
         t = np.arange(signal.shape[1])
-        freq = np.random.uniform(self.config.baseline_wander_min_freq, self.config.baseline_wander_max_freq)
-        amp = self.config.baseline_wander_amp_ratio * np.std(signal)
+        freq = np.random.uniform(self.config.augmentation['baseline_wander']['min_freq'], self.config.augmentation['baseline_wander']['max_freq'])
+        amp = self.config.augmentation['baseline_wander']['amp_ratio'] * np.std(signal)
         drift = amp * np.sin(2 * np.pi * freq * t)
         signal += drift
 
@@ -218,7 +194,7 @@ class ECGDataset(Dataset):
     def _time_wrapping(self, signal):
         original_length = signal.shape[1]
         original_freq = 500
-        new_freq = np.random.randint(self.config.time_wrap_min_hz, self.config.time_wrap_max_hz + 1)
+        new_freq = np.random.randint(self.config.augmentation['time_warp']['min_hz'], self.config.augmentation['time_warp']['max_hz'] + 1)
         new_length = int(original_length * new_freq / original_freq)
         
         if new_length == original_length:

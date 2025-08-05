@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=DataPreprocess         # Job name      
-#SBATCH --time=48:00:00                   # Request 48 hours
+#SBATCH --time=2:00:00                   # Request 48 hours
 #SBATCH --cpus-per-task=6                 # Number of cores per task
 #SBATCH --mem-per-cpu=8G                 # Memory per CPU
 
@@ -38,9 +38,4 @@ python Prepare_External_data.py --data_dir /mnt/scratch/wmqn2362/physionet.org/f
 
 python Prepare_External_data.py --data_dir /mnt/scratch/wmqn2362/physionet.org/files/challenge-2021/1.0.3/training/st_petersburg_incart \
                                 --output_path /mnt/scratch/wmqn2362/PhysioNet25/ST_Petersburg_data.hdf5
-
-
-
-
-
 

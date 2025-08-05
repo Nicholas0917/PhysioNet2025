@@ -106,13 +106,20 @@ def get_sex(record):
     
     return np.array(one_hot_encoding_sex, dtype=np.float32)
 
-def process_single_file(file_path, standard_channels):
+def process_single_file(file_path, standard_channels, fixed_domain_label):
     """
     Processes a single WFDB file, performs signal processing and quality checks,
-    and returns a list of valid (signal_segment, meta_feature) tuples.
+    and returns a list of valid (signal_segment, meta_feature, domain_label, label) tuples.
     """
     processed_segments_data = []
     record_name = os.path.basename(file_path)
+    
+    # Use the fixed domain label passed from main
+    domain_label = fixed_domain_label
+    
+    # Set label for chagas data (all chagas data is 0)
+    label = 0 # All chagas data has label 0
+
     try:
         record = wfdb.rdrecord(file_path)
         signal = record.p_signal
@@ -140,7 +147,7 @@ def process_single_file(file_path, standard_channels):
         # Standardize length to 5000 points or apply sliding window
         current_length = signal.shape[0]
         window_size = 5000
-        step_size = 4000 # 1000 overlap
+        step_size = 3000 # 2000 overlap
 
         segments_to_process = []
 
@@ -210,16 +217,13 @@ def process_single_file(file_path, standard_channels):
             if not is_amplitude_normal(segment_signal):
                 print(f"Skipping segment from record {record_name} due to abnormal amplitude.")
                 continue
-            # if not has_valid_peaks(segment_signal):
-            #     print(f"Skipping segment from record {record_name} due to invalid peaks.")
-            #     continue
 
             # Check for NaN values in meta features
             if np.isnan(meta_feature_current).any():
                 print(f"Skipping segment from record {record_name} due to NaN values in meta features.")
                 continue
 
-            processed_segments_data.append((segment_signal, meta_feature_current))
+            processed_segments_data.append((segment_signal, meta_feature_current, domain_label, label))
 
     except Exception as e:
         print(f"Error processing record {record_name}: {e}")
@@ -244,6 +248,31 @@ def main():
     wfdb_files = find_wfdb_files(data_dir)
     print(f"Found {len(wfdb_files)} WFDB files.")
 
+    domain_label_map = {
+        'CODE15': 0,
+        'CSPC': 1,
+        'CSPC_extra': 2,
+        'Chapman_Shaoxing': 3,
+        'Georgia': 4,
+        'Ningbo': 5,
+        'PTB': 6,
+        'ST_Petersburg': 7,
+        'PTBXL': 8,
+        'SaMiTrop': 9
+    }
+
+    # Determine domain_label from output_hdf5_path
+    filename_without_ext = os.path.splitext(os.path.basename(output_hdf5_path))[0]
+    # Extract the part before '_data' if it exists, otherwise use the whole filename
+    if '_data' in filename_without_ext:
+        dataset_prefix = filename_without_ext.split('_data')[0]
+    else:
+        dataset_prefix = filename_without_ext
+    
+    # Get the domain label, default to -1 if not found
+    fixed_domain_label = domain_label_map.get(dataset_prefix, -1)
+    print(f"Determined domain label from output path '{output_hdf5_path}': {dataset_prefix} -> {fixed_domain_label}")
+
     processed_count = 0
     with h5py.File(output_hdf5_path, 'w') as f:
         dset_signals = f.create_dataset('signals', shape=(0, 5000, num_channels_output), 
@@ -252,22 +281,36 @@ def main():
         dset_meta_features = f.create_dataset('meta_features', shape=(0, 4),
                                               maxshape=(None, 4),
                                               dtype=np.float32, compression=None)
+        dset_domain_labels = f.create_dataset('domain_labels', shape=(0, 1),
+                                              maxshape=(None, 1),
+                                              dtype=np.float32, compression=None)
+        dset_labels = f.create_dataset('labels', shape=(0, 1),
+                                       maxshape=(None, 1),
+                                       dtype=np.float32, compression=None)
 
         # Use ProcessPoolExecutor for parallel processing
         # max_workers=None uses os.cpu_count()
         with ProcessPoolExecutor(max_workers=os.cpu_count()) as executor:
             # Map the process_single_file function to all wfdb_files
-            # Pass standard_channels as an additional argument to process_single_file
-            results = executor.map(process_single_file, wfdb_files, [standard_channels] * len(wfdb_files))
+            # Pass standard_channels, fixed_domain_label, and data_dir as additional arguments
+            results = executor.map(process_single_file, wfdb_files, 
+                                   [standard_channels] * len(wfdb_files),
+                                   [fixed_domain_label] * len(wfdb_files)) # Pass the fixed domain label
 
             for file_segments_data in results:
-                for segment_signal, meta_feature_current in file_segments_data:
+                for segment_signal, meta_feature_current, domain_label, label in file_segments_data:
                     current_idx = dset_signals.shape[0]
                     dset_signals.resize(current_idx + 1, axis=0)
                     dset_signals[current_idx] = segment_signal
 
                     dset_meta_features.resize(current_idx + 1, axis=0)
                     dset_meta_features[current_idx] = meta_feature_current
+
+                    dset_domain_labels.resize(current_idx + 1, axis=0)
+                    dset_domain_labels[current_idx] = domain_label
+
+                    dset_labels.resize(current_idx + 1, axis=0)
+                    dset_labels[current_idx] = label
                     processed_count += 1
 
     print(f"Processed {processed_count} records and saved to {output_hdf5_path}")

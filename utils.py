@@ -61,8 +61,8 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     os.makedirs(config.cache_folder, exist_ok=True)
 
     header = load_header(record)
-    age = get_age(header) if config.use_age else 0
-    sex = get_sex(header) if config.use_sex else 'Unknown'
+    age = get_age(header) if config.model['meta_features']['use_age'] else 0
+    sex = get_sex(header) if config.model['meta_features']['use_sex'] else 'Unknown'
     label = get_label(header, allow_missing=True) # Allow missing labels for inference
     
     # Handle missing label: if label is None or False (from sanitize_boolean_value), set to -1
@@ -132,13 +132,13 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     meta_features = np.empty(config.get_meta_feature_dim(), dtype=np.float32)
     ptr = 0
     
-    if config.use_age:
+    if config.model['meta_features']['use_age']:
         meta_features[ptr] = age
         ptr += 1
-    if config.use_sex:
+    if config.model['meta_features']['use_sex']:
         meta_features[ptr:ptr+3] = one_hot_encoding_sex
         ptr += 3
-    if config.use_signal_stats:
+    if config.model['meta_features']['use_signal_stats']:
         valid_samples = np.isfinite(signal).sum()
         meta_features[ptr] = np.nanmean(signal) if valid_samples > 0 else 0.0
         meta_features[ptr+1] = np.nanstd(signal) if valid_samples > 1 else 0.0

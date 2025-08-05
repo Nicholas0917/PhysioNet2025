@@ -7,3 +7,4 @@ scikit_learn==1.6.1
 scipy==1.15.2
 torch==2.5.1
 wfdb==4.2.0
+seaborn==0.13.2
