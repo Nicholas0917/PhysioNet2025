@@ -40,7 +40,7 @@ from torch.optim.lr_scheduler import OneCycleLR
 from dataset import *
 from helper_code import *
 from loss import *
-from models import *
+from models.models import *
 from utils import *
 
 ################################################################################
@@ -51,7 +51,7 @@ from utils import *
 
 class Config:
     def __init__(self):
-        self.model_name = 'ResNet18' # [ECGFeatureExtractor, ecgfounder]
+        self.model_name = 'CTN' # [ECGFeatureExtractor, ecgfounder]
         self.use_pretrained = True
         self.pretrain_num_epochs = 50
         self.pretrain_learning_rate = 3e-5
@@ -71,6 +71,21 @@ class Config:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
         self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', './tmp'), 'pretrain_model.pth')
+
+
+        # --- CTN transformer parameters ---
+        self.d_model = 180 #changed from 184
+        self.nhead = 6 #changed from 8
+        self.d_ff = 2048
+        self.num_layers = 10
+        self.deepfeat_sz = 256
+        self.nb_feats = self.get_meta_feature_dim()
+        self.nb_demo = 0
+        self.classes = [0]  # Binary classification - single output
+        self.class_token = True
+        self.if_attn_gated_module = True
+
+
 
         # Loss parameters
         # self.pretrain_focal_alpha = 0.6
@@ -245,6 +260,8 @@ if torch.cuda.is_available():
 # Train your model.
 # @profile
 def train_model(data_folder, model_folder, verbose):
+    config= Config()
+    config.print_config()
     """Train the model using the three-stage process"""
     # torch.autograd.set_detect_anomaly(True)
     print_memory_usage("Initial Memory State in train_model")

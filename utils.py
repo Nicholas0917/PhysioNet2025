@@ -18,7 +18,7 @@ def print_memory_usage(extra_info=""):
     print(f"Memory Used % (Percentage of System RAM used): {vm.percent}%")
     if torch.cuda.is_available():
         print(f"GPU Memory Allocated (GPU memory currently allocated): {torch.cuda.memory_allocated() / 1024 ** 3:.2f} GB")
-        print(f"GPU Memory Cached (GPU memory currently cached): {torch.cuda.memory_cached() / 1024 ** 3:.2f} GB")
+        print(f"GPU Memory Cached (GPU memory currently cached): {torch.cuda.memory_reserved() / 1024 ** 3:.2f} GB")
     print("==========================================\n")
 
 def print_model_parameters(model, verbose=True):
