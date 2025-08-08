@@ -74,8 +74,8 @@ class Config:
         self.use_signal_stats = False
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
-        self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', './tmp'), 'pretrain_model.pth')
-        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
+        self.pretrain_model_path = os.path.join(os.getenv('PRETRAIN_MODEL_FOLDER', '/tmp'), 'pretrain_model.pth')
+        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', '/tmp')
 
         # DANN parameters
         self.num_domains = 8 # code15, CSPC, CSPC_extra, Chapman_Shaoxing, Georgia, Ningbo, PTB, ST_Petersburg
