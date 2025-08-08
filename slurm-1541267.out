@@ -1,0 +1,1394 @@
+Running CTN Transformer model
+No fused RMSNorm
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: CTN
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 3e-05
+Batch Size: 64
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 1e-06
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.3
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.2
+Use Shift Augmentation: True, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: True, Max Probability: 0.02, Probability: 0.3
+Use 50Hz Power Noise: False, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 0.08, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.08, Probability: 0.3
+Use Cutout Augmentation: True, Max Ratio: 0.2, Probability: 0.3
+Use Lead Mixing Augmentation: True, Lambda: 0.2, Probability: 0.3
+Use Time Warping Augmentation: True, Freq Range: [450, 550], Probability: 0.3
+>>>>>>>>>Loss Parameters:<<<<<<<<<<
+Pretrain Focal Gamma: 2
+Pretrain Margin: 0.1
+Pretrain S: 30
+Pretrain LMF Alpha: 0.98
+Pretrain LMF Beta: 0.02
+Finetune Focal Gamma: 2
+Finetune Margin: 0.35
+Finetune S: 30
+Finetune LMF Alpha: 0.98
+Finetune LMF Beta: 0.02
+Positive Sample Weight Multiplier: 1.0
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+/mnt/flash/tmp/job.1541267
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: CTN
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 3e-05
+Batch Size: 64
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 1e-06
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.3
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.2
+Use Shift Augmentation: True, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: True, Max Probability: 0.02, Probability: 0.3
+Use 50Hz Power Noise: False, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 0.08, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.08, Probability: 0.3
+Use Cutout Augmentation: True, Max Ratio: 0.2, Probability: 0.3
+Use Lead Mixing Augmentation: True, Lambda: 0.2, Probability: 0.3
+Use Time Warping Augmentation: True, Freq Range: [450, 550], Probability: 0.3
+>>>>>>>>>Loss Parameters:<<<<<<<<<<
+Pretrain Focal Gamma: 2
+Pretrain Margin: 0.1
+Pretrain S: 30
+Pretrain LMF Alpha: 0.98
+Pretrain LMF Beta: 0.02
+Finetune Focal Gamma: 2
+Finetune Margin: 0.35
+Finetune S: 30
+Finetune LMF Alpha: 0.98
+Finetune LMF Beta: 0.02
+Positive Sample Weight Multiplier: 1.0
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+
+====== Memory Usage Initial Memory State in train_model ======
+Process RSS (Resident Set Size, actual physical memory used by process): 0.50 GB
+Process VMS (Virtual Memory Size, total virtual memory used by process): 8.15 GB
+System Used (Total RAM used by the system): 28.47 GB
+System Available (RAM available for new processes): 205.50 GB / 250.84 GB (Total System RAM)
+Memory Used % (Percentage of System RAM used): 18.1%
+GPU Memory Allocated (GPU memory currently allocated): 0.00 GB
+GPU Memory Cached (GPU memory currently cached): 0.00 GB
+==========================================
+
+Data preprocessing took 2305.44 seconds.
+
+====== Memory Usage After data preprocessing ======
+Process RSS (Resident Set Size, actual physical memory used by process): 0.80 GB
+Process VMS (Virtual Memory Size, total virtual memory used by process): 8.54 GB
+System Used (Total RAM used by the system): 33.31 GB
+System Available (RAM available for new processes): 200.70 GB / 250.84 GB (Total System RAM)
+Memory Used % (Percentage of System RAM used): 20.0%
+GPU Memory Allocated (GPU memory currently allocated): 0.00 GB
+GPU Memory Cached (GPU memory currently cached): 0.00 GB
+==========================================
+
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+pth_path is None. Initializing CTN with Kaiming normal.
+Total parameters: 9,213,667
+Trainable parameters: 9,213,667
+Non-trainable parameters: 0
+
+====== Memory Usage Before pretrain_model function call ======
+Process RSS (Resident Set Size, actual physical memory used by process): 0.94 GB
+Process VMS (Virtual Memory Size, total virtual memory used by process): 9.92 GB
+System Used (Total RAM used by the system): 34.30 GB
+System Available (RAM available for new processes): 199.69 GB / 250.84 GB (Total System RAM)
+Memory Used % (Percentage of System RAM used): 20.4%
+GPU Memory Allocated (GPU memory currently allocated): 0.04 GB
+GPU Memory Cached (GPU memory currently cached): 0.05 GB
+==========================================
+
+Starting pretraining on 342755 records...
+Unfreezing meta_net parameters...
+Unfreezing classifier parameters...
+Epoch 1: Using initial learning rate 2.0e-04 for unfrozen layers.
+Epoch 1 Averages:
+  Positive Logit: -7.4197
+  Negative Logit: -6.9273
+  Positive Probability: 0.1665
+Validation Averages:
+  Positive Logit: -1.4118
+  Negative Logit: -1.4118
+  Positive Probability: 0.1959
+Epoch 1/50, Train Loss: 0.0881, Valid Loss: 0.0433, Time: 768.63 seconds
+Train AUROC: 0.5025, Train AUPRC: 0.0198, Train Accuracy: 0.9694, Train F1: 0.0141
+Valid AUROC: 0.5603, Valid AUPRC: 0.0230, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Epoch 2: Using initial learning rate 2.0e-04 for unfrozen layers.
+Epoch 2 Averages:
+  Positive Logit: -1.2992
+  Negative Logit: -1.3106
+  Positive Probability: 0.2185
+Validation Averages:
+  Positive Logit: -1.4338
+  Negative Logit: -1.4338
+  Positive Probability: 0.1925
+Epoch 2/50, Train Loss: 0.0112, Valid Loss: 0.0435, Time: 725.57 seconds
+Train AUROC: 0.5165, Train AUPRC: 0.0209, Train Accuracy: 0.9813, Train F1: 0.0000
+Valid AUROC: 0.5553, Valid AUPRC: 0.0234, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Epoch 3: Using initial learning rate 2.0e-04 for unfrozen layers.
+Epoch 3 Averages:
+  Positive Logit: -1.2664
+  Negative Logit: -1.2826
+  Positive Probability: 0.2220
+Validation Averages:
+  Positive Logit: -1.2760
+  Negative Logit: -1.2760
+  Positive Probability: 0.2182
+Epoch 3/50, Train Loss: 0.0115, Valid Loss: 0.0427, Time: 740.06 seconds
+Train AUROC: 0.5151, Train AUPRC: 0.0204, Train Accuracy: 0.9804, Train F1: 0.0000
+Valid AUROC: 0.4910, Valid AUPRC: 0.0188, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Epoch 4: Using initial learning rate 2.0e-04 for unfrozen layers.
+Epoch 4 Averages:
+  Positive Logit: -1.3161
+  Negative Logit: -1.3248
+  Positive Probability: 0.2191
+Validation Averages:
+  Positive Logit: -1.2223
+  Negative Logit: -1.2223
+  Positive Probability: 0.2275
+Epoch 4/50, Train Loss: 0.0119, Valid Loss: 0.0429, Time: 732.07 seconds
+Train AUROC: 0.4892, Train AUPRC: 0.0188, Train Accuracy: 0.9805, Train F1: 0.0000
+Valid AUROC: 0.4860, Valid AUPRC: 0.0179, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Epoch 5: Using initial learning rate 2.0e-04 for unfrozen layers.
+Epoch 5 Averages:
+  Positive Logit: -1.2790
+  Negative Logit: -1.2788
+  Positive Probability: 0.2207
+Validation Averages:
+  Positive Logit: -1.2189
+  Negative Logit: -1.2189
+  Positive Probability: 0.2281
+Epoch 5/50, Train Loss: 0.0115, Valid Loss: 0.0429, Time: 736.72 seconds
+Train AUROC: 0.5014, Train AUPRC: 0.0199, Train Accuracy: 0.9806, Train F1: 0.0000
+Valid AUROC: 0.5075, Valid AUPRC: 0.0187, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Unfreezing base_model parameters for full training...
+Epoch 6: Unfrozen basemodel and re-initialized optimizer/schedulers.
+Current learning rate: 3.0e-05.
+Epoch 6 Averages:
+  Positive Logit: -1.2993
+  Negative Logit: -1.3176
+  Positive Probability: 0.2221
+Validation Averages:
+  Positive Logit: -1.1959
+  Negative Logit: -1.1959
+  Positive Probability: 0.2322
+Epoch 6/50, Train Loss: 0.0119, Valid Loss: 0.0430, Time: 738.14 seconds
+Train AUROC: 0.5043, Train AUPRC: 0.0200, Train Accuracy: 0.9802, Train F1: 0.0000
+Valid AUROC: 0.5742, Valid AUPRC: 0.0216, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Epoch 7 Averages:
+  Positive Logit: -1.2627
+  Negative Logit: -1.3075
+  Positive Probability: 0.2232
+Validation Averages:
+  Positive Logit: -1.2587
+  Negative Logit: -1.2587
+  Positive Probability: 0.2212
+Epoch 7/50, Train Loss: 0.0116, Valid Loss: 0.0428, Time: 728.53 seconds
+Train AUROC: 0.5015, Train AUPRC: 0.0201, Train Accuracy: 0.9801, Train F1: 0.0000
+Valid AUROC: 0.5124, Valid AUPRC: 0.0194, Valid Accuracy: 0.9816, Valid F1: 0.0000
+
+Early stopping: Valid AUPRC not improved for 5 epochs
+Pretraining completed and model saved
+
+====== Memory Usage After pretrain_model function call ======
+Process RSS (Resident Set Size, actual physical memory used by process): 1.75 GB
+Process VMS (Virtual Memory Size, total virtual memory used by process): 19.30 GB
+System Used (Total RAM used by the system): 37.80 GB
+System Available (RAM available for new processes): 196.15 GB / 250.84 GB (Total System RAM)
+Memory Used % (Percentage of System RAM used): 21.8%
+GPU Memory Allocated (GPU memory currently allocated): 0.16 GB
+GPU Memory Cached (GPU memory currently cached): 7.02 GB
+==========================================
+
+
+Pretrain Dataset Metrics:
+AUROC: 0.5572
+AUPRC: 0.0216
+Accuracy: 0.9809
+F1 Score: 0.0000
+Positive Logit: -1.2587
+Negative Logit: -1.2587
+
+Finetune Dataset Metrics:
+AUROC: 0.4844
+AUPRC: 0.0805
+Accuracy: 0.9196
+F1 Score: 0.0000
+Positive Logit: -1.2587
+Negative Logit: -1.2615
+Total parameters: 9,213,667
+Trainable parameters: 9,213,667
+Non-trainable parameters: 0
+
+====== Memory Usage Before finetune_model function call ======
+Process RSS (Resident Set Size, actual physical memory used by process): 1.76 GB
+Process VMS (Virtual Memory Size, total virtual memory used by process): 15.03 GB
+System Used (Total RAM used by the system): 37.77 GB
+System Available (RAM available for new processes): 196.02 GB / 250.84 GB (Total System RAM)
+Memory Used % (Percentage of System RAM used): 21.9%
+GPU Memory Allocated (GPU memory currently allocated): 0.16 GB
+GPU Memory Cached (GPU memory currently cached): 0.82 GB
+==========================================
+
+Training the model on the fine-tune data...
+Fine-tune Datastes Size:  18430
+Fold 1
+/mnt/scratch/scabs/PhysioNet2025/team_code.py:959: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
+Epoch 1 Averages:
+  Positive Logit: -1.1946
+  Negative Logit: -1.2063
+  Positive Probability: 0.2358
+Validation Averages:
+  Positive Logit: -1.1048
+  Negative Logit: -1.1060
+  Positive Probability: 0.2488
+Epoch 1/100, Train Loss: 0.1550, Valid Loss: 0.1392, Time: 44.92 seconds
+Train AUROC: 0.4996, Train AUPRC: 0.0854, Train Accuracy: 0.9168, Train F1: 0.0000
+Valid AUROC: 0.5361, Valid AUPRC: 0.0844, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 2 Averages:
+  Positive Logit: -1.0744
+  Negative Logit: -1.0597
+  Positive Probability: 0.2611
+Validation Averages:
+  Positive Logit: -0.9725
+  Negative Logit: -0.9735
+  Positive Probability: 0.2744
+Epoch 2/100, Train Loss: 0.1426, Valid Loss: 0.1309, Time: 44.39 seconds
+Train AUROC: 0.4951, Train AUPRC: 0.0791, Train Accuracy: 0.9195, Train F1: 0.0000
+Valid AUROC: 0.4698, Valid AUPRC: 0.0802, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 3 Averages:
+  Positive Logit: -0.9183
+  Negative Logit: -0.9335
+  Positive Probability: 0.2863
+Validation Averages:
+  Positive Logit: -0.8651
+  Negative Logit: -0.8659
+  Positive Probability: 0.2963
+Epoch 3/100, Train Loss: 0.1340, Valid Loss: 0.1258, Time: 44.42 seconds
+Train AUROC: 0.5066, Train AUPRC: 0.0873, Train Accuracy: 0.9175, Train F1: 0.0000
+Valid AUROC: 0.5252, Valid AUPRC: 0.0829, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 4 Averages:
+  Positive Logit: -0.8253
+  Negative Logit: -0.8405
+  Positive Probability: 0.3056
+Validation Averages:
+  Positive Logit: -0.7949
+  Negative Logit: -0.7956
+  Positive Probability: 0.3111
+Epoch 4/100, Train Loss: 0.1266, Valid Loss: 0.1234, Time: 44.41 seconds
+Train AUROC: 0.5152, Train AUPRC: 0.0836, Train Accuracy: 0.9200, Train F1: 0.0000
+Valid AUROC: 0.5316, Valid AUPRC: 0.0838, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 5 Averages:
+  Positive Logit: -0.7601
+  Negative Logit: -0.7776
+  Positive Probability: 0.3190
+Validation Averages:
+  Positive Logit: -0.7389
+  Negative Logit: -0.7396
+  Positive Probability: 0.3232
+Epoch 5/100, Train Loss: 0.1273, Valid Loss: 0.1221, Time: 44.42 seconds
+Train AUROC: 0.5100, Train AUPRC: 0.0866, Train Accuracy: 0.9174, Train F1: 0.0000
+Valid AUROC: 0.5311, Valid AUPRC: 0.0836, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 6 Averages:
+  Positive Logit: -0.7211
+  Negative Logit: -0.7315
+  Positive Probability: 0.3275
+Validation Averages:
+  Positive Logit: -0.6962
+  Negative Logit: -0.6969
+  Positive Probability: 0.3326
+Epoch 6/100, Train Loss: 0.1252, Valid Loss: 0.1214, Time: 44.33 seconds
+Train AUROC: 0.4954, Train AUPRC: 0.0813, Train Accuracy: 0.9186, Train F1: 0.0000
+Valid AUROC: 0.4546, Valid AUPRC: 0.0751, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 7 Averages:
+  Positive Logit: -0.6891
+  Negative Logit: -0.6981
+  Positive Probability: 0.3345
+Validation Averages:
+  Positive Logit: -0.6725
+  Negative Logit: -0.6732
+  Positive Probability: 0.3379
+Epoch 7/100, Train Loss: 0.1238, Valid Loss: 0.1212, Time: 44.41 seconds
+Train AUROC: 0.4824, Train AUPRC: 0.0758, Train Accuracy: 0.9207, Train F1: 0.0000
+Valid AUROC: 0.5351, Valid AUPRC: 0.0858, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 8 Averages:
+  Positive Logit: -0.6642
+  Negative Logit: -0.6783
+  Positive Probability: 0.3401
+Validation Averages:
+  Positive Logit: -0.6515
+  Negative Logit: -0.6522
+  Positive Probability: 0.3427
+Epoch 8/100, Train Loss: 0.1254, Valid Loss: 0.1211, Time: 44.37 seconds
+Train AUROC: 0.5039, Train AUPRC: 0.0824, Train Accuracy: 0.9176, Train F1: 0.0000
+Valid AUROC: 0.5313, Valid AUPRC: 0.0837, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 9 Averages:
+  Positive Logit: -0.6676
+  Negative Logit: -0.6561
+  Positive Probability: 0.3433
+Validation Averages:
+  Positive Logit: -0.6462
+  Negative Logit: -0.6469
+  Positive Probability: 0.3439
+Epoch 9/100, Train Loss: 0.1239, Valid Loss: 0.1211, Time: 44.36 seconds
+Train AUROC: 0.4988, Train AUPRC: 0.0787, Train Accuracy: 0.9217, Train F1: 0.0000
+Valid AUROC: 0.5617, Valid AUPRC: 0.0889, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 10 Averages:
+  Positive Logit: -0.6450
+  Negative Logit: -0.6556
+  Positive Probability: 0.3449
+Validation Averages:
+  Positive Logit: -0.6445
+  Negative Logit: -0.6452
+  Positive Probability: 0.3442
+Epoch 10/100, Train Loss: 0.1222, Valid Loss: 0.1211, Time: 44.30 seconds
+Train AUROC: 0.5059, Train AUPRC: 0.0808, Train Accuracy: 0.9209, Train F1: 0.0000
+Valid AUROC: 0.5376, Valid AUPRC: 0.0848, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 11 Averages:
+  Positive Logit: -0.6440
+  Negative Logit: -0.6500
+  Positive Probability: 0.3462
+Validation Averages:
+  Positive Logit: -0.6289
+  Negative Logit: -0.6297
+  Positive Probability: 0.3478
+Epoch 11/100, Train Loss: 0.1268, Valid Loss: 0.1211, Time: 44.54 seconds
+Train AUROC: 0.5029, Train AUPRC: 0.0848, Train Accuracy: 0.9168, Train F1: 0.0000
+Valid AUROC: 0.5398, Valid AUPRC: 0.0850, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 12 Averages:
+  Positive Logit: -0.6269
+  Negative Logit: -0.6379
+  Positive Probability: 0.3487
+Validation Averages:
+  Positive Logit: -0.6188
+  Negative Logit: -0.6196
+  Positive Probability: 0.3501
+Epoch 12/100, Train Loss: 0.1271, Valid Loss: 0.1211, Time: 44.33 seconds
+Train AUROC: 0.4923, Train AUPRC: 0.0830, Train Accuracy: 0.9160, Train F1: 0.0000
+Valid AUROC: 0.5962, Valid AUPRC: 0.0978, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 13 Averages:
+  Positive Logit: -0.6231
+  Negative Logit: -0.6394
+  Positive Probability: 0.3496
+Validation Averages:
+  Positive Logit: -0.6215
+  Negative Logit: -0.6223
+  Positive Probability: 0.3495
+Epoch 13/100, Train Loss: 0.1232, Valid Loss: 0.1211, Time: 47.41 seconds
+Train AUROC: 0.5039, Train AUPRC: 0.0807, Train Accuracy: 0.9197, Train F1: 0.0000
+Valid AUROC: 0.4789, Valid AUPRC: 0.0794, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 14 Averages:
+  Positive Logit: -0.6551
+  Negative Logit: -0.6406
+  Positive Probability: 0.3494
+Validation Averages:
+  Positive Logit: -0.6217
+  Negative Logit: -0.6225
+  Positive Probability: 0.3494
+Epoch 14/100, Train Loss: 0.1285, Valid Loss: 0.1211, Time: 44.44 seconds
+Train AUROC: 0.5224, Train AUPRC: 0.0877, Train Accuracy: 0.9184, Train F1: 0.0000
+Valid AUROC: 0.4582, Valid AUPRC: 0.0755, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 15 Averages:
+  Positive Logit: -0.6267
+  Negative Logit: -0.6378
+  Positive Probability: 0.3485
+Validation Averages:
+  Positive Logit: -0.6281
+  Negative Logit: -0.6290
+  Positive Probability: 0.3479
+Epoch 15/100, Train Loss: 0.1219, Valid Loss: 0.1211, Time: 44.36 seconds
+Train AUROC: 0.4984, Train AUPRC: 0.0781, Train Accuracy: 0.9211, Train F1: 0.0000
+Valid AUROC: 0.4661, Valid AUPRC: 0.0786, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 16 Averages:
+  Positive Logit: -0.6261
+  Negative Logit: -0.6483
+  Positive Probability: 0.3486
+Validation Averages:
+  Positive Logit: -0.6216
+  Negative Logit: -0.6226
+  Positive Probability: 0.3494
+Epoch 16/100, Train Loss: 0.1248, Valid Loss: 0.1211, Time: 44.43 seconds
+Train AUROC: 0.5097, Train AUPRC: 0.0865, Train Accuracy: 0.9178, Train F1: 0.0000
+Valid AUROC: 0.5513, Valid AUPRC: 0.0902, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 17 Averages:
+  Positive Logit: -0.6154
+  Negative Logit: -0.6394
+  Positive Probability: 0.3511
+Validation Averages:
+  Positive Logit: -0.6147
+  Negative Logit: -0.6158
+  Positive Probability: 0.3510
+Epoch 17/100, Train Loss: 0.1257, Valid Loss: 0.1211, Time: 44.43 seconds
+Train AUROC: 0.5003, Train AUPRC: 0.0848, Train Accuracy: 0.9169, Train F1: 0.0000
+Valid AUROC: 0.5591, Valid AUPRC: 0.0884, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 18 Averages:
+  Positive Logit: -0.6237
+  Negative Logit: -0.6384
+  Positive Probability: 0.3492
+Validation Averages:
+  Positive Logit: -0.6148
+  Negative Logit: -0.6160
+  Positive Probability: 0.3510
+Epoch 18/100, Train Loss: 0.1240, Valid Loss: 0.1211, Time: 44.45 seconds
+Train AUROC: 0.4867, Train AUPRC: 0.0777, Train Accuracy: 0.9192, Train F1: 0.0000
+Valid AUROC: 0.5312, Valid AUPRC: 0.0841, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 19 Averages:
+  Positive Logit: -0.6306
+  Negative Logit: -0.6396
+  Positive Probability: 0.3498
+Validation Averages:
+  Positive Logit: -0.6197
+  Negative Logit: -0.6210
+  Positive Probability: 0.3498
+Epoch 19/100, Train Loss: 0.1249, Valid Loss: 0.1211, Time: 44.44 seconds
+Train AUROC: 0.5085, Train AUPRC: 0.0812, Train Accuracy: 0.9193, Train F1: 0.0000
+Valid AUROC: 0.4788, Valid AUPRC: 0.0788, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 20 Averages:
+  Positive Logit: -0.6238
+  Negative Logit: -0.6522
+  Positive Probability: 0.3491
+Validation Averages:
+  Positive Logit: -0.6224
+  Negative Logit: -0.6238
+  Positive Probability: 0.3492
+Epoch 20/100, Train Loss: 0.1220, Valid Loss: 0.1211, Time: 44.44 seconds
+Train AUROC: 0.4989, Train AUPRC: 0.0786, Train Accuracy: 0.9207, Train F1: 0.0000
+Valid AUROC: 0.5588, Valid AUPRC: 0.0884, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 1 finished. Best Valid AUPRC: 0.0978 at epoch 12. Time: 891.60 seconds 
+
+Model saved to /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold1.pth
+Finetuning completed for fold 1
+Fold 2
+/mnt/scratch/scabs/PhysioNet2025/team_code.py:959: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
+Epoch 1 Averages:
+  Positive Logit: -1.1764
+  Negative Logit: -1.1929
+  Positive Probability: 0.2369
+Validation Averages:
+  Positive Logit: -1.0995
+  Negative Logit: -1.1016
+  Positive Probability: 0.2498
+Epoch 1/100, Train Loss: 0.1506, Valid Loss: 0.1389, Time: 44.41 seconds
+Train AUROC: 0.5028, Train AUPRC: 0.0818, Train Accuracy: 0.9182, Train F1: 0.0000
+Valid AUROC: 0.5178, Valid AUPRC: 0.0815, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 2 Averages:
+  Positive Logit: -1.0453
+  Negative Logit: -1.0499
+  Positive Probability: 0.2639
+Validation Averages:
+  Positive Logit: -0.9682
+  Negative Logit: -0.9698
+  Positive Probability: 0.2752
+Epoch 2/100, Train Loss: 0.1407, Valid Loss: 0.1307, Time: 44.40 seconds
+Train AUROC: 0.5155, Train AUPRC: 0.0848, Train Accuracy: 0.9187, Train F1: 0.0000
+Valid AUROC: 0.5202, Valid AUPRC: 0.0819, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 3 Averages:
+  Positive Logit: -0.9204
+  Negative Logit: -0.9355
+  Positive Probability: 0.2857
+Validation Averages:
+  Positive Logit: -0.8667
+  Negative Logit: -0.8681
+  Positive Probability: 0.2959
+Epoch 3/100, Train Loss: 0.1298, Valid Loss: 0.1259, Time: 44.40 seconds
+Train AUROC: 0.5052, Train AUPRC: 0.0819, Train Accuracy: 0.9208, Train F1: 0.0000
+Valid AUROC: 0.5375, Valid AUPRC: 0.0847, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 4 Averages:
+  Positive Logit: -0.8297
+  Negative Logit: -0.8483
+  Positive Probability: 0.3042
+Validation Averages:
+  Positive Logit: -0.7926
+  Negative Logit: -0.7939
+  Positive Probability: 0.3116
+Epoch 4/100, Train Loss: 0.1267, Valid Loss: 0.1233, Time: 44.36 seconds
+Train AUROC: 0.5002, Train AUPRC: 0.0801, Train Accuracy: 0.9202, Train F1: 0.0000
+Valid AUROC: 0.5223, Valid AUPRC: 0.0822, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 5 Averages:
+  Positive Logit: -0.7624
+  Negative Logit: -0.7711
+  Positive Probability: 0.3186
+Validation Averages:
+  Positive Logit: -0.7358
+  Negative Logit: -0.7370
+  Positive Probability: 0.3239
+Epoch 5/100, Train Loss: 0.1270, Valid Loss: 0.1220, Time: 44.44 seconds
+Train AUROC: 0.4947, Train AUPRC: 0.0801, Train Accuracy: 0.9183, Train F1: 0.0000
+Valid AUROC: 0.5088, Valid AUPRC: 0.0805, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 6 Averages:
+  Positive Logit: -0.7217
+  Negative Logit: -0.7274
+  Positive Probability: 0.3274
+Validation Averages:
+  Positive Logit: -0.7045
+  Negative Logit: -0.7056
+  Positive Probability: 0.3308
+Epoch 6/100, Train Loss: 0.1213, Valid Loss: 0.1215, Time: 44.45 seconds
+Train AUROC: 0.4946, Train AUPRC: 0.0762, Train Accuracy: 0.9224, Train F1: 0.0000
+Valid AUROC: 0.5082, Valid AUPRC: 0.0804, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 7 Averages:
+  Positive Logit: -0.6877
+  Negative Logit: -0.7010
+  Positive Probability: 0.3350
+Validation Averages:
+  Positive Logit: -0.6686
+  Negative Logit: -0.6698
+  Positive Probability: 0.3388
+Epoch 7/100, Train Loss: 0.1268, Valid Loss: 0.1212, Time: 44.46 seconds
+Train AUROC: 0.4981, Train AUPRC: 0.0842, Train Accuracy: 0.9166, Train F1: 0.0000
+Valid AUROC: 0.5964, Valid AUPRC: 0.0974, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 8 Averages:
+  Positive Logit: -0.6600
+  Negative Logit: -0.6747
+  Positive Probability: 0.3410
+Validation Averages:
+  Positive Logit: -0.6483
+  Negative Logit: -0.6495
+  Positive Probability: 0.3434
+Epoch 8/100, Train Loss: 0.1243, Valid Loss: 0.1211, Time: 44.42 seconds
+Train AUROC: 0.5009, Train AUPRC: 0.0816, Train Accuracy: 0.9185, Train F1: 0.0000
+Valid AUROC: 0.5229, Valid AUPRC: 0.0826, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 9 Averages:
+  Positive Logit: -0.6471
+  Negative Logit: -0.6614
+  Positive Probability: 0.3439
+Validation Averages:
+  Positive Logit: -0.6416
+  Negative Logit: -0.6428
+  Positive Probability: 0.3449
+Epoch 9/100, Train Loss: 0.1231, Valid Loss: 0.1211, Time: 44.52 seconds
+Train AUROC: 0.5080, Train AUPRC: 0.0801, Train Accuracy: 0.9196, Train F1: 0.0000
+Valid AUROC: 0.5028, Valid AUPRC: 0.0801, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 10 Averages:
+  Positive Logit: -0.6500
+  Negative Logit: -0.6568
+  Positive Probability: 0.3442
+Validation Averages:
+  Positive Logit: -0.6401
+  Negative Logit: -0.6415
+  Positive Probability: 0.3452
+Epoch 10/100, Train Loss: 0.1219, Valid Loss: 0.1211, Time: 44.41 seconds
+Train AUROC: 0.4916, Train AUPRC: 0.0765, Train Accuracy: 0.9219, Train F1: 0.0000
+Valid AUROC: 0.4501, Valid AUPRC: 0.0724, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 11 Averages:
+  Positive Logit: -0.6444
+  Negative Logit: -0.6609
+  Positive Probability: 0.3445
+Validation Averages:
+  Positive Logit: -0.6485
+  Negative Logit: -0.6500
+  Positive Probability: 0.3433
+Epoch 11/100, Train Loss: 0.1184, Valid Loss: 0.1211, Time: 44.41 seconds
+Train AUROC: 0.5049, Train AUPRC: 0.0745, Train Accuracy: 0.9245, Train F1: 0.0000
+Valid AUROC: 0.5050, Valid AUPRC: 0.0817, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 12 Averages:
+  Positive Logit: -0.6461
+  Negative Logit: -0.6586
+  Positive Probability: 0.3452
+Validation Averages:
+  Positive Logit: -0.6381
+  Negative Logit: -0.6396
+  Positive Probability: 0.3457
+Epoch 12/100, Train Loss: 0.1243, Valid Loss: 0.1211, Time: 44.44 seconds
+Train AUROC: 0.5135, Train AUPRC: 0.0830, Train Accuracy: 0.9191, Train F1: 0.0000
+Valid AUROC: 0.5199, Valid AUPRC: 0.0818, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 13 Averages:
+  Positive Logit: -0.6357
+  Negative Logit: -0.6515
+  Positive Probability: 0.3465
+Validation Averages:
+  Positive Logit: -0.6270
+  Negative Logit: -0.6288
+  Positive Probability: 0.3482
+Epoch 13/100, Train Loss: 0.1249, Valid Loss: 0.1211, Time: 44.40 seconds
+Train AUROC: 0.4977, Train AUPRC: 0.0808, Train Accuracy: 0.9178, Train F1: 0.0000
+Valid AUROC: 0.5268, Valid AUPRC: 0.0829, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 14 Averages:
+  Positive Logit: -0.6370
+  Negative Logit: -0.6473
+  Positive Probability: 0.3478
+Validation Averages:
+  Positive Logit: -0.6277
+  Negative Logit: -0.6295
+  Positive Probability: 0.3480
+Epoch 14/100, Train Loss: 0.1243, Valid Loss: 0.1211, Time: 46.37 seconds
+Train AUROC: 0.5021, Train AUPRC: 0.0802, Train Accuracy: 0.9197, Train F1: 0.0000
+Valid AUROC: 0.5212, Valid AUPRC: 0.0820, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 15 Averages:
+  Positive Logit: -0.6224
+  Negative Logit: -0.6488
+  Positive Probability: 0.3496
+Validation Averages:
+  Positive Logit: -0.6231
+  Negative Logit: -0.6250
+  Positive Probability: 0.3491
+Epoch 15/100, Train Loss: 0.1250, Valid Loss: 0.1211, Time: 44.45 seconds
+Train AUROC: 0.5155, Train AUPRC: 0.0880, Train Accuracy: 0.9171, Train F1: 0.0000
+Valid AUROC: 0.5164, Valid AUPRC: 0.0813, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 2 finished. Best Valid AUPRC: 0.0974 at epoch 7. Time: 668.34 seconds 
+
+Model saved to /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold2.pth
+Finetuning completed for fold 2
+Fold 3
+/mnt/scratch/scabs/PhysioNet2025/team_code.py:959: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
+Epoch 1 Averages:
+  Positive Logit: -1.1936
+  Negative Logit: -1.1998
+  Positive Probability: 0.2360
+Validation Averages:
+  Positive Logit: -1.1031
+  Negative Logit: -1.1064
+  Positive Probability: 0.2492
+Epoch 1/100, Train Loss: 0.1514, Valid Loss: 0.1391, Time: 44.48 seconds
+Train AUROC: 0.4988, Train AUPRC: 0.0804, Train Accuracy: 0.9190, Train F1: 0.0000
+Valid AUROC: 0.5168, Valid AUPRC: 0.0813, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 2 Averages:
+  Positive Logit: -1.0404
+  Negative Logit: -1.0562
+  Positive Probability: 0.2640
+Validation Averages:
+  Positive Logit: -0.9685
+  Negative Logit: -0.9712
+  Positive Probability: 0.2752
+Epoch 2/100, Train Loss: 0.1405, Valid Loss: 0.1307, Time: 44.58 seconds
+Train AUROC: 0.5143, Train AUPRC: 0.0870, Train Accuracy: 0.9184, Train F1: 0.0000
+Valid AUROC: 0.4431, Valid AUPRC: 0.0731, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 3 Averages:
+  Positive Logit: -0.9218
+  Negative Logit: -0.9479
+  Positive Probability: 0.2852
+Validation Averages:
+  Positive Logit: -0.8719
+  Negative Logit: -0.8743
+  Positive Probability: 0.2948
+Epoch 3/100, Train Loss: 0.1258, Valid Loss: 0.1261, Time: 44.53 seconds
+Train AUROC: 0.5005, Train AUPRC: 0.0755, Train Accuracy: 0.9238, Train F1: 0.0000
+Valid AUROC: 0.5179, Valid AUPRC: 0.0823, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 4 Averages:
+  Positive Logit: -0.8388
+  Negative Logit: -0.8460
+  Positive Probability: 0.3023
+Validation Averages:
+  Positive Logit: -0.7981
+  Negative Logit: -0.8002
+  Positive Probability: 0.3104
+Epoch 4/100, Train Loss: 0.1262, Valid Loss: 0.1235, Time: 44.51 seconds
+Train AUROC: 0.4890, Train AUPRC: 0.0756, Train Accuracy: 0.9211, Train F1: 0.0000
+Valid AUROC: 0.5181, Valid AUPRC: 0.0815, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 5 Averages:
+  Positive Logit: -0.7732
+  Negative Logit: -0.7911
+  Positive Probability: 0.3165
+Validation Averages:
+  Positive Logit: -0.7408
+  Negative Logit: -0.7428
+  Positive Probability: 0.3228
+Epoch 5/100, Train Loss: 0.1257, Valid Loss: 0.1221, Time: 44.57 seconds
+Train AUROC: 0.5068, Train AUPRC: 0.0827, Train Accuracy: 0.9193, Train F1: 0.0000
+Valid AUROC: 0.4921, Valid AUPRC: 0.0785, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 6 Averages:
+  Positive Logit: -0.7223
+  Negative Logit: -0.7401
+  Positive Probability: 0.3272
+Validation Averages:
+  Positive Logit: -0.7111
+  Negative Logit: -0.7131
+  Positive Probability: 0.3294
+Epoch 6/100, Train Loss: 0.1193, Valid Loss: 0.1216, Time: 44.65 seconds
+Train AUROC: 0.5149, Train AUPRC: 0.0782, Train Accuracy: 0.9238, Train F1: 0.0000
+Valid AUROC: 0.5036, Valid AUPRC: 0.0803, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 7 Averages:
+  Positive Logit: -0.6968
+  Negative Logit: -0.7187
+  Positive Probability: 0.3329
+Validation Averages:
+  Positive Logit: -0.6807
+  Negative Logit: -0.6827
+  Positive Probability: 0.3361
+Epoch 7/100, Train Loss: 0.1231, Valid Loss: 0.1212, Time: 44.66 seconds
+Train AUROC: 0.5059, Train AUPRC: 0.0816, Train Accuracy: 0.9201, Train F1: 0.0000
+Valid AUROC: 0.5127, Valid AUPRC: 0.0810, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 8 Averages:
+  Positive Logit: -0.6750
+  Negative Logit: -0.6995
+  Positive Probability: 0.3378
+Validation Averages:
+  Positive Logit: -0.6636
+  Negative Logit: -0.6656
+  Positive Probability: 0.3399
+Epoch 8/100, Train Loss: 0.1219, Valid Loss: 0.1211, Time: 44.60 seconds
+Train AUROC: 0.5115, Train AUPRC: 0.0798, Train Accuracy: 0.9211, Train F1: 0.0000
+Valid AUROC: 0.5287, Valid AUPRC: 0.0832, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 9 Averages:
+  Positive Logit: -0.6775
+  Negative Logit: -0.6683
+  Positive Probability: 0.3413
+Validation Averages:
+  Positive Logit: -0.6443
+  Negative Logit: -0.6464
+  Positive Probability: 0.3443
+Epoch 9/100, Train Loss: 0.1280, Valid Loss: 0.1210, Time: 44.58 seconds
+Train AUROC: 0.4894, Train AUPRC: 0.0801, Train Accuracy: 0.9175, Train F1: 0.0000
+Valid AUROC: 0.4483, Valid AUPRC: 0.0738, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 10 Averages:
+  Positive Logit: -0.6572
+  Negative Logit: -0.6661
+  Positive Probability: 0.3441
+Validation Averages:
+  Positive Logit: -0.6390
+  Negative Logit: -0.6412
+  Positive Probability: 0.3455
+Epoch 10/100, Train Loss: 0.1237, Valid Loss: 0.1210, Time: 44.57 seconds
+Train AUROC: 0.5094, Train AUPRC: 0.0810, Train Accuracy: 0.9202, Train F1: 0.0000
+Valid AUROC: 0.5813, Valid AUPRC: 0.0938, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 11 Averages:
+  Positive Logit: -0.6421
+  Negative Logit: -0.6528
+  Positive Probability: 0.3462
+Validation Averages:
+  Positive Logit: -0.6326
+  Negative Logit: -0.6349
+  Positive Probability: 0.3469
+Epoch 11/100, Train Loss: 0.1238, Valid Loss: 0.1210, Time: 44.59 seconds
+Train AUROC: 0.5075, Train AUPRC: 0.0834, Train Accuracy: 0.9197, Train F1: 0.0000
+Valid AUROC: 0.5240, Valid AUPRC: 0.0825, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 12 Averages:
+  Positive Logit: -0.6318
+  Negative Logit: -0.6586
+  Positive Probability: 0.3474
+Validation Averages:
+  Positive Logit: -0.6241
+  Negative Logit: -0.6264
+  Positive Probability: 0.3489
+Epoch 12/100, Train Loss: 0.1257, Valid Loss: 0.1211, Time: 44.51 seconds
+Train AUROC: 0.5062, Train AUPRC: 0.0860, Train Accuracy: 0.9171, Train F1: 0.0000
+Valid AUROC: 0.6060, Valid AUPRC: 0.0992, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 13 Averages:
+  Positive Logit: -0.6283
+  Negative Logit: -0.6548
+  Positive Probability: 0.3483
+Validation Averages:
+  Positive Logit: -0.6239
+  Negative Logit: -0.6263
+  Positive Probability: 0.3489
+Epoch 13/100, Train Loss: 0.1226, Valid Loss: 0.1211, Time: 44.61 seconds
+Train AUROC: 0.5079, Train AUPRC: 0.0822, Train Accuracy: 0.9204, Train F1: 0.0000
+Valid AUROC: 0.4990, Valid AUPRC: 0.0803, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 14 Averages:
+  Positive Logit: -0.6251
+  Negative Logit: -0.6462
+  Positive Probability: 0.3491
+Validation Averages:
+  Positive Logit: -0.6278
+  Negative Logit: -0.6302
+  Positive Probability: 0.3480
+Epoch 14/100, Train Loss: 0.1222, Valid Loss: 0.1210, Time: 44.58 seconds
+Train AUROC: 0.5225, Train AUPRC: 0.0881, Train Accuracy: 0.9202, Train F1: 0.0000
+Valid AUROC: 0.5689, Valid AUPRC: 0.0932, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 15 Averages:
+  Positive Logit: -0.6208
+  Negative Logit: -0.6498
+  Positive Probability: 0.3498
+Validation Averages:
+  Positive Logit: -0.6240
+  Negative Logit: -0.6266
+  Positive Probability: 0.3489
+Epoch 15/100, Train Loss: 0.1243, Valid Loss: 0.1211, Time: 44.62 seconds
+Train AUROC: 0.5138, Train AUPRC: 0.0858, Train Accuracy: 0.9178, Train F1: 0.0000
+Valid AUROC: 0.5221, Valid AUPRC: 0.0822, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 16 Averages:
+  Positive Logit: -0.6228
+  Negative Logit: -0.6526
+  Positive Probability: 0.3500
+Validation Averages:
+  Positive Logit: -0.6209
+  Negative Logit: -0.6235
+  Positive Probability: 0.3496
+Epoch 16/100, Train Loss: 0.1249, Valid Loss: 0.1211, Time: 44.59 seconds
+Train AUROC: 0.5167, Train AUPRC: 0.0862, Train Accuracy: 0.9177, Train F1: 0.0000
+Valid AUROC: 0.5274, Valid AUPRC: 0.0830, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 17 Averages:
+  Positive Logit: -0.6179
+  Negative Logit: -0.6499
+  Positive Probability: 0.3505
+Validation Averages:
+  Positive Logit: -0.6171
+  Negative Logit: -0.6199
+  Positive Probability: 0.3504
+Epoch 17/100, Train Loss: 0.1252, Valid Loss: 0.1211, Time: 44.52 seconds
+Train AUROC: 0.5028, Train AUPRC: 0.0841, Train Accuracy: 0.9173, Train F1: 0.0000
+Valid AUROC: 0.5250, Valid AUPRC: 0.0826, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 18 Averages:
+  Positive Logit: -0.6189
+  Negative Logit: -0.6476
+  Positive Probability: 0.3503
+Validation Averages:
+  Positive Logit: -0.6180
+  Negative Logit: -0.6209
+  Positive Probability: 0.3502
+Epoch 18/100, Train Loss: 0.1247, Valid Loss: 0.1211, Time: 44.55 seconds
+Train AUROC: 0.5036, Train AUPRC: 0.0833, Train Accuracy: 0.9178, Train F1: 0.0000
+Valid AUROC: 0.5285, Valid AUPRC: 0.0833, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 19 Averages:
+  Positive Logit: -0.6338
+  Negative Logit: -0.6598
+  Positive Probability: 0.3495
+Validation Averages:
+  Positive Logit: -0.6235
+  Negative Logit: -0.6264
+  Positive Probability: 0.3490
+Epoch 19/100, Train Loss: 0.1226, Valid Loss: 0.1210, Time: 44.64 seconds
+Train AUROC: 0.5094, Train AUPRC: 0.0818, Train Accuracy: 0.9215, Train F1: 0.0000
+Valid AUROC: 0.5276, Valid AUPRC: 0.0830, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 20 Averages:
+  Positive Logit: -0.6351
+  Negative Logit: -0.6774
+  Positive Probability: 0.3474
+Validation Averages:
+  Positive Logit: -0.6247
+  Negative Logit: -0.6278
+  Positive Probability: 0.3487
+Epoch 20/100, Train Loss: 0.1235, Valid Loss: 0.1210, Time: 44.51 seconds
+Train AUROC: 0.4958, Train AUPRC: 0.0784, Train Accuracy: 0.9198, Train F1: 0.0000
+Valid AUROC: 0.4832, Valid AUPRC: 0.0798, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 3 finished. Best Valid AUPRC: 0.0992 at epoch 12. Time: 891.46 seconds 
+
+Model saved to /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold3.pth
+Finetuning completed for fold 3
+Fold 4
+/mnt/scratch/scabs/PhysioNet2025/team_code.py:959: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
+Epoch 1 Averages:
+  Positive Logit: -1.1718
+  Negative Logit: -1.1971
+  Positive Probability: 0.2377
+Validation Averages:
+  Positive Logit: -1.1003
+  Negative Logit: -1.1022
+  Positive Probability: 0.2497
+Epoch 1/100, Train Loss: 0.1456, Valid Loss: 0.1389, Time: 44.47 seconds
+Train AUROC: 0.5169, Train AUPRC: 0.0833, Train Accuracy: 0.9209, Train F1: 0.0000
+Valid AUROC: 0.6100, Valid AUPRC: 0.1010, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 2 Averages:
+  Positive Logit: -1.0328
+  Negative Logit: -1.0626
+  Positive Probability: 0.2634
+Validation Averages:
+  Positive Logit: -0.9668
+  Negative Logit: -0.9684
+  Positive Probability: 0.2755
+Epoch 2/100, Train Loss: 0.1368, Valid Loss: 0.1306, Time: 44.52 seconds
+Train AUROC: 0.5123, Train AUPRC: 0.0819, Train Accuracy: 0.9201, Train F1: 0.0000
+Valid AUROC: 0.5925, Valid AUPRC: 0.0957, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 3 Averages:
+  Positive Logit: -0.9438
+  Negative Logit: -0.9372
+  Positive Probability: 0.2860
+Validation Averages:
+  Positive Logit: -0.8705
+  Negative Logit: -0.8718
+  Positive Probability: 0.2952
+Epoch 3/100, Train Loss: 0.1291, Valid Loss: 0.1260, Time: 44.53 seconds
+Train AUROC: 0.5045, Train AUPRC: 0.0784, Train Accuracy: 0.9235, Train F1: 0.0000
+Valid AUROC: 0.5932, Valid AUPRC: 0.0969, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 4 Averages:
+  Positive Logit: -0.8329
+  Negative Logit: -0.8480
+  Positive Probability: 0.3035
+Validation Averages:
+  Positive Logit: -0.7974
+  Negative Logit: -0.7986
+  Positive Probability: 0.3106
+Epoch 4/100, Train Loss: 0.1245, Valid Loss: 0.1235, Time: 44.57 seconds
+Train AUROC: 0.5048, Train AUPRC: 0.0793, Train Accuracy: 0.9219, Train F1: 0.0000
+Valid AUROC: 0.5242, Valid AUPRC: 0.0825, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 5 Averages:
+  Positive Logit: -0.7707
+  Negative Logit: -0.7856
+  Positive Probability: 0.3168
+Validation Averages:
+  Positive Logit: -0.7479
+  Negative Logit: -0.7490
+  Positive Probability: 0.3213
+Epoch 5/100, Train Loss: 0.1222, Valid Loss: 0.1222, Time: 45.34 seconds
+Train AUROC: 0.5034, Train AUPRC: 0.0789, Train Accuracy: 0.9224, Train F1: 0.0000
+Valid AUROC: 0.5261, Valid AUPRC: 0.0828, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 6 Averages:
+  Positive Logit: -0.7155
+  Negative Logit: -0.7376
+  Positive Probability: 0.3287
+Validation Averages:
+  Positive Logit: -0.6988
+  Negative Logit: -0.6999
+  Positive Probability: 0.3321
+Epoch 6/100, Train Loss: 0.1280, Valid Loss: 0.1214, Time: 44.48 seconds
+Train AUROC: 0.5184, Train AUPRC: 0.0913, Train Accuracy: 0.9154, Train F1: 0.0000
+Valid AUROC: 0.4243, Valid AUPRC: 0.0697, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 7 Averages:
+  Positive Logit: -0.6810
+  Negative Logit: -0.7038
+  Positive Probability: 0.3363
+Validation Averages:
+  Positive Logit: -0.6730
+  Negative Logit: -0.6741
+  Positive Probability: 0.3378
+Epoch 7/100, Train Loss: 0.1234, Valid Loss: 0.1212, Time: 44.39 seconds
+Train AUROC: 0.5213, Train AUPRC: 0.0859, Train Accuracy: 0.9192, Train F1: 0.0000
+Valid AUROC: 0.6125, Valid AUPRC: 0.1016, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 8 Averages:
+  Positive Logit: -0.6617
+  Negative Logit: -0.6704
+  Positive Probability: 0.3424
+Validation Averages:
+  Positive Logit: -0.6467
+  Negative Logit: -0.6478
+  Positive Probability: 0.3437
+Epoch 8/100, Train Loss: 0.1286, Valid Loss: 0.1211, Time: 44.48 seconds
+Train AUROC: 0.5227, Train AUPRC: 0.0917, Train Accuracy: 0.9148, Train F1: 0.0000
+Valid AUROC: 0.5251, Valid AUPRC: 0.0826, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 9 Averages:
+  Positive Logit: -0.6529
+  Negative Logit: -0.6619
+  Positive Probability: 0.3455
+Validation Averages:
+  Positive Logit: -0.6339
+  Negative Logit: -0.6351
+  Positive Probability: 0.3466
+Epoch 9/100, Train Loss: 0.1273, Valid Loss: 0.1210, Time: 44.51 seconds
+Train AUROC: 0.5084, Train AUPRC: 0.0860, Train Accuracy: 0.9168, Train F1: 0.0000
+Valid AUROC: 0.5255, Valid AUPRC: 0.0827, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 10 Averages:
+  Positive Logit: -0.6454
+  Negative Logit: -0.6473
+  Positive Probability: 0.3464
+Validation Averages:
+  Positive Logit: -0.6332
+  Negative Logit: -0.6344
+  Positive Probability: 0.3468
+Epoch 10/100, Train Loss: 0.1238, Valid Loss: 0.1210, Time: 44.48 seconds
+Train AUROC: 0.4943, Train AUPRC: 0.0766, Train Accuracy: 0.9208, Train F1: 0.0000
+Valid AUROC: 0.5513, Valid AUPRC: 0.0878, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 11 Averages:
+  Positive Logit: -0.6266
+  Negative Logit: -0.6453
+  Positive Probability: 0.3485
+Validation Averages:
+  Positive Logit: -0.6232
+  Negative Logit: -0.6245
+  Positive Probability: 0.3491
+Epoch 11/100, Train Loss: 0.1260, Valid Loss: 0.1211, Time: 44.56 seconds
+Train AUROC: 0.5078, Train AUPRC: 0.0857, Train Accuracy: 0.9163, Train F1: 0.0000
+Valid AUROC: 0.4799, Valid AUPRC: 0.0775, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 12 Averages:
+  Positive Logit: -0.6285
+  Negative Logit: -0.6501
+  Positive Probability: 0.3487
+Validation Averages:
+  Positive Logit: -0.6207
+  Negative Logit: -0.6220
+  Positive Probability: 0.3496
+Epoch 12/100, Train Loss: 0.1241, Valid Loss: 0.1211, Time: 44.54 seconds
+Train AUROC: 0.4970, Train AUPRC: 0.0828, Train Accuracy: 0.9192, Train F1: 0.0000
+Valid AUROC: 0.5678, Valid AUPRC: 0.0906, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 13 Averages:
+  Positive Logit: -0.6226
+  Negative Logit: -0.6455
+  Positive Probability: 0.3494
+Validation Averages:
+  Positive Logit: -0.6254
+  Negative Logit: -0.6269
+  Positive Probability: 0.3486
+Epoch 13/100, Train Loss: 0.1225, Valid Loss: 0.1210, Time: 44.53 seconds
+Train AUROC: 0.5068, Train AUPRC: 0.0808, Train Accuracy: 0.9205, Train F1: 0.0000
+Valid AUROC: 0.4411, Valid AUPRC: 0.0737, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 14 Averages:
+  Positive Logit: -0.6254
+  Negative Logit: -0.6518
+  Positive Probability: 0.3488
+Validation Averages:
+  Positive Logit: -0.6248
+  Negative Logit: -0.6264
+  Positive Probability: 0.3487
+Epoch 14/100, Train Loss: 0.1237, Valid Loss: 0.1210, Time: 44.48 seconds
+Train AUROC: 0.5064, Train AUPRC: 0.0818, Train Accuracy: 0.9188, Train F1: 0.0000
+Valid AUROC: 0.4819, Valid AUPRC: 0.0793, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Epoch 15 Averages:
+  Positive Logit: -0.6443
+  Negative Logit: -0.6665
+  Positive Probability: 0.3473
+Validation Averages:
+  Positive Logit: -0.6315
+  Negative Logit: -0.6335
+  Positive Probability: 0.3472
+Epoch 15/100, Train Loss: 0.1226, Valid Loss: 0.1210, Time: 44.47 seconds
+Train AUROC: 0.5079, Train AUPRC: 0.0800, Train Accuracy: 0.9218, Train F1: 0.0000
+Valid AUROC: 0.3889, Valid AUPRC: 0.0693, Valid Accuracy: 0.9212, Valid F1: 0.0000
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 4 finished. Best Valid AUPRC: 0.1016 at epoch 7. Time: 668.35 seconds 
+
+Model saved to /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold4.pth
+Finetuning completed for fold 4
+Fold 5
+/mnt/scratch/scabs/PhysioNet2025/team_code.py:959: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
+Epoch 1 Averages:
+  Positive Logit: -1.1761
+  Negative Logit: -1.2041
+  Positive Probability: 0.2368
+Validation Averages:
+  Positive Logit: -1.1026
+  Negative Logit: -1.1053
+  Positive Probability: 0.2493
+Epoch 1/100, Train Loss: 0.1479, Valid Loss: 0.1395, Time: 44.77 seconds
+Train AUROC: 0.5030, Train AUPRC: 0.0807, Train Accuracy: 0.9198, Train F1: 0.0000
+Valid AUROC: 0.6384, Valid AUPRC: 0.1107, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 2 Averages:
+  Positive Logit: -1.0403
+  Negative Logit: -1.0584
+  Positive Probability: 0.2620
+Validation Averages:
+  Positive Logit: -0.9765
+  Negative Logit: -0.9787
+  Positive Probability: 0.2736
+Epoch 2/100, Train Loss: 0.1320, Valid Loss: 0.1315, Time: 44.44 seconds
+Train AUROC: 0.5037, Train AUPRC: 0.0790, Train Accuracy: 0.9238, Train F1: 0.0000
+Valid AUROC: 0.5042, Valid AUPRC: 0.0800, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 3 Averages:
+  Positive Logit: -0.9240
+  Negative Logit: -0.9389
+  Positive Probability: 0.2849
+Validation Averages:
+  Positive Logit: -0.8714
+  Negative Logit: -0.8733
+  Positive Probability: 0.2950
+Epoch 3/100, Train Loss: 0.1301, Valid Loss: 0.1264, Time: 44.58 seconds
+Train AUROC: 0.4938, Train AUPRC: 0.0792, Train Accuracy: 0.9208, Train F1: 0.0000
+Valid AUROC: 0.4009, Valid AUPRC: 0.0699, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 4 Averages:
+  Positive Logit: -0.8314
+  Negative Logit: -0.8505
+  Positive Probability: 0.3039
+Validation Averages:
+  Positive Logit: -0.7966
+  Negative Logit: -0.7984
+  Positive Probability: 0.3107
+Epoch 4/100, Train Loss: 0.1259, Valid Loss: 0.1238, Time: 44.45 seconds
+Train AUROC: 0.5072, Train AUPRC: 0.0804, Train Accuracy: 0.9211, Train F1: 0.0000
+Valid AUROC: 0.6267, Valid AUPRC: 0.1065, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 5 Averages:
+  Positive Logit: -0.7716
+  Negative Logit: -0.7859
+  Positive Probability: 0.3169
+Validation Averages:
+  Positive Logit: -0.7436
+  Negative Logit: -0.7453
+  Positive Probability: 0.3222
+Epoch 5/100, Train Loss: 0.1236, Valid Loss: 0.1224, Time: 44.57 seconds
+Train AUROC: 0.5080, Train AUPRC: 0.0812, Train Accuracy: 0.9213, Train F1: 0.0000
+Valid AUROC: 0.5112, Valid AUPRC: 0.0807, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 6 Averages:
+  Positive Logit: -0.7370
+  Negative Logit: -0.7413
+  Positive Probability: 0.3246
+Validation Averages:
+  Positive Logit: -0.7001
+  Negative Logit: -0.7018
+  Positive Probability: 0.3318
+Epoch 6/100, Train Loss: 0.1256, Valid Loss: 0.1217, Time: 44.45 seconds
+Train AUROC: 0.4849, Train AUPRC: 0.0776, Train Accuracy: 0.9196, Train F1: 0.0000
+Valid AUROC: 0.6000, Valid AUPRC: 0.0982, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 7 Averages:
+  Positive Logit: -0.6838
+  Negative Logit: -0.7010
+  Positive Probability: 0.3357
+Validation Averages:
+  Positive Logit: -0.6710
+  Negative Logit: -0.6727
+  Positive Probability: 0.3383
+Epoch 7/100, Train Loss: 0.1243, Valid Loss: 0.1214, Time: 44.45 seconds
+Train AUROC: 0.5124, Train AUPRC: 0.0838, Train Accuracy: 0.9186, Train F1: 0.0000
+Valid AUROC: 0.6092, Valid AUPRC: 0.1034, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 8 Averages:
+  Positive Logit: -0.6756
+  Negative Logit: -0.6756
+  Positive Probability: 0.3416
+Validation Averages:
+  Positive Logit: -0.6522
+  Negative Logit: -0.6539
+  Positive Probability: 0.3425
+Epoch 8/100, Train Loss: 0.1290, Valid Loss: 0.1213, Time: 44.52 seconds
+Train AUROC: 0.5150, Train AUPRC: 0.0883, Train Accuracy: 0.9167, Train F1: 0.0000
+Valid AUROC: 0.5818, Valid AUPRC: 0.0936, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Epoch 9 Averages:
+  Positive Logit: -0.6565
+  Negative Logit: -0.6622
+  Positive Probability: 0.3423
+Validation Averages:
+  Positive Logit: -0.6360
+  Negative Logit: -0.6378
+  Positive Probability: 0.3461
+Epoch 9/100, Train Loss: 0.1269, Valid Loss: 0.1213, Time: 44.56 seconds
+Train AUROC: 0.4884, Train AUPRC: 0.0799, Train Accuracy: 0.9170, Train F1: 0.0000
+Valid AUROC: 0.5118, Valid AUPRC: 0.0808, Valid Accuracy: 0.9209, Valid F1: 0.0000
+
+Early stopping: Valid AUPRC not improved for 8 epochs
+Fold 5 finished. Best Valid AUPRC: 0.1107 at epoch 1. Time: 400.80 seconds 
+
+Model saved to /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold5.pth
+Finetuning completed for fold 5
+
+====== Memory Usage After finetune_model function call ======
+Process RSS (Resident Set Size, actual physical memory used by process): 6.05 GB
+Process VMS (Virtual Memory Size, total virtual memory used by process): 20.13 GB
+System Used (Total RAM used by the system): 35.90 GB
+System Available (RAM available for new processes): 198.03 GB / 250.84 GB (Total System RAM)
+Memory Used % (Percentage of System RAM used): 21.1%
+GPU Memory Allocated (GPU memory currently allocated): 0.51 GB
+GPU Memory Cached (GPU memory currently cached): 3.83 GB
+==========================================
+
+Done.
+
+No fused RMSNorm
+>>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<
+Model Name: CTN
+>>>>>>>>>Pretraining Parameters:<<<<<<<<<<
+Number of Epochs: 50
+Learning Rate: 3e-05
+Batch Size: 64
+Early Stop Patience: 5
+>>>>>>>>>Training Parameters:<<<<<<<<<<
+Number of Epochs: 100
+Learning Rate: 1e-06
+Dropout Rate: 0.3
+Net1D Dropout Rate: 0.3
+Batch Size: 32
+Early Stop Patience: 8
+>>>>>>>>>Meta Features:<<<<<<<<<<
+Use Age: True
+Use Sex: True
+Use Signal Stats: False
+Meta Feature Dimension: 4
+>>>>>>>>>Data Augmentation:<<<<<<<<<<
+Use Noise Augmentation: True, Probability: 0.5
+Use Scaling Augmentation: True, Probability: 0.5
+Use Flip Augmentation: False, Probability: 0.2
+Use Shift Augmentation: True, Max Ratio: 0.8, Probability: 0.3
+Use Drop Augmentation: True, Max Probability: 0.02, Probability: 0.3
+Use 50Hz Power Noise: False, Probability: 0.5
+Use Sine Wave Augmentation: False, Freq Range: [0.001, 0.02], Max Amp: 0.08, Probability: 0.3
+Use Square Wave Augmentation: False, Freq Range: [0.001, 0.1], Max Amp: 0.08, Probability: 0.3
+Use Cutout Augmentation: True, Max Ratio: 0.2, Probability: 0.3
+Use Lead Mixing Augmentation: True, Lambda: 0.2, Probability: 0.3
+Use Time Warping Augmentation: True, Freq Range: [450, 550], Probability: 0.3
+>>>>>>>>>Loss Parameters:<<<<<<<<<<
+Pretrain Focal Gamma: 2
+Pretrain Margin: 0.1
+Pretrain S: 30
+Pretrain LMF Alpha: 0.98
+Pretrain LMF Beta: 0.02
+Finetune Focal Gamma: 2
+Finetune Margin: 0.35
+Finetune S: 30
+Finetune LMF Alpha: 0.98
+Finetune LMF Beta: 0.02
+Positive Sample Weight Multiplier: 1.0
+>>>>>>>>>Device:<<<<<<<<<<
+Device: cuda
+/mnt/flash/tmp/job.1541267
+/mnt/scratch/scabs/PhysioNet2025/team_code.py:1248: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  checkpoint = torch.load(model_filename, map_location=config.device)
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+/mnt/scratch/scabs/PhysioNet2025/models/models.py:71: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  checkpoint = torch.load(pth_path, map_location=device)
+Successfully loaded pretrained weights from /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold1.pth for CTN.
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+Successfully loaded pretrained weights from /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold2.pth for CTN.
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+Successfully loaded pretrained weights from /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold3.pth for CTN.
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+Successfully loaded pretrained weights from /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold4.pth for CTN.
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+DEBUG: d_model=180, nhead=6
+Successfully loaded pretrained weights from /mnt/scratch/scabs/PhysioNet2025/Transformer_run/Model/model_fold5.pth for CTN.
+Challenge score: 0.067
+AUROC: 0.605
+AUPRC: 0.039
+Accuracy: 0.970
+F-measure: 0.955
+
