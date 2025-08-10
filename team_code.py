@@ -57,12 +57,12 @@ from utils import *
 class Config:
     def __init__(self):
         # --- General & Path Settings ---
-        self.model_name = 'ResNet18'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
+        self.model_name = 'ECGFeatureExtractor'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
-        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp')
+        self.cache_folder = os.getenv('CACHE_FOLDER', '/tmp/wmqn2362')
+        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', '/tmp/wmqn2362')
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
-        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
+        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', '/tmp/wmqn2362')
         self.num_preprocess_workers = os.cpu_count() // 4
 
         # --- Model Architecture ---
@@ -113,7 +113,7 @@ class Config:
         self.dann = {
             "num_domains": 8,
             "external_datasets": ['CODE15', 'CSPC', 'CSPC_extra', 'Chapman_Shaoxing', 'Georgia', 'Ningbo', 'PTB', 'ST_Petersburg'],
-            "lambda": 0.3,  # Max weight for domain confusion loss
+            "lambda": 0.8,  # Max weight for domain confusion loss
             "alpha": 10.0  # Steepness of the lambda scheduler
         }
         
@@ -856,81 +856,82 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
                     train_neg_logits_sum += task_output_chagas[neg_mask_train].sum().item()
                     train_neg_count += neg_mask_train.sum().item()
 
-            # ------------------------------------------------------------------
-            # --- Phase 2: Domain Classifier Training (Update Domain Classifier) ---
-            # ------------------------------------------------------------------
-            model.train()
-            # Set requires_grad for domain classifier parameters
-            for param in model.encoder.parameters():
-                param.requires_grad = False # Fix encoder
-            for param in model.classifier.parameters():
-                param.requires_grad = False # Fix label predictor
-            for param in model.domain_classifier.parameters():
-                param.requires_grad = True
+            if epoch >= 5: # Warmup for 5 epochs without DANN
+                # ------------------------------------------------------------------
+                # --- Phase 2: Domain Classifier Training (Update Domain Classifier) ---
+                # ------------------------------------------------------------------
+                model.train()
+                # Set requires_grad for domain classifier parameters
+                for param in model.encoder.parameters():
+                    param.requires_grad = False # Fix encoder
+                for param in model.classifier.parameters():
+                    param.requires_grad = False # Fix label predictor
+                for param in model.domain_classifier.parameters():
+                    param.requires_grad = True
 
-            optimizer_domain_classifier.zero_grad()
-            # Prepare combined data for Domain Adversarial and Confusion Training
-            all_signals_domain = []
-            all_metas_domain = []
-            all_domain_labels_combined = []
+                optimizer_domain_classifier.zero_grad()
+                # Prepare combined data for Domain Adversarial and Confusion Training
+                all_signals_domain = []
+                all_metas_domain = []
+                all_domain_labels_combined = []
 
-            # Add all DANN datasets for domain tasks
-            for j, ext_iter in enumerate(external_iters): # Iterate over external_iters
-                try:
-                    ext_features, _, ext_domain_label = next(ext_iter)
-                except StopIteration:
-                    external_iters[j] = iter(external_train_loaders[j]) # Use external_train_loaders here
-                    ext_features, _, ext_domain_label = next(external_iters[j])
+                # Add all DANN datasets for domain tasks
+                for j, ext_iter in enumerate(external_iters): # Iterate over external_iters
+                    try:
+                        ext_features, _, ext_domain_label = next(ext_iter)
+                    except StopIteration:
+                        external_iters[j] = iter(external_train_loaders[j]) # Use external_train_loaders here
+                        ext_features, _, ext_domain_label = next(external_iters[j])
+                    
+                    signal_ext, meta_ext = ext_features
+                    all_signals_domain.append(signal_ext)
+                    all_metas_domain.append(meta_ext)
+                    all_domain_labels_combined.append(ext_domain_label.to(device))
                 
-                signal_ext, meta_ext = ext_features
-                all_signals_domain.append(signal_ext)
-                all_metas_domain.append(meta_ext)
-                all_domain_labels_combined.append(ext_domain_label.to(device))
-            
-            combined_domain_signal = torch.cat(all_signals_domain, 0).to(device)
-            combined_domain_meta = torch.cat(all_metas_domain, 0).to(device)
-            combined_domain_target = torch.cat(all_domain_labels_combined, 0).to(device)
-            # Add .squeeze() to convert (N, 1) to (N)
-            combined_domain_target = combined_domain_target.squeeze()
-            # Convert target to long type for CrossEntropyLoss
-            combined_domain_target = combined_domain_target.long()
+                combined_domain_signal = torch.cat(all_signals_domain, 0).to(device)
+                combined_domain_meta = torch.cat(all_metas_domain, 0).to(device)
+                combined_domain_target = torch.cat(all_domain_labels_combined, 0).to(device)
+                # Add .squeeze() to convert (N, 1) to (N)
+                combined_domain_target = combined_domain_target.squeeze()
+                # Convert target to long type for CrossEntropyLoss
+                combined_domain_target = combined_domain_target.long()
 
-            # Use detached features to prevent gradient flow back to encoder
-            _, domain_output_combined, _ = model(combined_domain_signal, combined_domain_meta)
-            domain_loss = domain_criterion(domain_output_combined, combined_domain_target)
-            
-            domain_loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer_domain_classifier.step()
-            total_domain_loss += domain_loss.item()
-            train_domain_targets.extend(combined_domain_target.cpu().numpy())
-            train_domain_outputs.extend(torch.argmax(domain_output_combined, dim=1).detach().cpu().numpy())
+                # Use detached features to prevent gradient flow back to encoder
+                _, domain_output_combined, _ = model(combined_domain_signal, combined_domain_meta)
+                domain_loss = domain_criterion(domain_output_combined, combined_domain_target)
+                
+                domain_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                optimizer_domain_classifier.step()
+                total_domain_loss += domain_loss.item()
+                train_domain_targets.extend(combined_domain_target.cpu().numpy())
+                train_domain_outputs.extend(torch.argmax(domain_output_combined, dim=1).detach().cpu().numpy())
 
-            # ------------------------------------------------------------------
-            # --- Phase 3: Confusion Training (Update Encoder) ---
-            # ------------------------------------------------------------------
-            model.train()
-            # Set requires_grad for encoder parameters
-            for param in model.domain_classifier.parameters():
-                param.requires_grad = False # Fix domain predictor
-            for param in model.encoder.parameters():
-                param.requires_grad = True
-            for param in model.classifier.parameters():
-                param.requires_grad = False # Fix label predictor
+                # ------------------------------------------------------------------
+                # --- Phase 3: Confusion Training (Update Encoder) ---
+                # ------------------------------------------------------------------
+                model.train()
+                # Set requires_grad for encoder parameters
+                for param in model.domain_classifier.parameters():
+                    param.requires_grad = False # Fix domain predictor
+                for param in model.encoder.parameters():
+                    param.requires_grad = True
+                for param in model.classifier.parameters():
+                    param.requires_grad = False # Fix label predictor
 
-            optimizer_encoder_confusion.zero_grad()
-            # Re-run forward pass to get features with gradients enabled for encoder
-            _, domain_output_confusion, _ = model(combined_domain_signal, combined_domain_meta)
-            
-            # Maximize domain classifier error: use negative of domain loss
-            # Dynamically calculate dann_lambda
-            dann_lambda = calculate_lambda(epoch, num_epochs, config.dann['lambda'])
-            confusion_loss = dann_lambda * confusion_criterion(domain_output_confusion, combined_domain_target)
-            
-            confusion_loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer_encoder_confusion.step()
-            total_confusion_loss += confusion_loss.item()
+                optimizer_encoder_confusion.zero_grad()
+                # Re-run forward pass to get features with gradients enabled for encoder
+                _, domain_output_confusion, _ = model(combined_domain_signal, combined_domain_meta)
+                
+                # Maximize domain classifier error: use negative of domain loss
+                # Dynamically calculate dann_lambda
+                dann_lambda = calculate_lambda(epoch, num_epochs, config.dann['lambda'])
+                confusion_loss = dann_lambda * confusion_criterion(domain_output_confusion, combined_domain_target)
+                
+                confusion_loss.backward()
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                optimizer_encoder_confusion.step()
+                total_confusion_loss += confusion_loss.item()
         
         total_chagas_loss /= len(code15_chagas_loader) # Average over code15 batches
         total_domain_loss /= max_batches # Average over DANN batches
@@ -1113,6 +1114,12 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         
         # Reset model to initial state for each fold
         model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
+        
+        # Freeze encoder parameters
+        for param in model.encoder.parameters():
+            param.requires_grad = False
+        if verbose:
+            print("Encoder parameters frozen for finetuning.")
         
         train_subset = Subset(finetune_dataset, train_idx)
         val_subset = Subset(finetune_dataset, val_idx)
@@ -1540,6 +1547,7 @@ def evaluate_model(models, code15_dataset, samitrop_dataset, ptbxl_dataset, exte
         )
     
     print(f"\nEvaluation completed for {len(models)} model(s).")
+
 # Load your trained models. This function is *required*. You should edit this function to add your code, but do *not* change the
 # arguments of this function. If you do not train one of the models, then you can return None for the model.
 def load_model(model_folder, verbose):
