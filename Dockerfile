@@ -7,7 +7,7 @@ WORKDIR /challenge
 
 ## Install your dependencies here using apt install, etc.
 RUN apt-get update && apt-get install -y wget tar
-RUN wget -O 12_lead_ECGFounder.pth "https://huggingface.co/PKUDigitalHealth/ECGFounder/resolve/main/12_lead_ECGFounder.pth?download=true"
+# RUN wget -O 12_lead_ECGFounder.pth "https://huggingface.co/PKUDigitalHealth/ECGFounder/resolve/main/12_lead_ECGFounder.pth?download=true"
 
 # RUN mkdir -p ./tmp
 RUN mkdir -p /tmp/wmqn2362
@@ -24,6 +24,11 @@ RUN wget -O /tmp/wmqn2362/CODE15_data_part_aa "https://huggingface.co/datasets/x
 
 # combine the CODE15 data parts into a single file
 RUN cat /tmp/wmqn2362/CODE15_data_part_* > /tmp/wmqn2362/CODE15_data.hdf5
+RUN rm /tmp/wmqn2362/CODE15_data_part_*
+
+# Download finetune datasets
+RUN wget -O /tmp/wmqn2362/PTBXL_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/PTBXL_data.hdf5?download=true"
+RUN wget -O /tmp/wmqn2362/SaMiTrop_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/SaMiTrop_data.hdf5?download=true"
 
 # Download external datasets
 RUN wget -O /tmp/wmqn2362/CSPC_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CSPC_data.hdf5?download=true"
