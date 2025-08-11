@@ -57,7 +57,7 @@ from utils import *
 class Config:
     def __init__(self):
         # --- General & Path Settings ---
-        self.model_name = 'ECGFeatureExtractor'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
+        self.model_name = 'ResNet18'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.cache_folder = os.getenv('CACHE_FOLDER', '/tmp/wmqn2362')
         self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', '/tmp/wmqn2362')
@@ -1038,8 +1038,9 @@ def pretrain_model(pretrain_dataset, external_datasets, model, criterion,
         print('\n')
 
         scheduler_task.step()
-        scheduler_domain_classifier.step()
-        scheduler_encoder_confusion.step()
+        if epoch >= 5: # Only step domain schedulers if DANN is active
+            scheduler_domain_classifier.step()
+            scheduler_encoder_confusion.step()
 
         if val_auprc > best_auprc:
             best_auprc = val_auprc
