@@ -63,10 +63,10 @@ def data_preprocess(record, config=None, highpass_filter_params=None, lowpass_fi
     header = load_header(record)
     age = get_age(header) if config.use_age else 0
     sex = get_sex(header) if config.use_sex else 'Unknown'
+    # Extract RBBB label from header (get_label now looks for 'RBBB label')
     label = get_label(header, allow_missing=True) # Allow missing labels for inference
-    
-    # Handle missing label: if label is None or False (from sanitize_boolean_value), set to -1
-    if label is None or (isinstance(label, bool) and not label):
+    # Handle missing label: if label is None, set to -1
+    if label is None:
         label = -1
     
     one_hot_encoding_sex = np.zeros(3, dtype=np.bool_)

@@ -18,7 +18,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-i', '--signal_files', type=str, required=True, nargs='*') # exams_part0.hdf5, exams_part1.hdf5, ...
     parser.add_argument('-d', '--demographics_file', type=str, required=True) # exams.csv
-    parser.add_argument('-l', '--labels_file', type=str, required=True) # code15_chagas_labels.csv
+    parser.add_argument('-l', '--labels_file', type=str, required=False) # code15_chagas_labels.csv - update required=False as predicting RBBB
     parser.add_argument('-f', '--signal_format', type=str, required=False, default='dat', choices=['dat', 'mat'])
     parser.add_argument('-o', '--output_paths', type=str, required=True, nargs='*')
     return parser
@@ -98,9 +98,10 @@ def fix_checksums(record, checksums=None):
 
 # Run script.
 def run(args):
-    # Load the patient demographic data.
+    # Load the patient demographic data and RBBB labels from exams.csv.
     exam_id_to_age = dict()
     exam_id_to_sex = dict()
+    exam_id_to_rbbb = dict()
 
     df = pd.read_csv(args.demographics_file)
     for idx, row in df.iterrows():
@@ -119,19 +120,19 @@ def run(args):
         sex = 'Male' if is_male else 'Female' # This variable was encoding as a binary value.
         exam_id_to_sex[exam_id] = sex
 
-    # Load the Chagas labels.
-    exam_id_to_chagas = dict()
-
-    df = pd.read_csv(args.labels_file)
-    for idx, row in df.iterrows():
-        exam_id = row['exam_id']
-        assert(is_integer(exam_id))
-        exam_id = int(exam_id)
-
-        chagas = row['chagas']
-        assert(is_boolean(chagas))
-        chagas = sanitize_boolean_value(chagas)
-        exam_id_to_chagas[exam_id] = bool(chagas)
+        # Load the RBBB label (expects 'TRUE'/'FALSE' as string)
+        rbbb = row['RBBB']
+        if isinstance(rbbb, str):
+            rbbb_clean = rbbb.strip().upper()
+            if rbbb_clean == 'TRUE':
+                rbbb_bool = True
+            elif rbbb_clean == 'FALSE':
+                rbbb_bool = False
+            else:
+                raise ValueError(f"Unexpected RBBB value: {rbbb} for exam_id {exam_id}")
+        else:
+            rbbb_bool = bool(rbbb)
+        exam_id_to_rbbb[exam_id] = rbbb_bool
 
     # Load and convert the signal data.
 
@@ -169,12 +170,13 @@ def run(args):
             exam_ids = list(f['exam_id'])
             num_exam_ids = len(exam_ids)
 
+
             # Iterate over the exam IDs in each signal file.
             for i in range(num_exam_ids):
                 exam_id = exam_ids[i]
 
-                # Skip exam IDs without Chagas labels.
-                if not exam_id in exam_id_to_chagas:
+                # Skip exam IDs without RBBB labels.
+                if not exam_id in exam_id_to_rbbb:
                     continue
                 else:
                     pass
@@ -206,12 +208,12 @@ def run(args):
                 digital_signals[~np.isfinite(digital_signals)] = -2**(num_bits-1)
                 digital_signals = np.asarray(digital_signals, dtype=np.int32) # We need to promote from 16-bit integers due to an error in the Python WFDB library.
 
-                # Add the exam ID, the patient ID, age, sex, Chagas label, and data source.
+                # Add the exam ID, the patient ID, age, sex, RBBB label, and data source.
                 age = exam_id_to_age[exam_id]
                 sex = exam_id_to_sex[exam_id]
-                chagas = exam_id_to_chagas[exam_id]
+                rbbb = exam_id_to_rbbb[exam_id]
                 source = 'CODE-15%'
-                comments = [f'Age: {age}', f'Sex: {sex}', f'Chagas label: {chagas}', f'Source: {source}']
+                comments = [f'Age: {age}', f'Sex: {sex}', f'RBBB label: {rbbb}', f'Source: {source}']
 
                 # Save the signal.
                 record = str(exam_id)

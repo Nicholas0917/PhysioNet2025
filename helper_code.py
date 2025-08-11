@@ -18,8 +18,8 @@ from collections import defaultdict
 age_string = '# Age:'
 sex_string = '# Sex:'
 source_string = '# Source:'
-label_string = '# Chagas label:'
-probability_string = '# Chagas probability:'
+label_string = '# RBBB label:'
+probability_string = '# RBBB probability:'
 
 ### Challenge data I/O functions
 
@@ -43,28 +43,30 @@ def load_label(record):
 
 # Get the binary label from a WFDB header or a similar string.
 def get_label(string, allow_missing=False):
+    # Look for 'RBBB label' in the header instead of the default label_string (which was for Chagas)
     label, has_label = get_variable(string, label_string)
     if not has_label and not allow_missing:
-        raise Exception('No label is available: are you trying to load the labels from the held-out data?')
+        raise Exception('No RBBB label is available: are you trying to load the labels from the held-out data?')
     label = sanitize_boolean_value(label)
     return label
 
 # Load the probability of a positive label for a record.
 def load_probability(record):
     header = load_header(record)
-    label = get_probability(header)
-    return label
+    probability = get_probability(header)
+    return probability
 
 # Get the probability of a positive label from a WFDB header or a similar string.
 def get_probability(string, allow_missing=False):
     probability, has_probability = get_variable(string, probability_string)
     if not has_probability and not allow_missing:
-        raise Exception('No probability is available: are you trying to load the labels from the held-out data?')
+        raise Exception('No RBBB probability is available: are you trying to load the labels from the held-out data?')
     probability = sanitize_scalar_value(probability)
     return probability
 
 # Save the model outputs for a record.
 def save_outputs(output_file, record_name, label, probability):
+    # All outputs now refer to RBBB
     output_string = f'{record_name}\n{label_string} {label}\n{probability_string} {probability}\n'
     save_text(output_file, output_string)
     return output_string
