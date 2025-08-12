@@ -59,10 +59,10 @@ class Config:
         # --- General & Path Settings ---
         self.model_name = 'ResNet18'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.cache_folder = os.getenv('CACHE_FOLDER', '/tmp')
-        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', '/tmp')
+        self.cache_folder = os.getenv('CACHE_FOLDER', './')
+        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './')
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
-        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', '/tmp')
+        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './')
         self.num_preprocess_workers = os.cpu_count() // 4
 
         # --- Model Architecture ---
@@ -204,6 +204,9 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.enabled = True
 
+# make cache folder if it does not exist
+if not os.path.exists(config.cache_folder):
+    os.makedirs(config.cache_folder)
 
 ################################################################################
 #
@@ -1115,12 +1118,6 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         
         # Reset model to initial state for each fold
         model.load_state_dict(torch.load(os.path.join(model_folder, 'pretrain_model.pth')))
-        
-        # Freeze encoder parameters
-        for param in model.encoder.parameters():
-            param.requires_grad = False
-        if verbose:
-            print("Encoder parameters frozen for finetuning.")
         
         train_subset = Subset(finetune_dataset, train_idx)
         val_subset = Subset(finetune_dataset, val_idx)
