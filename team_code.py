@@ -59,10 +59,10 @@ class Config:
         # --- General & Path Settings ---
         self.model_name = 'ResNet18'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
-        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp')
+        self.cache_folder = os.getenv('CACHE_FOLDER', '/tmp')
+        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', '/tmp')
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
-        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
+        self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', '/tmp')
         self.num_preprocess_workers = os.cpu_count() // 4
 
         # --- Model Architecture ---
