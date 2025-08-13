@@ -20,6 +20,7 @@ import gc
 import psutil
 import requests
 import json
+import shutil # Import shutil for file operations
 
 import joblib
 import numpy as np
@@ -50,7 +51,7 @@ from utils import *
 
 ################################################################################
 #
-# Global configuration. 
+# Global configuration.
 #
 ################################################################################
 
@@ -59,8 +60,13 @@ class Config:
         # --- General & Path Settings ---
         self.model_name = 'ResNet18'  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.cache_folder = os.getenv('CACHE_FOLDER', './tmp')
-        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp')
+        
+        # This is the folder where data is downloaded in the Dockerfile. It's read-only at runtime.
+        self.download_folder = '/challenge/downloaded_data'
+        # This is the folder where the script will create/process HDF5 files at runtime. It must be in /tmp.
+        self.cache_folder = '/tmp/wmqn2362/runtime_cache' # Use a writable runtime directory
+        
+        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp') # This will be inside the container's WORKDIR
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
         self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
         self.num_preprocess_workers = os.cpu_count() // 4
@@ -140,6 +146,7 @@ class Config:
         return dim
     
     def print_config(self):
+        # This function remains the same.
         print(">>>>>>>>>>>>>>>>>>>>>>>>>Configuration:<<<<<<<<<<<<<<<<<<<<<<<<<<")
         print(f"Model Name: {self.model_name}")
         print(">>>>>>>>>Pretraining Parameters:<<<<<<<<<<")
@@ -204,9 +211,10 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.enabled = True
 
-# make cache folder if it does not exist
-if not os.path.exists(config.cache_folder):
-    os.makedirs(config.cache_folder)
+# !! DEPRECATED !! The cache folder is now created inside train_model
+# # make cache folder if it does not exist
+# if not os.path.exists(config.cache_folder):
+#     os.makedirs(config.cache_folder)
 
 ################################################################################
 #
@@ -214,14 +222,31 @@ if not os.path.exists(config.cache_folder):
 #
 ################################################################################
 
-# Train your models. This function is *required*. You should edit this function to add your code, but do *not* change the arguments
-# of this function. If you do not train one of the models, then you can return None for the model.
-
-# Train your model.
 def train_model(data_folder, model_folder, verbose):
     """Train the model using the three-stage process"""
-    # torch.autograd.set_detect_anomaly(True)
-    # print_memory_usage("Initial Memory State in train_model")
+    # Create the runtime cache directory. This is the MOST IMPORTANT change.
+    os.makedirs(config.cache_folder, exist_ok=True)
+    if verbose:
+        print(f"Runtime cache folder created at: {config.cache_folder}")
+
+    # Helper function to prepare data by moving from download folder to cache folder
+    def prepare_data_folders():
+        if verbose:
+            print("Preparing data folders...")
+        all_hdf5_files = [f for f in os.listdir(config.download_folder) if f.endswith('.hdf5')]
+        for hdf5_file in all_hdf5_files:
+            source_path = os.path.join(config.download_folder, hdf5_file)
+            dest_path = os.path.join(config.cache_folder, hdf5_file)
+            if not os.path.exists(dest_path):
+                if verbose:
+                    print(f"Moving {source_path} to {dest_path}")
+                shutil.move(source_path, dest_path)
+            else:
+                if verbose:
+                    print(f"{dest_path} already exists, skipping move.")
+    
+    # Prepare the data folders at the beginning.
+    prepare_data_folders()
     
     start_total_time = time.time()
 
@@ -233,9 +258,8 @@ def train_model(data_folder, model_folder, verbose):
     stage0_start_time = time.time()
     records_relative = find_records(data_folder)
     records_full_path = [os.path.join(data_folder, r) for r in records_relative]
-    # print_memory_usage("After finding records and getting full paths")
     
-    # Define HDF5 file paths
+    # Define HDF5 file paths using the runtime cache folder
     code15_hdf5_path = os.path.join(config.cache_folder, 'CODE15_data.hdf5')
     samitrop_hdf5_path = os.path.join(config.cache_folder, 'SaMiTrop_data.hdf5')
     ptbxl_hdf5_path = os.path.join(config.cache_folder, 'PTBXL_data.hdf5')
@@ -255,8 +279,10 @@ def train_model(data_folder, model_folder, verbose):
     torch.cuda.empty_cache()
     gc.collect()
 
-    # Function to preprocess and write to HDF5
     def preprocess_and_write_to_hdf5(records_list, hdf5_path, dataset_name):
+        # This function should now correctly check for the file in the cache folder.
+        # If it's not there, it will create it. Since we moved the files,
+        # this creation step should ideally be skipped for pre-downloaded data.
         if not os.path.exists(hdf5_path):
             start_time = time.time()
             print(f"Starting data preprocessing for {dataset_name} (creating HDF5)")
@@ -284,7 +310,7 @@ def train_model(data_folder, model_folder, verbose):
                 'PTBXL_data': 8,
                 'SaMiTrop_data': 9
             }
-            domain_label_value = dataset_to_domain_label.get(dataset_name, -1) # Default to -1 or handle unknown
+            domain_label_value = dataset_to_domain_label.get(dataset_name, -1)
             if domain_label_value == -1:
                 print(f"Warning: Unknown dataset_name '{dataset_name}'. Domain label will be -1.")
 
@@ -382,7 +408,9 @@ def train_model(data_folder, model_folder, verbose):
     stage0_end_time = time.time()
     if verbose:
         print(f"Stage 0 completed in {stage0_end_time - stage0_start_time:.2f} seconds.")
-
+    
+    # ... The rest of your train_model function remains the same ...
+    # It will now correctly use config.cache_folder for all data operations.
     ############################################################################
     # Stage 1: Pretrain Model
     ############################################################################
