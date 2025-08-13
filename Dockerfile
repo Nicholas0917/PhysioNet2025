@@ -12,15 +12,15 @@ RUN apt-get update && apt-get install -y wget tar
 # Create a dedicated folder for downloaded data inside the image
 RUN mkdir -p /challenge/downloaded_data
 
-# Download the challenge datasets into the new folder
-RUN wget -O /challenge/downloaded_data/CODE15_data_part_aa "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_aa?download=true" \
-    && wget -O /challenge/downloaded_data/CODE15_data_part_ab "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ab?download=true" \
-    && wget -O /challenge/downloaded_data/CODE15_data_part_ac "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ac?download=true" \
-    && wget -O /challenge/downloaded_data/CODE15_data_part_ad "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ad?download=true"
+# # Download the challenge datasets into the new folder
+# RUN wget -O /challenge/downloaded_data/CODE15_data_part_aa "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_aa?download=true" \
+#     && wget -O /challenge/downloaded_data/CODE15_data_part_ab "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ab?download=true" \
+#     && wget -O /challenge/downloaded_data/CODE15_data_part_ac "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ac?download=true" \
+#     && wget -O /challenge/downloaded_data/CODE15_data_part_ad "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/CODE15_data_part_ad?download=true"
 
-# combine the CODE15 data parts into a single file
-RUN cat /challenge/downloaded_data/CODE15_data_part_* > /challenge/downloaded_data/CODE15_data.hdf5
-RUN rm /challenge/downloaded_data/CODE15_data_part_*
+# # combine the CODE15 data parts into a single file
+# RUN cat /challenge/downloaded_data/CODE15_data_part_* > /challenge/downloaded_data/CODE15_data.hdf5
+# RUN rm /challenge/downloaded_data/CODE15_data_part_*
 
 # Download finetune datasets
 RUN wget -O /challenge/downloaded_data/PTBXL_data.hdf5 "https://huggingface.co/datasets/xiaoyuwang123/CinCo_Amigos_PhysioNet2025/resolve/main/PTBXL_data.hdf5?download=true"
