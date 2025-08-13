@@ -62,9 +62,11 @@ class Config:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # This is the folder where data is downloaded in the Dockerfile. It's read-only at runtime.
-        self.download_folder = '/challenge/downloaded_data'
-        # This is the folder where the script will create/process HDF5 files at runtime. It must be in /tmp.
-        self.cache_folder = '/tmp/wmqn2362/runtime_cache' # Use a writable runtime directory
+        # Using a relative path is more robust as it relies on the WORKDIR set in the Dockerfile.
+        self.download_folder = './downloaded_data'
+        # This is the folder where the script will create/process HDF5 files at runtime. 
+        # It MUST be an absolute path under /tmp because /tmp is a separate mount.
+        self.cache_folder = '/tmp/wmqn2362/runtime_cache' 
         
         self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp') # This will be inside the container's WORKDIR
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
@@ -211,10 +213,9 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = True
     torch.backends.cudnn.enabled = True
 
-# !! DEPRECATED !! The cache folder is now created inside train_model
-# # make cache folder if it does not exist
-# if not os.path.exists(config.cache_folder):
-#     os.makedirs(config.cache_folder)
+# make cache folder if it does not exist
+if not os.path.exists(config.cache_folder):
+    os.makedirs(config.cache_folder)
 
 ################################################################################
 #
@@ -228,25 +229,6 @@ def train_model(data_folder, model_folder, verbose):
     os.makedirs(config.cache_folder, exist_ok=True)
     if verbose:
         print(f"Runtime cache folder created at: {config.cache_folder}")
-
-    # Helper function to prepare data by moving from download folder to cache folder
-    def prepare_data_folders():
-        if verbose:
-            print("Preparing data folders...")
-        all_hdf5_files = [f for f in os.listdir(config.download_folder) if f.endswith('.hdf5')]
-        for hdf5_file in all_hdf5_files:
-            source_path = os.path.join(config.download_folder, hdf5_file)
-            dest_path = os.path.join(config.cache_folder, hdf5_file)
-            if not os.path.exists(dest_path):
-                if verbose:
-                    print(f"Moving {source_path} to {dest_path}")
-                shutil.move(source_path, dest_path)
-            else:
-                if verbose:
-                    print(f"{dest_path} already exists, skipping move.")
-    
-    # Prepare the data folders at the beginning.
-    prepare_data_folders()
     
     start_total_time = time.time()
 
@@ -259,7 +241,7 @@ def train_model(data_folder, model_folder, verbose):
     records_relative = find_records(data_folder)
     records_full_path = [os.path.join(data_folder, r) for r in records_relative]
     
-    # Define HDF5 file paths using the runtime cache folder
+    # Define HDF5 file paths using the runtime cache folder for WRITING
     code15_hdf5_path = os.path.join(config.cache_folder, 'CODE15_data.hdf5')
     samitrop_hdf5_path = os.path.join(config.cache_folder, 'SaMiTrop_data.hdf5')
     ptbxl_hdf5_path = os.path.join(config.cache_folder, 'PTBXL_data.hdf5')
@@ -280,12 +262,9 @@ def train_model(data_folder, model_folder, verbose):
     gc.collect()
 
     def preprocess_and_write_to_hdf5(records_list, hdf5_path, dataset_name):
-        # This function should now correctly check for the file in the cache folder.
-        # If it's not there, it will create it. Since we moved the files,
-        # this creation step should ideally be skipped for pre-downloaded data.
         if not os.path.exists(hdf5_path):
             start_time = time.time()
-            print(f"Starting data preprocessing for {dataset_name} (creating HDF5)")
+            print(f"Starting data preprocessing for {dataset_name} (creating HDF5 in {config.cache_folder})")
 
             if not records_list:
                 print(f"No records for {dataset_name}. Skipping HDF5 creation.")
@@ -385,23 +364,22 @@ def train_model(data_folder, model_folder, verbose):
         else:
             print(f"Using existing {dataset_name} data file at {hdf5_path}")
 
-    # Preprocess and write CODE-15% data
+    # The logic here is that if the HDF5 files for the training data don't exist in the writable cache, we create them there.
+    # The external datasets are assumed to exist in the read-only download folder.
     if not os.path.exists(code15_hdf5_path):
         preprocess_and_write_to_hdf5(code15_records_full_path, code15_hdf5_path, 'CODE15_data')
     else:
-        print(f"Skipping CODE15_data preprocessing as {code15_hdf5_path} already exists.")
+        print(f"Skipping CODE15_data preprocessing as {code15_hdf5_path} already exists in cache.")
 
-    # Preprocess and write SaMiTrop data
     if not os.path.exists(samitrop_hdf5_path):
         preprocess_and_write_to_hdf5(samitrop_records_full_path, samitrop_hdf5_path, 'SaMiTrop_data')
     else:
-        print(f"Skipping SaMiTrop_data preprocessing as {samitrop_hdf5_path} already exists.")
+        print(f"Skipping SaMiTrop_data preprocessing as {samitrop_hdf5_path} already exists in cache.")
 
-    # Preprocess and write PTB-XL data
     if not os.path.exists(ptbxl_hdf5_path):
         preprocess_and_write_to_hdf5(ptbxl_records_full_path, ptbxl_hdf5_path, 'PTBXL_data')
     else:
-        print(f"Skipping PTBXL_data preprocessing as {ptbxl_hdf5_path} already exists.")
+        print(f"Skipping PTBXL_data preprocessing as {ptbxl_hdf5_path} already exists in cache.")
 
     del code15_records_full_path, samitrop_records_full_path, ptbxl_records_full_path
 
@@ -409,19 +387,19 @@ def train_model(data_folder, model_folder, verbose):
     if verbose:
         print(f"Stage 0 completed in {stage0_end_time - stage0_start_time:.2f} seconds.")
     
-    # ... The rest of your train_model function remains the same ...
-    # It will now correctly use config.cache_folder for all data operations.
     ############################################################################
     # Stage 1: Pretrain Model
     ############################################################################
     if verbose:
         print("Stage 1: Pretrain Model...")
         
-    # Load datasets
+    # Load datasets. Pre-generated data is now read from the DOWNLOAD folder.
+    # Data generated on-the-fly (from training folder) is read from the CACHE folder.
     pretrain_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=True, config=config)
     external_datasets = []
     for dataset_name in config.dann['external_datasets']:
-        external_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=True, config=config))
+        # IMPORTANT CHANGE: Load external datasets from the read-only download folder
+        external_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.download_folder, is_training=True, config=config))
 
     stage1_start_time = time.time()
     # Initialize model and training components
@@ -429,7 +407,6 @@ def train_model(data_folder, model_folder, verbose):
         device=config.device,
         config=config
     )
-    # print_memory_usage("After initializing HybridModel")
 
     # First stage: update all parameters
     for param in model.parameters():
@@ -455,7 +432,6 @@ def train_model(data_folder, model_folder, verbose):
         label_smoothing=config.pretrain['loss']['label_smoothing']
     )
     
-    print_memory_usage("Before pretrain_model function call")
     model = pretrain_model(
         pretrain_dataset=pretrain_dataset,
         external_datasets=external_datasets,
@@ -468,7 +444,6 @@ def train_model(data_folder, model_folder, verbose):
         pretrain_model_pth=os.path.join(model_folder, 'pretrain_model.pth'),
         verbose=verbose
     )
-    print_memory_usage("After pretrain_model function call")
     
     # Close pretrain datasets
     pretrain_dataset.close()
@@ -489,12 +464,13 @@ def train_model(data_folder, model_folder, verbose):
         print("Stage 2: Evaluate pretrained model...")
     stage2_start_time = time.time()
     if verbose:
+        # For evaluation, datasets are also loaded from their respective locations
         pretrain_eval_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=False, config=config)
-        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=False, config=config)
-        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=False, config=config)
+        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=False, config=config)
         external_eval_datasets = []
         for dataset_name in config.dann['external_datasets']:
-            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=False, config=config))
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.download_folder, is_training=False, config=config))
 
         evaluate_model(model, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'pretrain')
         
@@ -516,24 +492,14 @@ def train_model(data_folder, model_folder, verbose):
     # Stage 3: Finetune on target datasets
     ############################################################################
     
-    # Create finetune datasets from SaMiTrop, PTB-XL, and other external datasets
-    samitrop_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=True, config=config)
-    ptbxl_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=True, config=config)
+    samitrop_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=True, config=config)
+    ptbxl_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=True, config=config)
 
-    # Create finetune datasets from SaMiTrop, PTB-XL, and other external datasets
     # --- Start of new logic for negative sampling ---
-    # 1. Get positive sample count from SaMiTrop
-    # SaMiTrop is assumed to contain only positive samples
     num_positive_samitrop = len(samitrop_dataset)
-
-    # 2. Calculate total negative samples needed (positive samples are 2% of total)
     num_negative_needed = int(num_positive_samitrop * 49)
-
-    # 3. Define negative sample datasets (all external except CODE15, plus PTBXL)
     negative_dataset_names = [name for name in config.dann['external_datasets'] if name != 'CODE15']
-    negative_dataset_names.append('PTBXL') # Explicitly add PTBXL
-    
-    # Calculate samples per negative dataset
+    negative_dataset_names.append('PTBXL')
     num_negative_datasets = len(negative_dataset_names)
     num_negative_per_dataset = num_negative_needed // num_negative_datasets
 
@@ -542,22 +508,17 @@ def train_model(data_folder, model_folder, verbose):
     print(f"Negative datasets: {negative_dataset_names}")
     print(f"Negative samples per dataset: {num_negative_per_dataset}")
 
-    # 4. Sample negative examples from each negative dataset
     sampled_negative_datasets = []
-    # Keep track of the actual ECGDataset objects created for closing later
     actual_negative_datasets = [] 
     for ds_name in negative_dataset_names:
-        # PTBXL is already loaded, reuse it
         if ds_name == 'PTBXL':
             current_dataset = ptbxl_dataset
         else:
-            current_dataset = ECGDataset(dataset_name=ds_name, data_folder=config.cache_folder, is_training=True, config=config)
-            actual_negative_datasets.append(current_dataset) # Store for closing
+            current_dataset = ECGDataset(dataset_name=ds_name, data_folder=config.download_folder, is_training=True, config=config)
+            actual_negative_datasets.append(current_dataset)
         
-        # Filter for negative samples (assuming label 0 is negative)
         negative_indices = [i for i, (_, label, _) in enumerate(current_dataset) if label == 0]
         
-        # Sample if there are enough negative samples
         if len(negative_indices) > 0:
             num_samples_to_take = min(num_negative_per_dataset, len(negative_indices))
             sampled_indices = np.random.choice(negative_indices, num_samples_to_take, replace=False)
@@ -565,24 +526,17 @@ def train_model(data_folder, model_folder, verbose):
         else:
             print(f"Warning: No negative samples found in {ds_name} or dataset is empty.")
 
-    # 5. Concatenate all datasets
-    # Start with SaMiTrop (positive samples)
     finetune_dataset = [samitrop_dataset]
-    # Add all sampled negative datasets
     finetune_dataset.extend(sampled_negative_datasets)
     finetune_dataset = torch.utils.data.ConcatDataset(finetune_dataset)
     # --- End of new logic for negative sampling ---
-
 
     if verbose:
         print("Stage 3: Finetune on target datasets...")
     stage3_start_time = time.time()
     
-    # Print model parameters after freezing layers for finetuning
     print_model_parameters(model, verbose)
 
-    # Initialize training components with BinaryLMFLoss
-    # For finetuning, we also use BinaryLMFLoss
     finetune_labels = [finetune_dataset[i][1] for i in range(len(finetune_dataset))]
     finetune_neg_samples = finetune_labels.count(0)
     finetune_pos_samples = finetune_labels.count(1)
@@ -600,7 +554,6 @@ def train_model(data_folder, model_folder, verbose):
         label_smoothing=config.finetune['loss']['label_smoothing']
     )
     
-    # Create optimizers and schedulers for each fold
     optimizers = []
     schedulers = []
     for _ in range(5):
@@ -652,11 +605,9 @@ def train_model(data_folder, model_folder, verbose):
         
         optimizers.append(optimizer)
         schedulers.append(scheduler)
-    # print_memory_usage("After initializing finetune criterion, optimizers, and schedulers")
     
     kf = StratifiedKFold(n_splits=5)
     
-    print_memory_usage("Before finetune_model function call")
     finetuned_models = finetune_model(
         model=model,
         finetune_dataset=finetune_dataset,
@@ -667,9 +618,7 @@ def train_model(data_folder, model_folder, verbose):
         schedulers=schedulers,
         kf=kf
     )
-    print_memory_usage("After finetune_model function call")
     
-    # Close finetune datasets
     samitrop_dataset.close()
     ptbxl_dataset.close()
     for ds in actual_negative_datasets:
@@ -690,11 +639,11 @@ def train_model(data_folder, model_folder, verbose):
     stage4_start_time = time.time()
     if verbose:
         pretrain_eval_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=False, config=config)
-        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=False, config=config)
-        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=False, config=config)
+        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=False, config=config)
         external_eval_datasets = []
         for dataset_name in config.dann['external_datasets']:
-            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.cache_folder, is_training=False, config=config))
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.download_folder, is_training=False, config=config))
         evaluate_model(finetuned_models, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'finetune')
 
     stage4_end_time = time.time()
