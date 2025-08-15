@@ -398,8 +398,11 @@ def train_model(data_folder, model_folder, verbose):
     pretrain_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=True, config=config)
     external_datasets = []
     for dataset_name in config.dann['external_datasets']:
-        # IMPORTANT CHANGE: Load external datasets from the read-only download folder
-        external_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.download_folder, is_training=True, config=config))
+        if dataset_name == 'CODE15':
+            data_folder_path = config.cache_folder
+        else:
+            data_folder_path = config.download_folder
+        external_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=True, config=config))
 
     stage1_start_time = time.time()
     # Initialize model and training components
@@ -470,7 +473,11 @@ def train_model(data_folder, model_folder, verbose):
         ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=False, config=config)
         external_eval_datasets = []
         for dataset_name in config.dann['external_datasets']:
-            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.download_folder, is_training=False, config=config))
+            if dataset_name == 'CODE15':
+                data_folder_path = config.cache_folder
+            else:
+                data_folder_path = config.download_folder
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=True, config=config))
 
         evaluate_model(model, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'pretrain')
         
@@ -643,7 +650,11 @@ def train_model(data_folder, model_folder, verbose):
         ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=False, config=config)
         external_eval_datasets = []
         for dataset_name in config.dann['external_datasets']:
-            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=config.download_folder, is_training=False, config=config))
+            if dataset_name == 'CODE15':
+                data_folder_path = config.cache_folder
+            else:
+                data_folder_path = config.download_folder
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=True, config=config))
         evaluate_model(finetuned_models, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'finetune')
 
     stage4_end_time = time.time()
