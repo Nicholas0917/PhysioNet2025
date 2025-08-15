@@ -81,7 +81,7 @@ class Config:
         self.deepfeat_sz = 256
         self.nb_feats = self.get_meta_feature_dim()
         self.nb_demo = 0
-        self.classes = [0]  # Binary classification - single output
+        self.classes = [0]  # Binary classification - single output (as originally designed)
         self.class_token = True
         self.if_attn_gated_module = True
 
