@@ -68,7 +68,7 @@ class Config:
         # It MUST be an absolute path under /tmp because /tmp is a separate mount.
         self.cache_folder = '/tmp/wmqn2362/runtime_cache' 
         
-        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './tmp') # This will be inside the container's WORKDIR
+        self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './Trained_models') # This will be inside the container's WORKDIR
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
         self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
         self.num_preprocess_workers = os.cpu_count() // 4
@@ -1075,19 +1075,26 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
     # torch.autograd.set_detect_anomaly(True)
     
     # Check if all fold models already exist
-    all_folds_exist = True
-    for fold_num in range(1, 6): # Check for model_fold1.pth to model_fold5.pth
-        model_path = os.path.join(model_folder, f'model_fold{fold_num}.pth')
-        if not os.path.exists(model_path):
-            all_folds_exist = False
-            break
-    
+    all_folds_exist = all(
+        os.path.exists(os.path.join(config.pretrain_model_folder, f'model_fold{fold_num}.pth'))
+        for fold_num in range(1, 6)
+    )
+
     if all_folds_exist:
         if verbose:
-            print(f"All 5 fold models already exist in {model_folder}. Skipping finetuning stage and loading existing models.")
-        # Load all existing models and return them
-        finetuned_models = load_model(model_folder, verbose)
-        return finetuned_models
+            print(f"All 5 fold models found in {config.pretrain_model_folder}. Skipping finetuning and loading models.")
+            
+        loaded_models = load_model(config.pretrain_model_folder, verbose)
+
+        os.makedirs(model_folder, exist_ok=True)
+        
+        for i, model in enumerate(loaded_models):
+            fold_num = i + 1
+            save_model(model_folder, model.state_dict(), config, fold=fold_num)
+            if verbose:
+                print(f"Saved loaded model for fold {fold_num} to {model_folder}")
+        
+        return loaded_models
 
     # Save initial model state
     initial_state = copy.deepcopy(model.state_dict())
