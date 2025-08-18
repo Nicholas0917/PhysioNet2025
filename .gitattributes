@@ -1,0 +1,2 @@
+*.pth filter=lfs diff=lfs merge=lfs -text
+Trained_model/* filter=lfs diff=lfs merge=lfs -text
