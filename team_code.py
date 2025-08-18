@@ -58,7 +58,7 @@ from utils import *
 class Config:
     def __init__(self):
         # --- General & Path Settings ---
-        self.model_name = os.getenv('MODEL_NAME', 'ECGFeatureExtractor')  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
+        self.model_name = os.getenv('MODEL_NAME', 'ResNet18')  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Using a relative path is more robust as it relies on the WORKDIR set in the Dockerfile.
