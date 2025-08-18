@@ -261,3 +261,57 @@ class ConfusionLoss(nn.Module):
             print(f"Loss value: {loss.item():.4f}")
 
         return loss
+
+class ELRLoss(nn.Module):
+    """
+    Early Learning Regularization (ELR) Loss.
+    
+    This loss function is designed to handle noisy labels by combining a standard 
+    classification loss with a regularization term that encourages the model's
+    predictions to conform to a moving average of its own past predictions.
+    
+    Args:
+        num_examples (int): The total number of examples in the training dataset.
+        num_classes (int): The number of classes. Default: 1 (for binary classification).
+        elr_lambda (float): The weight of the ELR regularization term.
+        elr_beta (float): The momentum parameter for updating the soft target labels.
+    """
+    def __init__(self, num_examples, num_classes=1, elr_lambda=3.0, elr_beta=0.7, device='cpu'):
+        super(ELRLoss, self).__init__()
+        self.num_classes = num_classes
+        self.elr_lambda = elr_lambda
+        self.elr_beta = elr_beta
+        self.device = device
+
+        self.register_buffer(
+            'target_labels', 
+            torch.zeros(num_examples, self.num_classes).to(self.device)
+        )
+
+    def forward(self, index, output, target):
+        """
+        Calculates the ELR loss.
+        
+        Args:
+            index (torch.Tensor): A tensor of indices for the current batch of data.
+                                  This is crucial for updating the correct soft labels.
+            output (torch.Tensor): The raw logits from the model (batch_size, num_classes).
+            target (torch.Tensor): The ground truth (potentially noisy) labels.
+            
+        Returns:
+            torch.Tensor: The final computed ELR loss.
+        """
+        if target.dim() < output.dim():
+            target = target.view(-1, 1).float()
+
+        classification_loss = F.binary_cross_entropy_with_logits(output, target)
+        
+        current_soft_labels = self.target_labels[index]
+        
+        probs = torch.sigmoid(output) if self.num_classes == 1 else F.softmax(output, dim=1)
+        
+        reg_loss = self.elr_lambda * torch.mean((probs - current_soft_labels.detach())**2)
+
+        self.target_labels[index] = self.elr_beta * self.target_labels[index] + (1. - self.elr_beta) * probs.detach()
+        
+        return classification_loss + reg_loss

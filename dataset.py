@@ -5,6 +5,9 @@ from torch.utils.data import Dataset
 from helper_code import *
 
 class ECGDataset(Dataset):
+    GLOBAL_AGE_MEAN = 54.6773
+    GLOBAL_AGE_STD = 19.9747
+
     def __init__(self, dataset_name, data_folder='./external_data', is_training=True, config=None):
         self.is_training = is_training
         self.config = config
@@ -46,6 +49,9 @@ class ECGDataset(Dataset):
         label = self.hdf5_file['labels'][idx] # Read label for this record
         domain_label = self.hdf5_file['domain_labels'][idx] # Read domain label for this record
         
+        # if len(meta_features) > 0:
+        #     meta_features[0] = (meta_features[0] - self.GLOBAL_AGE_MEAN) / self.GLOBAL_AGE_STD
+
         if self.is_training:            
             if self.config.augmentation['noise']['use'] and np.random.rand() < self.config.augmentation['noise']['prob']:
                 signal = self._add_noise(signal)
@@ -79,11 +85,12 @@ class ECGDataset(Dataset):
 
             signal = np.ascontiguousarray(signal).astype(np.float32)
             meta_features = meta_features.astype(np.float32)
+            # domain_label = np.array(domain_label) # Convert to numpy array
             domain_label = domain_label.astype(np.float32) # Ensure domain_label is float32
             
         features = [signal, meta_features]
 
-        return features, label, domain_label
+        return features, label, domain_label, idx
         
     def close(self):
         if hasattr(self, 'hdf5_file') and self.hdf5_file:
