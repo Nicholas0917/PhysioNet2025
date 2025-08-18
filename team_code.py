@@ -65,7 +65,6 @@ class Config:
         self.download_folder = os.getenv('CACHE_FOLDER', './downloaded_data')
         # This is the folder where the script will create/process HDF5 files at runtime. 
         self.cache_folder = os.getenv('CACHE_FOLDER', '/tmp/wmqn2362/runtime_cache')
-
         self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './Trained_models')  # This will be inside the container's WORKDIR
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
         self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
@@ -450,7 +449,6 @@ def train_model(data_folder, model_folder, verbose):
         num_classes=1,
         device=config.device
     )
-
     model = pretrain_model(
         pretrain_dataset=pretrain_dataset,
         external_datasets=external_datasets,
@@ -482,8 +480,8 @@ def train_model(data_folder, model_folder, verbose):
     ############################################################################
     if verbose:
         print("Stage 2: Evaluate pretrained model...")
-        
         stage2_start_time = time.time()
+        
         # For evaluation, datasets are also loaded from their respective locations
         pretrain_eval_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=False, config=config)
         samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=False, config=config)
@@ -540,7 +538,7 @@ def train_model(data_folder, model_folder, verbose):
         else:
             current_dataset = ECGDataset(dataset_name=ds_name, data_folder=config.download_folder, is_training=True, config=config)
             actual_negative_datasets.append(current_dataset)
-        
+
         negative_indices = [i for i, (_, label, _, _) in enumerate(current_dataset) if label == 0]
         
         if len(negative_indices) > 0:
@@ -1134,7 +1132,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
             param.requires_grad = True
         for param in model.domain_classifier.parameters():
             param.requires_grad = False
-        
+
         train_subset = Subset(finetune_dataset, train_idx)
         val_subset = Subset(finetune_dataset, val_idx)
 
