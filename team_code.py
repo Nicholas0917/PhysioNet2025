@@ -58,7 +58,7 @@ from utils import *
 class Config:
     def __init__(self):
         # --- General & Path Settings ---
-        self.model_name = os.getenv('MODEL_NAME', 'ResNet18')  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
+        self.model_name = os.getenv('MODEL_NAME', 'ECGFeatureExtractor')  # [ECGFeatureExtractor, ecgfounder, ResNet18, ResNet34, ResNet50]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
         # Using a relative path is more robust as it relies on the WORKDIR set in the Dockerfile.
@@ -492,7 +492,7 @@ def train_model(data_folder, model_folder, verbose):
                 data_folder_path = config.cache_folder
             else:
                 data_folder_path = config.download_folder
-            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=True, config=config))
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=False, config=config))
 
         evaluate_model(model, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'pretrain')
         
@@ -638,7 +638,7 @@ def train_model(data_folder, model_folder, verbose):
                 data_folder_path = config.cache_folder
             else:
                 data_folder_path = config.download_folder
-            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=True, config=config))
+            external_eval_datasets.append(ECGDataset(dataset_name=dataset_name, data_folder=data_folder_path, is_training=False, config=config))
         evaluate_model(finetuned_models, pretrain_eval_dataset, samitrop_eval_dataset, ptbxl_eval_dataset, external_eval_datasets, verbose, 'finetune')
 
     stage4_end_time = time.time()
