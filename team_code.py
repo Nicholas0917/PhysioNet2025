@@ -484,8 +484,8 @@ def train_model(data_folder, model_folder, verbose):
         
         # For evaluation, datasets are also loaded from their respective locations
         pretrain_eval_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=False, config=config)
-        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=False, config=config)
-        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=False, config=config)
+        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=False, config=config)
         external_eval_datasets = []
         for dataset_name in config.dann['external_datasets']:
             if dataset_name == 'CODE15':
@@ -514,8 +514,8 @@ def train_model(data_folder, model_folder, verbose):
     # Stage 3: Finetune on target datasets
     ############################################################################
     
-    samitrop_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=True, config=config)
-    ptbxl_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=True, config=config)
+    samitrop_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=True, config=config)
+    ptbxl_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=True, config=config)
 
     # --- Start of new logic for negative sampling ---
     num_positive_samitrop = len(samitrop_dataset)
@@ -630,8 +630,8 @@ def train_model(data_folder, model_folder, verbose):
     stage4_start_time = time.time()
     if verbose:
         pretrain_eval_dataset = ECGDataset(dataset_name='CODE15', data_folder=config.cache_folder, is_training=False, config=config)
-        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.download_folder, is_training=False, config=config)
-        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.download_folder, is_training=False, config=config)
+        samitrop_eval_dataset = ECGDataset(dataset_name='SaMiTrop', data_folder=config.cache_folder, is_training=False, config=config)
+        ptbxl_eval_dataset = ECGDataset(dataset_name='PTBXL', data_folder=config.cache_folder, is_training=False, config=config)
         external_eval_datasets = []
         for dataset_name in config.dann['external_datasets']:
             if dataset_name == 'CODE15':
