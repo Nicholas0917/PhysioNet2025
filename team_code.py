@@ -107,7 +107,7 @@ class Config:
             "learning_rate": 1e-6,
             "batch_size": 64,
             "early_stop_patience": 5,
-            "is_train_encoder": bool(int(os.getenv('IS_TRAIN_ENCODER', 1))), # New parameter
+            "is_train_encoder": bool(int(os.getenv('IS_TRAIN_ENCODER', 0))), # New parameter
             "loss": {
                 "focal_gamma": 2,
                 "margin": 0.8,
