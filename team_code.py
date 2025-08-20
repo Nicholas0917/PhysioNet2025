@@ -65,6 +65,7 @@ class Config:
         self.download_folder = os.getenv('CACHE_FOLDER', './downloaded_data')
         # This is the folder where the script will create/process HDF5 files at runtime. 
         self.cache_folder = os.getenv('CACHE_FOLDER', '/tmp/wmqn2362/runtime_cache')
+
         self.pretrain_model_folder = os.getenv('PRETRAIN_MODEL_FOLDER', './Trained_models')  # This will be inside the container's WORKDIR
         self.pretrain_model_path = os.path.join(self.pretrain_model_folder, 'pretrain_model.pth')
         self.visualisation_folder = os.getenv('VISUALISATION_FOLDER', './tmp')
@@ -97,7 +98,7 @@ class Config:
                 "label_smoothing": 0.0,
                 "elr_lambda": 3.0,
                 "elr_beta": 0.7,
-                "elr_loss_weight": float(os.getenv('ELR_WEIGHT', 0.01))
+                "elr_loss_weight": float(os.getenv('ELR_WEIGHT', 0.05))
             }
         }
 
@@ -107,7 +108,7 @@ class Config:
             "learning_rate": 1e-6,
             "batch_size": 64,
             "early_stop_patience": 5,
-            "is_train_encoder": bool(int(os.getenv('IS_TRAIN_ENCODER', 0))), # New parameter
+            "is_train_encoder": bool(int(os.getenv('IS_TRAIN_ENCODER', 1))), # New parameter
             "loss": {
                 "focal_gamma": 2,
                 "margin": 0.8,
@@ -115,7 +116,7 @@ class Config:
                 "lmf_alpha": 0.98,
                 "lmf_beta": 0.02,
                 "label_smoothing": 0.2,
-                "distill_lambda": float(os.getenv('DISTILL_LAMBDA', 0.1))
+                "distill_lambda": float(os.getenv('DISTILL_LAMBDA', 0.05))
             }
         }
         
@@ -123,7 +124,7 @@ class Config:
         self.dann = {
             "num_domains": 8,
             "external_datasets": ['CODE15', 'CSPC', 'CSPC_extra', 'Chapman_Shaoxing', 'Georgia', 'Ningbo', 'PTB', 'ST_Petersburg'],
-            "lambda": float(os.getenv('DANN_LAMBDA', 0.8)),  # Max weight for domain confusion loss
+            "lambda": float(os.getenv('DANN_LAMBDA', 1.0)),  # Max weight for domain confusion loss
             "alpha": 10.0  # Steepness of the lambda scheduler
         }
         
@@ -1151,8 +1152,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                               num_workers=config.num_preprocess_workers,
                               drop_last=True)
 
-        best_loss = float('inf')
-        best_auprc = 0.0
+        best_val_loss = float('inf')
         best_epoch = 0
         start_time = time.time()
 
@@ -1307,9 +1307,9 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 print(f"  Train Logits: Pos {epoch_pos_logit:.4f}, Neg {epoch_neg_logit:.4f}")
                 print(f"  Valid Logits: Pos {val_epoch_pos_logit:.4f}, Neg {val_epoch_neg_logit:.4f}")
 
-            # Early stopping based on AUPRC
-            if val_auprc > best_auprc:
-                best_auprc = val_auprc
+            # Early stopping based on validation loss
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
                 best_epoch = epoch
                 best_model = model.state_dict()
                 epochs_no_improve = 0
@@ -1317,7 +1317,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
                 epochs_no_improve += 1
                 if epochs_no_improve >= config.finetune['early_stop_patience']:
                     if verbose:
-                        print(f"Early stopping: Valid AUPRC not improved for {config.finetune['early_stop_patience']} epochs")
+                        print(f"Early stopping: Valid Loss not improved for {config.finetune['early_stop_patience']} epochs")
                     break
 
             # del train_targets, train_outputs, val_targets, val_outputs
@@ -1326,7 +1326,7 @@ def finetune_model(model, finetune_dataset, model_folder, verbose, criterion, op
         
         end_time = time.time()
         if verbose:
-            print(f'Fold {fold + 1} finished. Best Valid AUPRC: {best_auprc:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
+            print(f'Fold {fold + 1} finished. Best Valid Loss: {best_val_loss:.4f} at epoch {best_epoch + 1}. Time: {end_time - start_time:.2f} seconds \n')
 
         # Save finetuned model
         os.makedirs(model_folder, exist_ok=True)
