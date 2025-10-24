@@ -1,4 +1,5 @@
 # **Two-Stage Domain Adversarial Learning to Identify Chagas Disease from ECG and Patient Demographic Data**
+*Team members: Xiaoyu Wang, Aron Syversen, Zixuan Ding, James Battye, Sharon Yuen Shan Ho, David C Wong*
 
 ## **Introduction**
 
