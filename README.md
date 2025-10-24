@@ -1,154 +1,118 @@
-# Python example code for the George B. Moody PhysioNet Challenge 2025
+# **Two-Stage Domain Adversarial Learning to Identify Chagas Disease from ECG and Patient Demographic Data**
 
-## What's in this repository?
+## **Introduction**
 
-This repository contains a simple example that illustrates how to format a Python entry for the [George B. Moody PhysioNet Challenge 2025](https://physionetchallenges.org/2025/). If you are participating in the 2025 Challenge, then we recommend using this repository as a template for your entry. You can remove some of the code, reuse other code, and add new code to create your entry. You do not need to use the models, features, and/or libraries in this example for your entry. We encourage a diversity of approaches to the Challenges.
+This repository contains the code for the submission by our team, CinCo Amigos, to the [George B. Moody PhysioNet Challenge 2025](https://physionetchallenges.org/2025/). Our goal was to develop an automated, open-source algorithm to detect Chagas disease using electrocardiograms (ECGs) and patient demographic data.
 
-For this example, we implemented a random forest model with several simple features. (This simple example is **not** designed to perform well, so you should **not** use it as a baseline for your approach's performance.) You can try it by running the following commands on the Challenge training set. If you are using a relatively recent personal computer, then you should be able to run these commands from start to finish on a small subset (1000 records) of the training data in a few minutes or less.
+Chagas disease is widely underdiagnosed due to limited serological test coverage. Large-scale automated ECG screening offers a promising solution. However, this task presents significant challenges, including:
 
-## How do I run these scripts?
+* **Significant Label Noise**: The largest dataset (CODE-15) contains unreliable self-reported labels, whereas smaller datasets provide reliable annotations.  
+* **Extreme Class Imbalance**: The prevalence of the positive class is only 2%.  
+* **Substantial Domain Shift**: There is a noticeable performance drop between internal testing and public scoring metrics, indicating differences between data sources.
 
-First, you can download and create data for these scripts by following the instructions in the following section.
+To address these challenges, we proposed a **Two-Stage Domain Adversarial Learning** approach. This framework combines a custom neural network architecture with noise-robust learning techniques, domain-adversarial methods, and advanced class-imbalance handling strategies.
 
-Second, you can install the dependencies for these scripts by creating a Docker image (see below) or [virtual environment](https://docs.python.org/3/library/venv.html) and running
+## **Methodology Overview**
 
-    pip install -r requirements.txt
+Our approach follows a two-stage training paradigm, illustrated in Fig. 2 of the paper:
+<p align="center">  <img width="705" height="417" alt="image" src="https://github.com/user-attachments/assets/796f5c9a-68d1-4a62-9739-420b82d54af9" />
 
-You can train your model by running
 
-    python train_model.py -d training_data -m model
 
-where
+1. **Stage 1: Pre-training with Noise and Domain Adaptation**  
+   * A custom neural network (an encoder based on ECGNeXt or SEResNet, plus a Meta Net for demographic covariates) is pre-trained on the large, noisy CODE15 dataset.  
+   * **LMFLoss**, a combination of Focal Loss and Label-Distribution-Aware Margin (LDAM) Loss, is used to handle class imbalance.  
+   * **Early Learning Regularization (ELR)** is integrated to counteract label noise.  
+   * **Domain-Adversarial Neural Network (DANN)** is employed, incorporating several external datasets (e.g., CSPC, PTB, etc., ignoring their diagnostic labels) as distinct domains to learn domain-invariant features. The encoder is trained to confuse a domain classifier, forcing it to learn domain-agnostic representations.  
+2. **Stage 2: Fine-tuning with Preservation of Domain Generalisation**  
+   * The model is adapted using smaller, high-quality datasets (e.g., SaMi-Trop, PTB-XL).  
+   * **Feature Distillation** is used, where the pre-trained encoder acts as a frozen "teacher" model guiding the "student" encoder during fine-tuning to retain domain generalisation capabilities.  
+   * Alternatively, the pre-trained encoder is frozen, and only the classifier head is fine-tuned.
 
-- `training_data` (input; required) is a folder with the training data files, which must include the labels; and
-- `model` (output; required) is a folder for saving your model.
 
-You can run your trained model by running
+## **How to Run the Code**
 
-    python run_model.py -d holdout_data -m model -o holdout_outputs
+### **1\. Environment Setup**
 
-where
+You can set up the environment in one of two ways:
 
-- `holdout_data` (input; required) is a folder with the holdout data files, which will not necessarily include the labels;
-- `model` (input; required) is a folder for loading your model; and
-- `holdout_outputs` (output; required) is a folder for saving your model outputs.
+* Using Docker (Recommended):  
+  Build the Docker image:
+  ```
+  docker build -t cinc2025-image .
+  ```
+  This command uses the Dockerfile to build an image containing all dependencies. The Dockerfile also automatically downloads the required external datasets into the /challenge/downloaded\_data directory within the image.  
+* Using a Python Virtual Environment:  
+  Create and activate a virtual environment (e.g., using venv or conda), then install the required dependencies:
+  ```
+  pip install -r requirements.txt
+  ```
+  You will need to ensure the necessary datasets are downloaded and accessible. The Dockerfile indicates the HDF5 files required.
 
-The [Challenge website](https://physionetchallenges.org/2025/#data) provides a training database with a description of the contents and structure of the data files.
+### **2\. Data Preparation (If not using pre-downloaded data in Docker)**
 
-You can evaluate your model by pulling or downloading the [evaluation code](https://github.com/physionetchallenges/evaluation-2025) and running
+* **Download Datasets**: Obtain the required ECG datasets (CODE-15%, SaMi-Trop, PTB-XL, CSPC, PTB, etc.) from the [PhysioNet Challenge 2025 website](https://physionetchallenges.org/2025/#data) and other sources cited in the paper.  
+* **Preprocessing**: Run the relevant data preparation scripts to convert the raw data into HDF5 or WFDB format. Scripts provided include prepare\_code15\_data.py, prepare\_samitrop\_data.py, prepare\_ptbxl\_data.py, and Prepare\_External\_data.py.  
+  * Example for CODE-15% data to WFDB:  
+    ```
+    python prepare_code15_data.py -i <path_to_input_hdf5_files> -d <path_to_demographics_csv> -l <path_to_labels_csv> -o <output_wfdb_folder>
+    ```
+  * Example for preparing external datasets into HDF5:  
+    ```
+    python Prepare_External_data.py --data_dir <raw_data_directory> --output_path <output_hdf5_file_path>
+    ```
 
-    python evaluate_model.py -d holdout_data -o holdout_outputs -s scores.csv
+### **3\. Training the Model**
 
-where
+Use the train\_model.py script to train the model. If running inside a Docker container, make sure to mount your local data and model folders.
+```
+python train_model.py -d <path_to_training_data_folder> -m <path_to_model_output_folder> -v
+```
+* `<path_to_training_data_folder>`: Directory containing the training data files (likely preprocessed .hdf5 files based on Dockerfile and dataset.py).  
+* `<path_to_model_output_folder\>`: Directory where the trained model(s) will be saved.  
+* `-v`: (Optional) Enable verbose output.
 
-- `holdout_data`(input; required) is a folder with labels for the holdout data files, which must include the labels;
-- `holdout_outputs` (input; required) is a folder containing files with your model's outputs for the data; and
-- `scores.csv` (output; optional) is file with a collection of scores for your model.
+This script executes the train\_model function in team\_code.py, which implements the two-stage training strategy described in the paper.
 
-You can use the provided training set for the `training_data` and `holdout_data` files, but we will use different datasets for the validation and test sets, and we will not provide the labels to your code.
+### **4\. Running the Model for Prediction**
 
-## How do I create data for these scripts?
+Use the run\_model.py script to make predictions on new data.
+```
+python run_model.py -d <path_to_test_data_folder> -m <path_to_model_folder> -o <path_to_output_folder> -v
+```
+* `<path_to_test_data_folder>`: Directory containing the data files for prediction (expects WFDB format .hea/.dat or .mat files).  
+* `<path_to_model_folder>`: Directory containing the trained model(s) saved by train\_model.py.  
+* `<path_to_output_folder>`: Directory where the model's predictions (one .txt file per record) will be saved.  
+* `-v`: (Optional) Enable verbose output.
 
-You can use the scripts in this repository to convert the [CODE-15% dataset](https://zenodo.org/records/4916206) to [WFDB](https://wfdb.io/) format. These instructions use `code15_hdf5` as the path for the input data files and `code15_wfdb` for the output data files, but you can replace them with the absolute or relative paths for the files on your machine.
+This script calls the load\_model and run\_model functions from team\_code.py.
 
-1. Download and unzip one or more of the `exam_part` files and the `exams.csv` file in the [CODE-15% dataset](https://zenodo.org/records/4916206).
+### **5\. Evaluating Model Performance**
 
-2. Download and unzip the Chagas labels, i.e., the [`code15_chagas_labels.csv`](https://physionetchallenges.org/2025/data/code15_chagas_labels.zip) file.
+Use the official evaluate\_model.py script (or the version included in this repository) to evaluate the model's performance.
+```
+python evaluate_model.py -d <path_to_labeled_data_folder> -o <path_to_model_output_folder> -s <path_to_scores_file>
+```
+* `<path_to_labeled_data_folder>`: Directory containing the ground truth label files for the test data.  
+* `<path_to_model_output_folder>`: Directory containing the model's predictions generated by run\_model.py.  
+* `<path_to_scores_file>`: (Optional) Path to save the evaluation scores in a CSV file.
 
-3. Convert the CODE-15% dataset to WFDB format, with the available demographics information and Chagas labels in the WFDB header file, by running
+The script will compute and output the challenge metrics, such as the Challenge score, AUROC, AUPRC, etc..
 
-        python prepare_code15_data.py \
-            -i code15_hdf5/exams_part0.hdf5 code15_hdf5/exams_part1.hdf5 \
-            -d code15_hdf5/exams.csv \
-            -l code15_hdf5/code15_chagas_labels.csv \
-            -o code15_wfdb
+## **Results**
 
-Each `exam_part` file in the [CODE-15% dataset](https://zenodo.org/records/4916206) contains approximately 20,000 ECG recordings. You can include more or fewer of these files to increase or decrease the number of ECG recordings, respectively. You may want to start with fewer ECG recordings to debug your code.
+Our approach achieved a mean Challenge score of 0.250 on the official hidden test sets of the PhysioNet Challenge 2025, ranking 7th out of 40 competing teams. Notably, our model ranked 1st on the ELSA-Brasil test set. 
+<p align="center"> <img width="576" height="250" alt="image" src="https://github.com/user-attachments/assets/3de62d9d-f0ce-4a3d-ba13-33b211df9809" />
 
-## Which scripts I can edit?
 
-Please edit the following script to add your code:
+## **Citation**
 
-* `team_code.py` is a script with functions for training and running your trained model.
+If you use this code or methodology in your research, please cite our paper:
 
-Please do **not** edit the following scripts. We will use the unedited versions of these scripts when running your code:
+Wang, X., Syversen, A., Ding, Z., Battye, J., Ho, S. Y. S., & Wong, D. C. (2025). Two-Stage Domain Adversarial Learning to Identify Chagas Disease from ECG and Patient Demographic Data. *Computing in Cardiology* 
 
-* `train_model.py` is a script for training your model.
-* `run_model.py` is a script for running your trained model.
-* `helper_code.py` is a script with helper functions that we used for our code. You are welcome to use them in your code.
+And the relevant PhysioNet Challenge 2025 papers.
 
-These scripts must remain in the root path of your repository, but you can put other scripts and other files elsewhere in your repository.
+## **Contact**
 
-## How do I train, save, load, and run my model?
-
-To train and save your model, please edit the `train_model` function in the `team_code.py` script. Please do not edit the input or output arguments of this function.
-
-To load and run your trained model, please edit the `load_model` and `run_model` functions in the `team_code.py` script. Please do not edit the input or output arguments of these functions.
-
-## How do I run these scripts in Docker?
-
-Docker and similar platforms allow you to containerize and package your code with specific dependencies so that your code can be reliably run in other computational environments.
-
-To increase the likelihood that we can run your code, please [install](https://docs.docker.com/get-docker/) Docker, build a Docker image from your code, and run it on the training data. To quickly check your code for bugs, you may want to run it on a small subset of the training data, such as 1000 records.
-
-If you have trouble running your code, then please try the follow steps to run the example code.
-
-1. Create a folder `example` in your home directory with several subfolders.
-
-        user@computer:~$ cd ~/
-        user@computer:~$ mkdir example
-        user@computer:~$ cd example
-        user@computer:~/example$ mkdir training_data holdout_data model holdout_outputs
-
-2. Download the training data from the [Challenge website](https://physionetchallenges.org/2025/#data). Put some of the training data in `training_data` and `holdout_data`. You can use some of the training data to check your code (and you should perform cross-validation on the training data to evaluate your algorithm).
-
-3. Download or clone this repository in your terminal.
-
-        user@computer:~/example$ git clone https://github.com/physionetchallenges/python-example-2025.git
-
-4. Build a Docker image and run the example code in your terminal.
-
-        user@computer:~/example$ ls
-        holdout_data  holdout_outputs  model  python-example-2025  training_data
-
-        user@computer:~/example$ cd python-example-2025/
-
-        user@computer:~/example/python-example-2025$ docker build -t image .
-
-        Sending build context to Docker daemon  [...]kB
-        [...]
-        Successfully tagged image:latest
-
-        user@computer:~/example/python-example-2025$ docker run -it -v ~/example/model:/challenge/model -v ~/example/holdout_data:/challenge/holdout_data -v ~/example/holdout_outputs:/challenge/holdout_outputs -v ~/example/training_data:/challenge/training_data image bash
-
-        root@[...]:/challenge# ls
-            Dockerfile             holdout_outputs        run_mode.py
-            evaluate_model.py      LICENSE                training_data
-            helper_code.py         README.md      
-            holdout_data           requirements.txt
-
-        root@[...]:/challenge# python train_model.py -d training_data -m model -v
-
-        root@[...]:/challenge# python run_model.py -d holdout_data -m model -o holdout_outputs -v
-
-        root@[...]:/challenge# python evaluate_model.py -d holdout_data -o holdout_outputs
-        [...]
-
-        root@[...]:/challenge# exit
-        Exit
-
-## What else do I need?
-
-This repository does not include code for evaluating your entry. Please see the [evaluation code repository](https://github.com/physionetchallenges/evaluation-2025) for code and instructions for evaluating your entry using the Challenge scoring metric.
-
-## How do I learn more? How do I share more?
-
-Please see the [Challenge website](https://physionetchallenges.org/2025/) for more details. Please post questions and concerns on the [Challenge discussion forum](https://groups.google.com/forum/#!forum/physionet-challenges). Please do not make pull requests, which may share information about your approach.
-
-## Useful links
-
-* [Challenge website](https://physionetchallenges.org/2025/)
-* [MATLAB example code](https://github.com/physionetchallenges/matlab-example-2025)
-* [Evaluation code](https://github.com/physionetchallenges/evaluation-2025)
-* [Frequently asked questions (FAQ) for this year's Challenge](https://physionetchallenges.org/2025/faq/)
-* [Frequently asked questions (FAQ) about the Challenges in general](https://physionetchallenges.org/faq/)
+For any questions, please contact Xiaoyu Wang (wmqn2362@leeds.ac.uk).
