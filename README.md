@@ -3,7 +3,7 @@
 
 ## **Introduction**
 
-This repository contains the code for the submission by our team, CinCo Amigos, to the [George B. Moody PhysioNet Challenge 2025](https://physionetchallenges.org/2025/). Our goal was to develop an automated, open-source algorithm to detect Chagas disease using electrocardiograms (ECGs) and patient demographic data.
+This repository contains the code for the submission by our team, **CinCo Amigos**, to the [George B. Moody PhysioNet Challenge 2025](https://physionetchallenges.org/2025/). Our goal was to develop an automated, open-source algorithm to detect Chagas disease using electrocardiograms (ECGs) and patient demographic data.
 
 Chagas disease is widely underdiagnosed due to limited serological test coverage. Large-scale automated ECG screening offers a promising solution. However, this task presents significant challenges, including:
 
